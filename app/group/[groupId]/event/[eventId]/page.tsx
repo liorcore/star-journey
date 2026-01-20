@@ -1,12 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { AnimatePresence, motion } from 'framer-motion';
+import confetti from 'canvas-confetti';
+import { BadgeCheck, ChevronRight, Minus, Sparkles, Star, Timer } from 'lucide-react';
+import { ParticipantIcon } from '@/app/lib/participantIcons';
 
 interface Participant {
     id: string;
     name: string;
-    icon: string;
+    icon: string; // lucide key (or legacy emoji)
     age: number;
     color: string;
     gender: 'male' | 'female';
@@ -35,6 +39,67 @@ interface Group {
     events: Event[];
 }
 
+function hexToRgba(hex: string, alpha: number) {
+    const clean = hex.replace('#', '').trim();
+    if (clean.length !== 6) return `rgba(0,0,0,${alpha})`;
+    const r = parseInt(clean.slice(0, 2), 16);
+    const g = parseInt(clean.slice(2, 4), 16);
+    const b = parseInt(clean.slice(4, 6), 16);
+    if ([r, g, b].some((n) => Number.isNaN(n))) return `rgba(0,0,0,${alpha})`;
+    return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function burstConfetti(opts?: { big?: boolean }) {
+    confetti({
+        particleCount: opts?.big ? 260 : 120,
+        spread: opts?.big ? 105 : 70,
+        startVelocity: opts?.big ? 60 : 40,
+        origin: { y: 0.72 },
+        colors: ['#FFD93D', '#4D96FF', '#FF6B6B', '#4ECDC4', '#BB8FCE', '#FFA07A', '#FF0080'],
+        scalar: opts?.big ? 1.15 : 1,
+    });
+}
+
+function emojiRain(opts?: { count?: number }) {
+    const emojis = ['😄', '😁', '😆', '😊', '🥳', '🤩', '😎', '⭐', '✨'];
+    const count = opts?.count ?? 90;
+
+    for (let i = 0; i < count; i++) {
+        const el = document.createElement('div');
+        el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+        el.style.position = 'fixed';
+        el.style.left = `${Math.random() * 100}vw`;
+        el.style.top = '-40px';
+        el.style.fontSize = `${18 + Math.random() * 22}px`;
+        el.style.zIndex = '9999';
+        el.style.pointerEvents = 'none';
+        el.style.willChange = 'transform, opacity';
+        document.body.appendChild(el);
+
+        const duration = 1900 + Math.random() * 900;
+        const endY = window.innerHeight + 80;
+        const driftX = (Math.random() - 0.5) * 260;
+        const rotate = (Math.random() - 0.5) * 840;
+
+        el.animate(
+            [
+                { transform: 'translate3d(0, 0, 0) rotate(0deg)', opacity: 1 },
+                { transform: `translate3d(${driftX}px, ${endY}px, 0) rotate(${rotate}deg)`, opacity: 0 }
+            ],
+            { duration, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' }
+        ).onfinish = () => el.remove();
+    }
+}
+
+function richGoalCelebration() {
+    // “עשיר”: כמה פיצוצים + גשם סמיילים
+    burstConfetti({ big: true });
+    setTimeout(() => burstConfetti({ big: true }), 160);
+    setTimeout(() => burstConfetti({ big: true }), 380);
+    setTimeout(() => burstConfetti({ big: true }), 620);
+    emojiRain({ count: 170 });
+}
+
 export default function EventPage() {
     const params = useParams();
     const router = useRouter();
@@ -44,8 +109,12 @@ export default function EventPage() {
     const [group, setGroup] = useState<Group | null>(null);
     const [event, setEvent] = useState<Event | null>(null);
     const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-    const [showConfetti, setShowConfetti] = useState(false);
+
     const [showSadEmoji, setShowSadEmoji] = useState(false);
+    const [showCongrats, setShowCongrats] = useState(false);
+    const [congratsName, setCongratsName] = useState<string>('');
+    const [bonusToast, setBonusToast] = useState<string | null>(null);
+    const [starFlash, setStarFlash] = useState<{ text?: string; variant?: 'normal' | 'bonus' } | null>(null);
 
     useEffect(() => {
         const groups = JSON.parse(localStorage.getItem('groups') || '[]');
@@ -88,6 +157,17 @@ export default function EventPage() {
         return () => clearInterval(interval);
     }, [event]);
 
+    const sortedParticipants = useMemo(() => {
+        if (!group || !event) return [];
+        return [...event.participants]
+            .map(ep => ({
+                ...ep,
+                participant: group.participants.find(p => p.id === ep.participantId)!
+            }))
+            .filter(ep => ep.participant)
+            .sort((a, b) => b.stars - a.stars);
+    }, [group, event]);
+
     const updateEventData = (updatedEvent: Event) => {
         const groups = JSON.parse(localStorage.getItem('groups') || '[]');
         const groupIndex = groups.findIndex((g: Group) => g.id === groupId);
@@ -98,7 +178,7 @@ export default function EventPage() {
 
         groups[groupIndex].events[eventIndex] = updatedEvent;
 
-        // Update participant total stars
+        // Update participant total stars across all events
         groups[groupIndex].participants.forEach((participant: Participant) => {
             let totalStars = 0;
             groups[groupIndex].events.forEach((evt: Event) => {
@@ -116,18 +196,48 @@ export default function EventPage() {
     const handleAddStar = (participantId: string) => {
         if (!event) return;
 
+        const currentStars = event.participants.find((ep) => ep.participantId === participantId)?.stars ?? 0;
+        const increment = currentStars >= event.starGoal ? 2 : 1; // מעל היעד = 2 נקודות
+        const willHitGoal = currentStars < event.starGoal && currentStars + increment >= event.starGoal;
+        const isAboveGoal = currentStars >= event.starGoal;
+
         const updatedParticipants = event.participants.map(ep =>
             ep.participantId === participantId
-                ? { ...ep, stars: ep.stars + 1 }
+                ? { ...ep, stars: ep.stars + increment }
                 : ep
         );
 
         updateEventData({ ...event, participants: updatedParticipants });
 
-        // Show confetti animation
-        setShowConfetti(true);
-        createConfetti();
-        setTimeout(() => setShowConfetti(false), 3000);
+        // חיווי במרכז למסך (כוכב)
+        if (isAboveGoal) {
+            setStarFlash({ text: '+2', variant: 'bonus' });
+            setTimeout(() => setStarFlash(null), 650);
+        } else {
+            setStarFlash({ variant: 'normal' });
+            setTimeout(() => setStarFlash(null), 600);
+        }
+
+        if (willHitGoal) {
+            const p = group?.participants.find((x) => x.id === participantId);
+            setCongratsName(p?.name ?? '');
+            setShowCongrats(true);
+            setTimeout(() => setShowCongrats(false), 1700);
+            richGoalCelebration();
+            return;
+        }
+
+        if (isAboveGoal) {
+            // מעל היעד: קונפטי רגיל + סמיילי + טוסט +2⭐
+            setBonusToast('+2');
+            setTimeout(() => setBonusToast(null), 900);
+            burstConfetti({ big: false });
+            emojiRain({ count: 110 });
+            return;
+        }
+
+        // תוספת רגילה: קונפטי + כוכב במרכז
+        burstConfetti({ big: false });
     };
 
     const handleRemoveStar = (participantId: string) => {
@@ -141,163 +251,275 @@ export default function EventPage() {
 
         updateEventData({ ...event, participants: updatedParticipants });
 
-        // Show sad emoji animation
         setShowSadEmoji(true);
-        setTimeout(() => setShowSadEmoji(false), 2000);
-    };
-
-    const createConfetti = () => {
-        const colors = ['#FFD700', '#FFA500', '#FF6B6B', '#4ECDC4', '#45B7D1', '#BB8FCE'];
-        const confettiCount = 50;
-
-        for (let i = 0; i < confettiCount; i++) {
-            const confetti = document.createElement('div');
-            confetti.style.position = 'fixed';
-            confetti.style.width = '10px';
-            confetti.style.height = '10px';
-            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-            confetti.style.left = Math.random() * window.innerWidth + 'px';
-            confetti.style.top = '-10px';
-            confetti.style.opacity = '1';
-            confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
-            confetti.style.zIndex = '9999';
-            confetti.style.pointerEvents = 'none';
-
-            document.body.appendChild(confetti);
-
-            const duration = 2000 + Math.random() * 1000;
-            const endY = window.innerHeight + 10;
-            const endX = parseFloat(confetti.style.left) + (Math.random() - 0.5) * 200;
-
-            confetti.animate([
-                { transform: `translate(0, 0) rotate(0deg)`, opacity: 1 },
-                { transform: `translate(${endX - parseFloat(confetti.style.left)}px, ${endY}px) rotate(${Math.random() * 720}deg)`, opacity: 0 }
-            ], {
-                duration,
-                easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-            }).onfinish = () => confetti.remove();
-        }
+        setTimeout(() => setShowSadEmoji(false), 1600);
     };
 
     if (!group || !event) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="text-2xl">...טוען</div>
+            <div className="min-h-screen flex items-center justify-center bg-[#F1F5F9]">
+                <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                >
+                    <Sparkles className="w-12 h-12 text-[#4D96FF]" />
+                </motion.div>
             </div>
         );
     }
 
-    const sortedParticipants = [...event.participants]
-        .map(ep => ({
-            ...ep,
-            participant: group.participants.find(p => p.id === ep.participantId)!
-        }))
-        .filter(ep => ep.participant)
-        .sort((a, b) => b.stars - a.stars);
-
     return (
-        <div className="min-h-screen p-6" style={{ background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%)' }}>
-            <div className="max-w-4xl mx-auto">
-                <button
-                    onClick={() => router.push(`/group/${groupId}`)}
-                    className="btn btn-secondary mb-6"
-                >
-                    ← חזרה לקבוצה
-                </button>
+        <div className="min-h-screen bg-[#F1F5F9] pb-10" dir="rtl">
+            {/* Top Bar */}
+            <nav className="fixed top-0 left-0 right-0 h-14 bg-white border-b border-slate-200 z-50 px-3">
+                <div className="max-w-md mx-auto h-full flex items-center justify-between">
+                    <button
+                        onClick={() => router.push(`/group/${groupId}`)}
+                        className="h-10 w-10 inline-flex items-center justify-center rounded-xl bg-slate-100 text-slate-700 active:scale-95 transition-transform"
+                        aria-label="חזרה לקבוצה"
+                    >
+                        <ChevronRight className="w-5 h-5" />
+                    </button>
 
-                {/* Event Header */}
-                <div className="glass-card p-8 mb-8">
-                    <h1 className="text-4xl font-bold mb-6 text-center rainbow-text">{event.name}</h1>
-
-                    <div className="flex items-center justify-center gap-3 mb-6">
-                        <span className="text-3xl">⭐</span>
-                        <span className="text-2xl font-bold">יעד: {event.starGoal}</span>
+                    <div className="min-w-0 text-center">
+                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">אירוע</div>
+                        <div className="text-sm font-black text-slate-900 truncate max-w-[220px]">{event.name}</div>
                     </div>
 
-                    {/* Countdown */}
-                    <div className="grid grid-cols-4 gap-4 text-center">
-                        <div className="glass-card p-4">
-                            <div className="text-3xl font-bold">{timeRemaining.days}</div>
-                            <div className="text-sm" style={{ color: 'var(--text-muted)' }}>ימים</div>
-                        </div>
-                        <div className="glass-card p-4">
-                            <div className="text-3xl font-bold">{timeRemaining.hours}</div>
-                            <div className="text-sm" style={{ color: 'var(--text-muted)' }}>שעות</div>
-                        </div>
-                        <div className="glass-card p-4">
-                            <div className="text-3xl font-bold">{timeRemaining.minutes}</div>
-                            <div className="text-sm" style={{ color: 'var(--text-muted)' }}>דקות</div>
-                        </div>
-                        <div className="glass-card p-4">
-                            <div className="text-3xl font-bold">{timeRemaining.seconds}</div>
-                            <div className="text-sm" style={{ color: 'var(--text-muted)' }}>שניות</div>
-                        </div>
-                    </div>
+                    <div className="w-10" />
                 </div>
+            </nav>
+
+            <main className="max-w-md mx-auto px-3 pt-20">
+                {/* Header Card */}
+                <motion.section
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 mb-4 relative overflow-hidden"
+                >
+                    <div className="pattern-overlay" />
+                    <div className="relative">
+                        <h1 className="text-2xl font-black rainbow-text text-center break-words">{event.name}</h1>
+
+                        <div className="mt-4 flex items-center justify-center gap-2">
+                            <Star className="w-5 h-5" fill="currentColor" style={{ color: '#FFD93D' }} />
+                            <span className="text-sm font-black text-slate-900">יעד: {event.starGoal}</span>
+                            <BadgeCheck className="w-4 h-4 text-[#4D96FF]" />
+                        </div>
+
+                        <div className="mt-4 flex items-center justify-center gap-2 text-slate-500">
+                            <Timer className="w-4 h-4 text-[#4D96FF]" />
+                            <span className="text-xs font-black uppercase tracking-widest">נותר זמן</span>
+                        </div>
+
+                        {/* Countdown (LTR) */}
+                        <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2" dir="ltr">
+                            {([
+                                { label: 'ימים', value: timeRemaining.days },
+                                { label: 'שעות', value: timeRemaining.hours },
+                                { label: 'דקות', value: timeRemaining.minutes },
+                                { label: 'שניות', value: timeRemaining.seconds },
+                            ] as const).map((item) => (
+                                <div key={item.label} className="bg-slate-50 rounded-2xl border border-slate-200 p-3 text-center">
+                                    <div className="text-2xl font-black text-slate-900 leading-none">{item.value}</div>
+                                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">{item.label}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </motion.section>
 
                 {/* Participants */}
-                <div className="space-y-4">
+                <motion.section
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05 }}
+                    className="space-y-3"
+                >
                     {sortedParticipants.map(({ participant, participantId, stars }) => {
+                        const isDone = stars >= event.starGoal;
                         const progress = Math.min((stars / event.starGoal) * 100, 100);
 
                         return (
                             <div
                                 key={participantId}
-                                className="glass-card p-6"
-                                style={{ borderRight: `4px solid ${participant.color}` }}
+                                className="rounded-2xl border shadow-sm p-4 relative overflow-hidden"
+                                style={{
+                                    background: isDone
+                                        ? 'linear-gradient(135deg, rgba(255,0,128,0.62) 0%, rgba(255,140,0,0.55) 16%, rgba(255,217,61,0.60) 32%, rgba(0,255,0,0.40) 50%, rgba(0,206,209,0.45) 66%, rgba(77,150,255,0.62) 82%, rgba(187,143,206,0.62) 100%)'
+                                        : hexToRgba(participant.color, 0.14),
+                                    borderColor: isDone ? 'rgba(77,150,255,0.45)' : hexToRgba(participant.color, 0.32),
+                                    boxShadow: isDone
+                                        ? '0 14px 40px rgba(77,150,255,0.20), 0 0 0 2px rgba(255,217,61,0.30)'
+                                        : '0 6px 18px rgba(15, 23, 42, 0.06)',
+                                }}
                             >
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center gap-4">
-                                        <span className="text-5xl">{participant.icon}</span>
-                                        <div>
-                                            <h3 className="text-2xl font-bold">{participant.name}</h3>
-                                            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                                                גיל {participant.age} {participant.gender === 'male' ? '👦' : '👧'}
-                                            </p>
+                                <div className="pattern-overlay" />
+                                <div className="relative">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div
+                                                className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 bg-white/35 backdrop-blur-md"
+                                                style={{ border: `1px solid ${hexToRgba(participant.color, 0.35)}` }}
+                                            >
+                                                <ParticipantIcon icon={participant.icon} className="w-6 h-6 text-slate-900" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <h3 className="text-base font-black text-slate-900 truncate">{participant.name}</h3>
+                                                    {isDone && <BadgeCheck className="w-4 h-4 text-green-600" />}
+                                                </div>
+                                                <p className="text-[11px] font-bold text-slate-800/75 mt-0.5">
+                                                    גיל {participant.age} {participant.gender === 'male' ? '👦' : '👧'}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="text-right shrink-0">
+                                            <div className="text-2xl font-black text-slate-900 leading-none">{stars}</div>
+                                            <div className="text-[10px] font-black text-slate-800/70 uppercase tracking-widest">כוכבים</div>
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* Progress Bar */}
-                                <div className="mb-4">
-                                    <div className="flex justify-between mb-2">
-                                        <span className="font-semibold">{stars} / {event.starGoal} ⭐</span>
-                                        <span style={{ color: 'var(--text-muted)' }}>{progress.toFixed(0)}%</span>
+                                    {/* Progress */}
+                                    <div className="mt-4">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[11px] font-black text-slate-900 uppercase tracking-wider">
+                                                {stars} / {event.starGoal}
+                                            </span>
+                                            <span className="text-[11px] font-black text-slate-900/60">{progress.toFixed(0)}%</span>
+                                        </div>
+                                        <div className="mt-2 h-3 rounded-full bg-white/55 overflow-hidden">
+                                            <div
+                                                className="h-full rounded-full transition-all"
+                                                style={{
+                                                    width: `${progress}%`,
+                                                    background: 'linear-gradient(90deg, #FFD93D, #FFA500)',
+                                                }}
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="progress-bar">
-                                        <div className="progress-fill" style={{ width: `${progress}%` }} />
-                                    </div>
-                                </div>
 
-                                {/* Buttons */}
-                                <div className="flex gap-3">
-                                    <button
-                                        onClick={() => handleAddStar(participantId)}
-                                        className="btn btn-primary flex-1 text-xl"
-                                    >
-                                        ➕ הוסף כוכב
-                                    </button>
-                                    <button
-                                        onClick={() => handleRemoveStar(participantId)}
-                                        className="btn btn-secondary flex-1 text-xl"
-                                        disabled={stars === 0}
-                                        style={{ opacity: stars === 0 ? 0.5 : 1 }}
-                                    >
-                                        ➖ הסר כוכב
-                                    </button>
+                                    {/* Actions */}
+                                    <div className="mt-4 grid grid-cols-2 gap-3">
+                                        <button
+                                            onClick={() => handleAddStar(participantId)}
+                                            className="btn-star h-12 rounded-2xl flex items-center justify-center gap-2"
+                                        >
+                                            <Star className="w-4 h-4" fill="currentColor" style={{ color: '#FFD93D' }} />
+                                            הוסף
+                                        </button>
+                                        <button
+                                            onClick={() => handleRemoveStar(participantId)}
+                                            disabled={stars === 0}
+                                            className="h-12 rounded-2xl border-2 border-slate-200 bg-white font-black text-slate-700 active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
+                                        >
+                                            <Minus className="w-4 h-4" />
+                                            הסר
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         );
                     })}
-                </div>
+                </motion.section>
+            </main>
 
-                {/* Sad Emoji Animation */}
-                {showSadEmoji && (
-                    <div className="sad-emoji">
-                        😢
-                    </div>
+            {/* Congrats overlay */}
+            <AnimatePresence>
+                {showCongrats && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[80] backdrop-blur-sm bg-black/10 flex items-center justify-center pointer-events-none"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.7, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.85, opacity: 0 }}
+                            transition={{ type: 'spring', stiffness: 260, damping: 18 }}
+                            className="px-6 py-5 rounded-3xl border-2 border-white/60 bg-white/75 shadow-xl text-center"
+                        >
+                            <div className="text-3xl font-black rainbow-text">כל הכבוד!</div>
+                            {congratsName && (
+                                <div className="mt-1 text-sm font-black text-slate-800">{congratsName} הגיע/ה ליעד</div>
+                            )}
+                        </motion.div>
+                    </motion.div>
                 )}
-            </div>
+            </AnimatePresence>
+
+            {/* +2 toast with star */}
+            <AnimatePresence>
+                {bonusToast && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 8 }}
+                        className="fixed top-16 left-1/2 -translate-x-1/2 z-[85] pointer-events-none"
+                    >
+                        <div className="px-4 py-2 rounded-2xl bg-white/85 border border-slate-200 shadow-md text-sm font-black text-slate-900">
+                            <span className="inline-flex items-center gap-1.5">
+                                <span>{bonusToast}</span>
+                                <Star className="w-4 h-4" fill="currentColor" style={{ color: '#FFD93D' }} />
+                            </span>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Center star flash */}
+            <AnimatePresence>
+                {starFlash && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[84] flex items-center justify-center pointer-events-none"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.6, opacity: 0, y: 6 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 6 }}
+                            transition={{ type: 'spring', stiffness: 260, damping: 16 }}
+                            className="text-center"
+                        >
+                            <div className="mx-auto w-20 h-20 rounded-[2.5rem] bg-white/70 backdrop-blur-md border border-white/60 shadow-xl flex items-center justify-center">
+                                <Star className="w-10 h-10" fill="currentColor" style={{ color: '#FFD93D' }} />
+                            </div>
+                            {starFlash.text && (
+                                <div className="mt-2 text-2xl font-black text-slate-900">
+                                    {starFlash.text}{' '}
+                                    <Star className="inline-block w-5 h-5 align-[-2px]" fill="currentColor" style={{ color: '#FFD93D' }} />
+                                </div>
+                            )}
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Sad feedback overlay */}
+            <AnimatePresence>
+                {showSadEmoji && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[70] backdrop-blur-sm bg-black/10 flex items-center justify-center pointer-events-none"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.7, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.8, opacity: 0 }}
+                            transition={{ type: 'spring', stiffness: 260, damping: 18 }}
+                            className="text-[96px]"
+                        >
+                            😢
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

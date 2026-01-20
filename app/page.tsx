@@ -19,6 +19,8 @@ export default function Home() {
   const [recentGroups, setRecentGroups] = useState<RecentGroup[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [copiedGroupCode, setCopiedGroupCode] = useState<string | null>(null);
+  const [hoveredGroupCode, setHoveredGroupCode] = useState<string | null>(null);
 
   useEffect(() => {
     // Load recent groups from localStorage
@@ -107,78 +109,105 @@ export default function Home() {
     router.push(`/group/${groupId}`);
   };
 
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6" style={{ background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%)' }}>
-      <div className="w-full max-w-2xl">
-        {/* Title */}
-        <h1 className="rainbow-text text-6xl font-bold text-center mb-16 fade-in" style={{ animationDelay: '0.1s' }}>
-          מסע בין כוכבים
-        </h1>
+  const handleCopyGroupCode = (e: React.MouseEvent, code: string) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(code);
+    setCopiedGroupCode(code);
+    setTimeout(() => setCopiedGroupCode(null), 2000);
+  };
 
-        {/* Main buttons */}
-        <div className="space-y-4 mb-12">
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="btn btn-primary w-full fade-in"
-            style={{ animationDelay: '0.2s' }}
-          >
-            ✨ צור קבוצה חדשה
-          </button>
-          <button
-            onClick={() => setShowJoinModal(true)}
-            className="btn btn-secondary w-full fade-in"
-            style={{ animationDelay: '0.3s' }}
-          >
-            🚀 התחבר לקבוצה קיימת
-          </button>
-        </div>
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 gap-16 sm:gap-20" style={{ background: 'linear-gradient(135deg, #1a0a2e 0%, #0f051d 50%, #16213e 100%)' }}>
+      {/* Title Section */}
+      <h1 className="rainbow-text text-4xl sm:text-5xl md:text-6xl font-bold text-center fade-in" style={{ animationDelay: '0.1s' }}>
+        מסע בין כוכבים
+      </h1>
+
+      {/* Buttons Section */}
+      <div className="flex flex-col items-center gap-4">
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="btn btn-primary fade-in min-w-[220px] sm:min-w-[250px] underline"
+          style={{ animationDelay: '0.3s' }}
+        >
+          ✨ צור קבוצה חדשה
+        </button>
+        <button
+          onClick={() => setShowJoinModal(true)}
+          className="btn btn-secondary fade-in min-w-[220px] sm:min-w-[250px] underline"
+          style={{ animationDelay: '0.4s' }}
+        >
+          🚀 התחבר לקבוצה קיימת
+        </button>
+      </div>
 
         {/* Recent groups */}
         {recentGroups.length > 0 && (
-          <div className="fade-in" style={{ animationDelay: '0.4s' }}>
-            <h2 className="text-2xl font-semibold mb-4 text-center" style={{ color: 'var(--text-secondary)' }}>
+          <div className="fade-in px-4 mt-16 sm:mt-20 pt-12 sm:pt-16 w-full max-w-2xl" style={{ animationDelay: '0.4s' }}>
+            <h2 className="text-xl sm:text-2xl font-semibold mb-12 sm:mb-16 text-center" style={{ color: 'var(--text-secondary)' }}>
               קבוצות אחרונות
             </h2>
-            <div className="space-y-3">
+            <div className="space-y-3 sm:space-y-4">
               {recentGroups.map((group, index) => (
                 <div
                   key={group.id}
                   onClick={() => handleRecentGroupClick(group.id)}
-                  className="glass-card p-4 cursor-pointer slide-in"
+                  className="glass-card p-5 sm:p-6 cursor-pointer slide-in"
                   style={{ animationDelay: `${0.5 + index * 0.1}s` }}
                 >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="text-xl font-semibold">{group.name}</h3>
-                      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>קוד: {group.code}</p>
+                    <div className="flex items-center justify-between gap-4" dir="rtl">
+                    <div className="flex-1 min-w-0 flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-base sm:text-lg md:text-xl font-semibold truncate">{group.name}</h3>
+                      </div>
+                      <div className="relative flex-shrink-0">
+                        <button
+                          onClick={(e) => handleCopyGroupCode(e, group.code)}
+                          onMouseEnter={() => setHoveredGroupCode(group.code)}
+                          onMouseLeave={() => setHoveredGroupCode(null)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all hover:bg-purple-600 hover:bg-opacity-20 active:scale-95"
+                          title="לחץ להעתקה"
+                        >
+                          <span className="text-lg">📋</span>
+                          {copiedGroupCode === group.code && (
+                            <span className="text-xs sm:text-sm text-green-400 font-semibold animate-pulse">✓ הועתק!</span>
+                          )}
+                        </button>
+                        {hoveredGroupCode === group.code && (
+                          <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 glass-card px-3 py-2 whitespace-nowrap z-10 shadow-lg border border-white border-opacity-30">
+                            <span className="text-sm font-mono font-bold text-white tracking-wider">{group.code}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-3xl">⭐</div>
+                    <div className="text-2xl sm:text-3xl flex-shrink-0">⭐</div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
         )}
-      </div>
 
       {/* Create Group Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50" onClick={() => setShowCreateModal(false)}>
-          <div className="glass-card p-8 max-w-md w-full fade-in" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-3xl font-bold mb-6 text-center">צור קבוצה חדשה</h2>
-            <input
-              type="text"
-              placeholder="שם הקבוצה"
-              value={groupName}
-              onChange={(e) => {
-                setGroupName(e.target.value);
-                setError('');
-              }}
-              className="input mb-4"
-              dir="rtl"
-            />
-            {error && <p className="text-red-400 text-sm mb-4 text-center">{error}</p>}
-            <div className="flex gap-3">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 sm:p-6 z-50" onClick={() => setShowCreateModal(false)}>
+          <div className="flex flex-col items-center gap-8 p-6 sm:p-10 max-w-md w-full fade-in mx-4" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-2xl sm:text-3xl font-bold text-center">צור קבוצה חדשה</h2>
+            <div className="w-full">
+              <input
+                type="text"
+                placeholder="שם הקבוצה"
+                value={groupName}
+                onChange={(e) => {
+                  setGroupName(e.target.value);
+                  setError('');
+                }}
+                className="input w-full"
+                dir="rtl"
+              />
+              {error && <p className="text-red-400 text-sm mt-4 text-center">{error}</p>}
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full">
               <button
                 onClick={handleCreateGroup}
                 disabled={loading}
@@ -203,9 +232,9 @@ export default function Home() {
 
       {/* Join Group Modal */}
       {showJoinModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50" onClick={() => setShowJoinModal(false)}>
-          <div className="glass-card p-8 max-w-md w-full fade-in" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-3xl font-bold mb-6 text-center">התחבר לקבוצה</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 sm:p-6 z-50" onClick={() => setShowJoinModal(false)}>
+          <div className="glass-card p-6 sm:p-10 max-w-md w-full fade-in mx-4" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-center">התחבר לקבוצה</h2>
             <input
               type="text"
               placeholder="הזן קוד קבוצה"
@@ -214,14 +243,14 @@ export default function Home() {
                 setGroupCode(e.target.value.toUpperCase());
                 setError('');
               }}
-              className="input mb-4"
+              className="input mb-6"
               dir="ltr"
-              style={{ textAlign: 'center', letterSpacing: '2px', fontSize: '20px', fontWeight: 'bold' }}
+              style={{ textAlign: 'center', letterSpacing: '2px', fontSize: '18px', fontWeight: 'bold' }}
               maxLength={6}
             />
-            {loading && <p className="text-center mb-4" style={{ color: 'var(--text-secondary)' }}>...מחפש</p>}
-            {error && <p className="text-red-400 text-sm mb-4 text-center">{error}</p>}
-            <div className="flex gap-3">
+            {loading && <p className="text-center mb-6" style={{ color: 'var(--text-secondary)' }}>...מחפש</p>}
+            {error && <p className="text-red-400 text-sm mb-6 text-center">{error}</p>}
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <button
                 onClick={handleJoinGroup}
                 disabled={loading}

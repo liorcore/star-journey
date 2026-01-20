@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ChevronRight, Copy, Palette, Smile, Sparkles, UserPlus, X } from 'lucide-react';
+import { PARTICIPANT_ICONS, ParticipantIcon } from '@/app/lib/participantIcons';
 
-const ICONS = ['😀', '😊', '😎', '🥳', '🤩', '😇', '🦸', '🦄', '🐶', '🐱', '🐼', '🦁', '🐯', '🦊', '🐻', '🐨', '🐸', '🦋', '🌟', '⚡', '🔥', '💎', '🎨', '🎭', '🎪', '🎯', '🎲', '🎸', '🚀', '✈️'];
 const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B739', '#52B788', '#FF8FA3', '#C9ADA7'];
 
 interface Participant {
@@ -31,12 +33,19 @@ export default function AddParticipantPage() {
     const groupId = params.groupId as string;
 
     const [name, setName] = useState('');
-    const [icon, setIcon] = useState(ICONS[0]);
+    const [icon, setIcon] = useState(PARTICIPANT_ICONS[0].key);
     const [age, setAge] = useState(5);
     const [color, setColor] = useState(COLORS[0]);
     const [gender, setGender] = useState<'male' | 'female'>('male');
     const [showIconPicker, setShowIconPicker] = useState(false);
     const [showColorPicker, setShowColorPicker] = useState(false);
+
+    const ageLabel = age % 1 === 0 ? String(age) : age.toFixed(1);
+
+    const closePickers = () => {
+        setShowIconPicker(false);
+        setShowColorPicker(false);
+    };
 
     const handleSave = () => {
         if (!name.trim()) {
@@ -70,160 +79,330 @@ export default function AddParticipantPage() {
     };
 
     return (
-        <div className="min-h-screen p-6" style={{ background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%)' }}>
-            <div className="max-w-2xl mx-auto">
-                <button
-                    onClick={() => router.push(`/group/${groupId}`)}
-                    className="btn btn-secondary mb-6"
+        <div className="min-h-screen bg-[#F1F5F9] pb-10" dir="rtl">
+            {/* Top Bar */}
+            <nav className="fixed top-0 left-0 right-0 h-14 bg-white border-b border-slate-200 z-50 px-3">
+                <div className="max-w-md mx-auto h-full flex items-center justify-between">
+                    <button
+                        onClick={() => router.push(`/group/${groupId}`)}
+                        className="h-10 w-10 inline-flex items-center justify-center rounded-xl bg-slate-100 text-slate-700 active:scale-95 transition-transform"
+                        aria-label="חזרה"
+                    >
+                        <ChevronRight className="w-5 h-5" />
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-[#4D96FF]" />
+                        <span className="text-sm font-black text-slate-900">הוסף משתתף</span>
+                    </div>
+
+                    <div className="w-10" />
+                </div>
+            </nav>
+
+            <main className="max-w-md mx-auto px-3 pt-20">
+                <motion.header
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-center mb-6"
                 >
-                    ← חזרה
-                </button>
+                    <h1 className="text-2xl font-black text-slate-900">הוסף משתתף חדש</h1>
+                    <p className="text-sm text-slate-500 mt-2">
+                        בוחרים שם, אייקון וצבע — ויוצאים למסע.
+                    </p>
+                </motion.header>
 
-                <div className="glass-card p-8">
-                    <h1 className="text-3xl font-bold mb-8 text-center">הוסף משתתף חדש</h1>
-
+                <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05 }}
+                    className="space-y-4"
+                >
                     {/* Name */}
-                    <div className="mb-6">
-                        <label className="block mb-2 text-lg font-semibold">שם</label>
+                    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                        <label className="control-label text-[11px]">שם</label>
                         <input
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="input"
                             placeholder="הזן שם"
                             dir="rtl"
+                            className="mt-2 w-full h-12 rounded-2xl border-2 border-slate-200 bg-white px-4 text-base font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#4D96FF]"
                         />
-                    </div>
+                    </section>
 
-                    {/* Icon Picker */}
-                    <div className="mb-6">
-                        <label className="block mb-2 text-lg font-semibold">אייקון</label>
-                        <div className="relative">
+                    {/* Icon */}
+                    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Smile className="w-4 h-4 text-[#4D96FF]" />
+                                <span className="control-label text-[11px]">אייקון</span>
+                            </div>
                             <button
-                                onClick={() => setShowIconPicker(!showIconPicker)}
-                                className="glass-card p-4 w-full flex items-center justify-center text-4xl hover:scale-105 transition-transform"
+                                type="button"
+                                onClick={() => {
+                                    setShowColorPicker(false);
+                                    setShowIconPicker(true);
+                                }}
+                                className="h-10 px-4 rounded-2xl bg-slate-100 text-slate-700 font-black text-xs active:scale-95 transition-transform"
                             >
-                                {icon}
+                                בחר
                             </button>
-                            {showIconPicker && (
-                                <div className="absolute top-full mt-2 w-full glass-card p-4 grid grid-cols-6 gap-2 z-10 max-h-64 overflow-y-auto">
-                                    {ICONS.map((ic) => (
-                                        <button
-                                            key={ic}
-                                            onClick={() => {
-                                                setIcon(ic);
-                                                setShowIconPicker(false);
-                                            }}
-                                            className="text-3xl hover:scale-125 transition-transform p-2"
-                                        >
-                                            {ic}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
                         </div>
-                    </div>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setShowColorPicker(false);
+                                setShowIconPicker(true);
+                            }}
+                            className="mt-3 w-full h-14 rounded-2xl border-2 border-slate-200 bg-white flex items-center justify-center text-3xl active:scale-95 transition-transform"
+                            aria-label="בחירת אייקון"
+                        >
+                            <ParticipantIcon icon={icon} className="w-8 h-8 text-slate-900" />
+                        </button>
+                    </section>
 
-                    {/* Age Slider */}
-                    <div className="mb-6">
-                        <label className="block mb-2 text-lg font-semibold">גיל: {age}</label>
+                    {/* Age */}
+                    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                        <div className="flex items-baseline justify-between">
+                            <span className="control-label text-[11px]">גיל</span>
+                            <span className="text-2xl font-black text-slate-900">{ageLabel}</span>
+                        </div>
                         <input
                             type="range"
                             min="1"
-                            max="18"
+                            max="100"
+                            step="0.5"
                             value={age}
-                            onChange={(e) => setAge(parseInt(e.target.value))}
-                            className="w-full h-3 rounded-lg appearance-none cursor-pointer"
+                            onChange={(e) => setAge(parseFloat(e.target.value))}
+                            className="mt-4 w-full h-3 rounded-full appearance-none cursor-pointer"
                             style={{
-                                background: `linear-gradient(to right, var(--primary) 0%, var(--primary) ${(age / 18) * 100}%, var(--glass-bg) ${(age / 18) * 100}%, var(--glass-bg) 100%)`
+                                background: `linear-gradient(to left, #4D96FF 0%, #4D96FF ${(age / 100) * 100}%, #e2e8f0 ${(age / 100) * 100}%, #e2e8f0 100%)`
                             }}
                         />
-                        <div className="flex justify-between text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+                        <div className="flex justify-between text-[11px] mt-2 text-slate-400 font-bold">
                             <span>1</span>
-                            <span>18</span>
+                            <span>100</span>
                         </div>
-                    </div>
+                    </section>
 
-                    {/* Color Picker */}
-                    <div className="mb-6">
-                        <label className="block mb-2 text-lg font-semibold">צבע</label>
-                        <div className="relative">
+                    {/* Color */}
+                    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Palette className="w-4 h-4 text-[#4D96FF]" />
+                                <span className="control-label text-[11px]">צבע</span>
+                            </div>
                             <button
-                                onClick={() => setShowColorPicker(!showColorPicker)}
-                                className="glass-card p-4 w-full flex items-center justify-center"
+                                type="button"
+                                onClick={() => {
+                                    setShowIconPicker(false);
+                                    setShowColorPicker(true);
+                                }}
+                                className="h-10 px-4 rounded-2xl bg-slate-100 text-slate-700 font-black text-xs active:scale-95 transition-transform"
                             >
-                                <div
-                                    className="w-12 h-12 rounded-full"
-                                    style={{ backgroundColor: color }}
-                                />
+                                בחר
                             </button>
-                            {showColorPicker && (
-                                <div className="absolute top-full mt-2 w-full glass-card p-4 grid grid-cols-6 gap-3 z-10">
-                                    {COLORS.map((c) => (
-                                        <button
-                                            key={c}
-                                            onClick={() => {
-                                                setColor(c);
-                                                setShowColorPicker(false);
-                                            }}
-                                            className="w-12 h-12 rounded-full hover:scale-110 transition-transform"
-                                            style={{ backgroundColor: c }}
-                                        />
-                                    ))}
-                                </div>
-                            )}
                         </div>
-                    </div>
 
-                    {/* Gender Switch */}
-                    <div className="mb-8">
-                        <label className="block mb-2 text-lg font-semibold">מין</label>
-                        <div className="flex gap-4">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setShowIconPicker(false);
+                                setShowColorPicker(true);
+                            }}
+                            className="mt-3 w-full h-14 rounded-2xl border-2 border-slate-200 bg-white flex items-center justify-center gap-3 active:scale-95 transition-transform"
+                            aria-label="בחירת צבע"
+                        >
+                            <span className="w-10 h-10 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: color }} />
+                            <span className="text-xs font-black text-slate-600">לחץ לשינוי</span>
+                        </button>
+                    </section>
+
+                    {/* Gender */}
+                    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                        <span className="control-label text-[11px]">מין</span>
+                        <div className="mt-3 grid grid-cols-2 gap-3">
                             <button
+                                type="button"
                                 onClick={() => setGender('male')}
-                                className={`flex-1 glass-card p-4 text-4xl transition-all ${gender === 'male' ? 'ring-2 ring-blue-400' : ''
-                                    }`}
+                                className={`h-14 rounded-2xl border-2 font-black text-2xl active:scale-95 transition-transform ${
+                                    gender === 'male'
+                                        ? 'border-[#4D96FF] bg-blue-50'
+                                        : 'border-slate-200 bg-white'
+                                }`}
+                                aria-pressed={gender === 'male'}
                             >
                                 👦
                             </button>
                             <button
+                                type="button"
                                 onClick={() => setGender('female')}
-                                className={`flex-1 glass-card p-4 text-4xl transition-all ${gender === 'female' ? 'ring-2 ring-pink-400' : ''
-                                    }`}
+                                className={`h-14 rounded-2xl border-2 font-black text-2xl active:scale-95 transition-transform ${
+                                    gender === 'female'
+                                        ? 'border-[#4D96FF] bg-blue-50'
+                                        : 'border-slate-200 bg-white'
+                                }`}
+                                aria-pressed={gender === 'female'}
                             >
                                 👧
                             </button>
                         </div>
-                    </div>
+                    </section>
 
                     {/* Preview */}
-                    <div className="mb-6 glass-card p-6" style={{ borderRight: `4px solid ${color}` }}>
-                        <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-secondary)' }}>תצוגה מקדימה</h3>
-                        <div className="flex items-center gap-3">
-                            <span className="text-4xl">{icon}</span>
-                            <div>
-                                <p className="text-xl font-bold">{name || 'שם המשתתף'}</p>
-                                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                                    גיל {age} {gender === 'male' ? '👦' : '👧'}
-                                </p>
+                    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 relative overflow-hidden">
+                        <div className="pattern-overlay" />
+                        <div className="relative">
+                            <span className="control-label text-[11px]">תצוגה מקדימה</span>
+                            <div className="mt-3 flex items-center gap-3 rounded-2xl bg-white/70 border border-slate-200 p-3" style={{ borderRight: `6px solid ${color}` }}>
+                                <div
+                                    className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
+                                    style={{ backgroundColor: `${color}22`, border: `1px solid ${color}` }}
+                                >
+                                    <ParticipantIcon icon={icon} className="w-7 h-7 text-slate-900" />
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-base font-black text-slate-900 truncate">{name || 'שם המשתתף'}</p>
+                                    <p className="text-xs font-bold text-slate-500 mt-1">
+                                        גיל {ageLabel} {gender === 'male' ? '👦' : '👧'}
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </section>
 
-                    {/* Buttons */}
-                    <div className="flex gap-4">
-                        <button onClick={handleSave} className="btn btn-primary flex-1">
-                            ✓ שמור
+                    {/* Actions */}
+                    <div className="grid grid-cols-2 gap-3 pt-2">
+                        <button
+                            onClick={handleSave}
+                            className="btn-star h-12 rounded-2xl flex items-center justify-center gap-2"
+                        >
+                            <UserPlus className="w-4 h-4" />
+                            שמור
                         </button>
                         <button
+                            type="button"
                             onClick={() => router.push(`/group/${groupId}`)}
-                            className="btn btn-secondary flex-1"
+                            className="h-12 rounded-2xl border-2 border-slate-200 bg-white font-black text-slate-700 active:scale-95 transition-transform"
                         >
                             ביטול
                         </button>
                     </div>
-                </div>
-            </div>
+                </motion.div>
+            </main>
+
+            {/* Icon Picker Sheet */}
+            <AnimatePresence>
+                {showIconPicker && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[60] bg-black/40"
+                        onClick={closePickers}
+                    >
+                        <motion.div
+                            initial={{ y: 30, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: 30, opacity: 0 }}
+                            transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+                            className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-4"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                    <Smile className="w-4 h-4 text-[#4D96FF]" />
+                                    <span className="text-sm font-black text-slate-900">בחר אייקון</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={closePickers}
+                                    className="h-10 w-10 rounded-xl bg-slate-100 text-slate-700 inline-flex items-center justify-center active:scale-95 transition-transform"
+                                    aria-label="סגור"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <div className="max-h-[55vh] overflow-y-auto">
+                                <div className="grid grid-cols-6 gap-2">
+                                    {PARTICIPANT_ICONS.map(({ key, label }) => (
+                                        <button
+                                            key={key}
+                                            type="button"
+                                            onClick={() => {
+                                                setIcon(key);
+                                                setShowIconPicker(false);
+                                            }}
+                                            className="h-12 rounded-2xl border border-slate-200 bg-white active:scale-95 transition-transform inline-flex items-center justify-center"
+                                            aria-label={`בחר אייקון ${label}`}
+                                        >
+                                            <ParticipantIcon icon={key} className="w-6 h-6 text-slate-900" />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Color Picker Sheet */}
+            <AnimatePresence>
+                {showColorPicker && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[60] bg-black/40"
+                        onClick={closePickers}
+                    >
+                        <motion.div
+                            initial={{ y: 30, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: 30, opacity: 0 }}
+                            transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+                            className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-4"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                    <Palette className="w-4 h-4 text-[#4D96FF]" />
+                                    <span className="text-sm font-black text-slate-900">בחר צבע</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={closePickers}
+                                    className="h-10 w-10 rounded-xl bg-slate-100 text-slate-700 inline-flex items-center justify-center active:scale-95 transition-transform"
+                                    aria-label="סגור"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-6 gap-3">
+                                {COLORS.map((c) => (
+                                    <button
+                                        key={c}
+                                        type="button"
+                                        onClick={() => {
+                                            setColor(c);
+                                            setShowColorPicker(false);
+                                        }}
+                                        className="h-12 rounded-2xl border-2 border-white shadow-sm active:scale-95 transition-transform"
+                                        style={{
+                                            backgroundColor: c,
+                                            outline: c === color ? '3px solid #4D96FF' : 'none',
+                                        }}
+                                        aria-label={`בחר צבע ${c}`}
+                                    />
+                                ))}
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
