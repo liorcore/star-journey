@@ -108,15 +108,22 @@ export function ParticipantIcon({
   icon: string;
   className?: string;
 }) {
+  // Wrap so Tailwind `w-*/h-*` works for both SVG and emoji
   if (isParticipantIconKey(icon)) {
     const Icon = ICON_MAP[icon];
-    return <Icon className={className} />;
+    return (
+      <span className={className} aria-label="אייקון">
+        <Icon className="w-full h-full" />
+      </span>
+    );
   }
 
-  // Fallback for legacy emoji icons in existing localStorage data
+  // Emoji / unicode icon
   return (
     <span className={className} aria-label="אייקון">
-      {icon}
+      <span className="w-full h-full inline-flex items-center justify-center leading-none select-none">
+        {icon}
+      </span>
     </span>
   );
 }

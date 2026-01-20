@@ -116,6 +116,14 @@ export default function EventPage() {
     const [bonusToast, setBonusToast] = useState<string | null>(null);
     const [starFlash, setStarFlash] = useState<{ text?: string; variant?: 'normal' | 'bonus' } | null>(null);
 
+    const FEEDBACK_MS = {
+        starFlashNormal: 900,
+        starFlashBonus: 1050,
+        congrats: 2600,
+        bonusToast: 1500,
+        sad: 1900,
+    } as const;
+
     useEffect(() => {
         const groups = JSON.parse(localStorage.getItem('groups') || '[]');
         const foundGroup = groups.find((g: Group) => g.id === groupId);
@@ -212,17 +220,17 @@ export default function EventPage() {
         // חיווי במרכז למסך (כוכב)
         if (isAboveGoal) {
             setStarFlash({ text: '+2', variant: 'bonus' });
-            setTimeout(() => setStarFlash(null), 650);
+            setTimeout(() => setStarFlash(null), FEEDBACK_MS.starFlashBonus);
         } else {
             setStarFlash({ variant: 'normal' });
-            setTimeout(() => setStarFlash(null), 600);
+            setTimeout(() => setStarFlash(null), FEEDBACK_MS.starFlashNormal);
         }
 
         if (willHitGoal) {
             const p = group?.participants.find((x) => x.id === participantId);
             setCongratsName(p?.name ?? '');
             setShowCongrats(true);
-            setTimeout(() => setShowCongrats(false), 1700);
+            setTimeout(() => setShowCongrats(false), FEEDBACK_MS.congrats);
             richGoalCelebration();
             return;
         }
@@ -230,7 +238,7 @@ export default function EventPage() {
         if (isAboveGoal) {
             // מעל היעד: קונפטי רגיל + סמיילי + טוסט +2⭐
             setBonusToast('+2');
-            setTimeout(() => setBonusToast(null), 900);
+            setTimeout(() => setBonusToast(null), FEEDBACK_MS.bonusToast);
             burstConfetti({ big: false });
             emojiRain({ count: 110 });
             return;
@@ -252,7 +260,7 @@ export default function EventPage() {
         updateEventData({ ...event, participants: updatedParticipants });
 
         setShowSadEmoji(true);
-        setTimeout(() => setShowSadEmoji(false), 1600);
+        setTimeout(() => setShowSadEmoji(false), FEEDBACK_MS.sad);
     };
 
     if (!group || !event) {

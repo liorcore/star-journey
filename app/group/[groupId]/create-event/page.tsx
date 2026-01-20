@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CalendarClock, CalendarPlus, Check, ChevronRight, Palette, Smile, Sparkles, Star, Users, X } from 'lucide-react';
-import { PARTICIPANT_ICONS, ParticipantIcon } from '@/app/lib/participantIcons';
+import { ParticipantIcon } from '@/app/lib/participantIcons';
+import { PARTICIPANT_EMOJIS } from '@/app/lib/participantEmoji';
 
 const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B739', '#52B788', '#FF8FA3', '#C9ADA7'];
 
@@ -43,7 +44,7 @@ export default function CreateEventPage() {
 
     // New participant fields
     const [newName, setNewName] = useState('');
-    const [newIcon, setNewIcon] = useState(PARTICIPANT_ICONS[0].key);
+    const [newIcon, setNewIcon] = useState(PARTICIPANT_EMOJIS[0]);
     const [newAge, setNewAge] = useState(5);
     const [newColor, setNewColor] = useState(COLORS[0]);
     const [newGender, setNewGender] = useState<'male' | 'female'>('male');
@@ -100,7 +101,7 @@ export default function CreateEventPage() {
 
         // Reset form
         setNewName('');
-        setNewIcon(PARTICIPANT_ICONS[0].key);
+        setNewIcon(PARTICIPANT_EMOJIS[0]);
         setNewAge(5);
         setNewColor(COLORS[0]);
         setNewGender('male');
@@ -295,7 +296,7 @@ export default function CreateEventPage() {
                                                 style={{ backgroundColor: `${participant.color}22`, border: `1px solid ${participant.color}` }}
                                             >
                                                 <div className="pattern-overlay" />
-                                                <ParticipantIcon icon={participant.icon} className="w-6 h-6 text-slate-900" />
+                                                <ParticipantIcon icon={participant.icon} className="w-6 h-6 text-2xl" />
                                             </div>
 
                                             <div className="flex-1 min-w-0">
@@ -396,8 +397,8 @@ export default function CreateEventPage() {
                                                 <Smile className="w-4 h-4 text-[#4D96FF]" />
                                                 <span className="text-[11px] font-black text-slate-600 uppercase tracking-wider">אייקון</span>
                                             </div>
-                                            <span className="w-7 h-7 inline-flex items-center justify-center text-slate-900">
-                                                <ParticipantIcon icon={newIcon} className="w-6 h-6" />
+                                            <span className="w-7 h-7 inline-flex items-center justify-center">
+                                                <ParticipantIcon icon={newIcon} className="w-7 h-7 text-2xl" />
                                             </span>
                                         </div>
                                     </button>
@@ -516,18 +517,18 @@ export default function CreateEventPage() {
 
                                         <div className="max-h-[55vh] overflow-y-auto">
                                             <div className="grid grid-cols-6 gap-2">
-                                                {PARTICIPANT_ICONS.map(({ key, label }) => (
+                                                {PARTICIPANT_EMOJIS.map((ic) => (
                                                     <button
-                                                        key={key}
+                                                        key={ic}
                                                         type="button"
                                                         onClick={() => {
-                                                            setNewIcon(key);
+                                                            setNewIcon(ic);
                                                             setShowIconPicker(false);
                                                         }}
                                                         className="h-12 rounded-2xl border border-slate-200 bg-white active:scale-95 transition-transform inline-flex items-center justify-center"
-                                                        aria-label={`בחר אייקון ${label}`}
+                                                        aria-label="בחר אייקון"
                                                     >
-                                                        <ParticipantIcon icon={key} className="w-6 h-6 text-slate-900" />
+                                                        <ParticipantIcon icon={ic} className="w-8 h-8 text-2xl" />
                                                     </button>
                                                 ))}
                                             </div>

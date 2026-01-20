@@ -25,7 +25,8 @@ import {
 import confetti from 'canvas-confetti';
 
 const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B739', '#52B788', '#FF8FA3', '#C9ADA7'];
-import { PARTICIPANT_ICONS, ParticipantIcon } from '@/app/lib/participantIcons';
+import { ParticipantIcon } from '@/app/lib/participantIcons';
+import { PARTICIPANT_EMOJIS } from '@/app/lib/participantEmoji';
 
 function hexToRgba(hex: string, alpha: number) {
     const clean = hex.replace('#', '').trim();
@@ -86,7 +87,7 @@ export default function GroupPage() {
     const [editingParticipantId, setEditingParticipantId] = useState<string | null>(null);
     const [pName, setPName] = useState('');
     // keep as string to support legacy emoji icons already saved in localStorage
-    const [pIcon, setPIcon] = useState<string>(PARTICIPANT_ICONS[0].key);
+    const [pIcon, setPIcon] = useState<string>(PARTICIPANT_EMOJIS[0]);
     const [pAge, setPAge] = useState<number>(5);
     const [pColor, setPColor] = useState(COLORS[0]);
     const [pGender, setPGender] = useState<'male' | 'female'>('male');
@@ -604,18 +605,18 @@ export default function GroupPage() {
 
                                             <div className="max-h-[55vh] overflow-y-auto">
                                                 <div className="grid grid-cols-6 gap-2">
-                                                    {PARTICIPANT_ICONS.map(({ key, label }) => (
+                                                    {PARTICIPANT_EMOJIS.map((ic) => (
                                                         <button
-                                                            key={key}
+                                                            key={ic}
                                                             type="button"
                                                             onClick={() => {
-                                                                setPIcon(key);
+                                                                setPIcon(ic);
                                                                 setShowPIconPicker(false);
                                                             }}
                                                             className="h-12 rounded-2xl border border-slate-200 bg-white active:scale-95 transition-transform inline-flex items-center justify-center"
-                                                            aria-label={`בחר אייקון ${label}`}
+                                                            aria-label="בחר אייקון"
                                                         >
-                                                            <ParticipantIcon icon={key} className="w-6 h-6 text-slate-900" />
+                                                            <ParticipantIcon icon={ic} className="w-8 h-8 text-2xl" />
                                                         </button>
                                                     ))}
                                                 </div>

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Check, Copy, Plus, Rocket, Star, Users, X } from 'lucide-react';
 
 interface RecentGroup {
   id: string;
@@ -20,7 +22,6 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [copiedGroupCode, setCopiedGroupCode] = useState<string | null>(null);
-  const [hoveredGroupCode, setHoveredGroupCode] = useState<string | null>(null);
 
   useEffect(() => {
     // Load recent groups from localStorage
@@ -116,162 +117,276 @@ export default function Home() {
     setTimeout(() => setCopiedGroupCode(null), 2000);
   };
 
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 gap-16 sm:gap-20" style={{ background: 'linear-gradient(135deg, #1a0a2e 0%, #0f051d 50%, #16213e 100%)' }}>
-      {/* Title Section */}
-      <h1 className="rainbow-text text-4xl sm:text-5xl md:text-6xl font-bold text-center fade-in" style={{ animationDelay: '0.1s' }}>
-        מסע בין כוכבים
-      </h1>
+  const closeModals = () => {
+    setShowCreateModal(false);
+    setShowJoinModal(false);
+    setGroupName('');
+    setGroupCode('');
+    setError('');
+    setLoading(false);
+  };
 
-      {/* Buttons Section */}
-      <div className="flex flex-col items-center gap-4">
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="btn btn-primary fade-in min-w-[220px] sm:min-w-[250px] underline"
-          style={{ animationDelay: '0.3s' }}
+  return (
+    <div className="min-h-screen bg-[#F1F5F9] pb-10" dir="rtl">
+      <main className="max-w-md mx-auto px-3 pt-10 sm:pt-16">
+        {/* Hero */}
+        <motion.section
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center"
         >
-          ✨ צור קבוצה חדשה
-        </button>
-        <button
-          onClick={() => setShowJoinModal(true)}
-          className="btn btn-secondary fade-in min-w-[220px] sm:min-w-[250px] underline"
-          style={{ animationDelay: '0.4s' }}
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-[2.5rem] bg-white border border-slate-200 shadow-sm mb-4">
+            <Rocket className="w-7 h-7 text-[#4D96FF]" />
+          </div>
+          <h1 className="text-4xl sm:text-5xl font-black rainbow-text leading-tight">
+            מסע בין כוכבים
+          </h1>
+          <p className="text-sm sm:text-base text-slate-500 mt-3">
+            יוצרים קבוצה, יוצאים להרפתקה, וצוברים כוכבים.
+          </p>
+        </motion.section>
+
+        {/* Actions */}
+        <motion.section
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="mt-8 grid grid-cols-1 gap-3"
         >
-          🚀 התחבר לקבוצה קיימת
-        </button>
-      </div>
+          <button
+            onClick={() => {
+              setError('');
+              setShowCreateModal(true);
+            }}
+            className="btn-star h-12 rounded-[2.5rem] w-full flex items-center justify-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            צור קבוצה חדשה
+          </button>
+
+          <button
+            onClick={() => {
+              setError('');
+              setShowJoinModal(true);
+            }}
+            className="h-12 rounded-[2.5rem] w-full border-2 border-slate-200 bg-white font-black text-slate-800 active:scale-95 transition-transform flex items-center justify-center gap-2"
+          >
+            <Users className="w-4 h-4 text-[#4D96FF]" />
+            התחבר לקבוצה קיימת
+          </button>
+        </motion.section>
 
         {/* Recent groups */}
         {recentGroups.length > 0 && (
-          <div className="fade-in px-4 mt-16 sm:mt-20 pt-12 sm:pt-16 w-full max-w-2xl" style={{ animationDelay: '0.4s' }}>
-            <h2 className="text-xl sm:text-2xl font-semibold mb-12 sm:mb-16 text-center" style={{ color: 'var(--text-secondary)' }}>
-              קבוצות אחרונות
-            </h2>
-            <div className="space-y-3 sm:space-y-4">
-              {recentGroups.map((group, index) => (
+          <motion.section
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="mt-10"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest">
+                קבוצות אחרונות
+              </h2>
+              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                לחץ כדי להיכנס
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {recentGroups.map((group) => (
                 <div
                   key={group.id}
                   onClick={() => handleRecentGroupClick(group.id)}
-                  className="glass-card p-5 sm:p-6 cursor-pointer slide-in"
-                  style={{ animationDelay: `${0.5 + index * 0.1}s` }}
+                  className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 cursor-pointer active:scale-[0.99] transition-transform"
                 >
-                    <div className="flex items-center justify-between gap-4" dir="rtl">
-                    <div className="flex-1 min-w-0 flex items-center gap-3">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-base sm:text-lg md:text-xl font-semibold truncate">{group.name}</h3>
-                      </div>
-                      <div className="relative flex-shrink-0">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-lg font-black text-slate-900 truncate">{group.name}</div>
+                      <div className="mt-1 inline-flex items-center gap-2">
+                        <span className="px-3 py-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-mono font-black text-slate-700 tracking-wider">
+                          {group.code}
+                        </span>
                         <button
                           onClick={(e) => handleCopyGroupCode(e, group.code)}
-                          onMouseEnter={() => setHoveredGroupCode(group.code)}
-                          onMouseLeave={() => setHoveredGroupCode(null)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all hover:bg-purple-600 hover:bg-opacity-20 active:scale-95"
-                          title="לחץ להעתקה"
+                          className="h-9 px-3 rounded-xl bg-slate-100 border border-slate-200 font-black text-slate-700 active:scale-95 transition-transform inline-flex items-center gap-2"
+                          title="העתק קוד"
                         >
-                          <span className="text-lg">📋</span>
-                          {copiedGroupCode === group.code && (
-                            <span className="text-xs sm:text-sm text-green-400 font-semibold animate-pulse">✓ הועתק!</span>
+                          {copiedGroupCode === group.code ? (
+                            <>
+                              <Check className="w-4 h-4 text-green-500" />
+                              <span className="text-xs">הועתק</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-4 h-4" />
+                              <span className="text-xs">העתק</span>
+                            </>
                           )}
                         </button>
-                        {hoveredGroupCode === group.code && (
-                          <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 glass-card px-3 py-2 whitespace-nowrap z-10 shadow-lg border border-white border-opacity-30">
-                            <span className="text-sm font-mono font-bold text-white tracking-wider">{group.code}</span>
-                          </div>
-                        )}
                       </div>
                     </div>
-                    <div className="text-2xl sm:text-3xl flex-shrink-0">⭐</div>
+                    <div className="shrink-0 w-12 h-12 rounded-2xl bg-yellow-50 border border-yellow-100 flex items-center justify-center">
+                      <Star className="w-6 h-6" fill="currentColor" style={{ color: '#FFD93D' }} />
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          </motion.section>
         )}
+      </main>
 
-      {/* Create Group Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 sm:p-6 z-50" onClick={() => setShowCreateModal(false)}>
-          <div className="flex flex-col items-center gap-8 p-6 sm:p-10 max-w-md w-full fade-in mx-4" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-2xl sm:text-3xl font-bold text-center">צור קבוצה חדשה</h2>
-            <div className="w-full">
-              <input
-                type="text"
-                placeholder="שם הקבוצה"
-                value={groupName}
-                onChange={(e) => {
-                  setGroupName(e.target.value);
-                  setError('');
-                }}
-                className="input w-full"
-                dir="rtl"
-              />
-              {error && <p className="text-red-400 text-sm mt-4 text-center">{error}</p>}
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full">
-              <button
-                onClick={handleCreateGroup}
-                disabled={loading}
-                className="btn btn-primary flex-1"
-              >
-                {loading ? '...יוצר' : 'צור קבוצה'}
-              </button>
-              <button
-                onClick={() => {
-                  setShowCreateModal(false);
-                  setGroupName('');
-                  setError('');
-                }}
-                className="btn btn-secondary flex-1"
-              >
-                ביטול
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Create Group Sheet */}
+      <AnimatePresence>
+        {showCreateModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-black/40"
+            onClick={closeModals}
+          >
+            <motion.div
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 30, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+              className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <div className="text-[11px] font-black text-slate-600 uppercase tracking-widest">צור קבוצה</div>
+                  <div className="text-xl font-black text-slate-900">קבוצה חדשה</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeModals}
+                  className="h-10 w-10 rounded-xl bg-slate-100 text-slate-700 inline-flex items-center justify-center active:scale-95 transition-transform"
+                  aria-label="סגור"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
 
-      {/* Join Group Modal */}
-      {showJoinModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 sm:p-6 z-50" onClick={() => setShowJoinModal(false)}>
-          <div className="glass-card p-6 sm:p-10 max-w-md w-full fade-in mx-4" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-center">התחבר לקבוצה</h2>
-            <input
-              type="text"
-              placeholder="הזן קוד קבוצה"
-              value={groupCode}
-              onChange={(e) => {
-                setGroupCode(e.target.value.toUpperCase());
-                setError('');
-              }}
-              className="input mb-6"
-              dir="ltr"
-              style={{ textAlign: 'center', letterSpacing: '2px', fontSize: '18px', fontWeight: 'bold' }}
-              maxLength={6}
-            />
-            {loading && <p className="text-center mb-6" style={{ color: 'var(--text-secondary)' }}>...מחפש</p>}
-            {error && <p className="text-red-400 text-sm mb-6 text-center">{error}</p>}
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-              <button
-                onClick={handleJoinGroup}
-                disabled={loading}
-                className="btn btn-primary flex-1"
-              >
-                {loading ? '...מתחבר' : 'התחבר'}
-              </button>
-              <button
-                onClick={() => {
-                  setShowJoinModal(false);
-                  setGroupCode('');
-                  setError('');
-                }}
-                className="btn btn-secondary flex-1"
-              >
-                ביטול
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              <div className="space-y-3">
+                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-3">
+                  <div className="text-[11px] font-black text-slate-600 uppercase tracking-widest">שם קבוצה</div>
+                  <input
+                    type="text"
+                    value={groupName}
+                    onChange={(e) => {
+                      setGroupName(e.target.value);
+                      setError('');
+                    }}
+                    placeholder="למשל: משפחת ליאור"
+                    className="mt-2 w-full h-11 rounded-2xl border-2 border-slate-200 bg-white px-4 text-sm font-black text-slate-900 focus:outline-none focus:border-[#4D96FF]"
+                    dir="rtl"
+                    autoFocus
+                  />
+                </div>
+
+                {error && <p className="text-red-600 text-sm font-black text-center">{error}</p>}
+
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <button
+                    onClick={handleCreateGroup}
+                    disabled={loading}
+                    className="btn-star h-12 rounded-2xl flex items-center justify-center gap-2 disabled:opacity-60 disabled:active:scale-100"
+                  >
+                    {loading ? 'יוצר...' : 'צור'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={closeModals}
+                    className="h-12 rounded-2xl border-2 border-slate-200 bg-white font-black text-slate-700 active:scale-95 transition-transform"
+                  >
+                    ביטול
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Join Group Sheet */}
+      <AnimatePresence>
+        {showJoinModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-black/40"
+            onClick={closeModals}
+          >
+            <motion.div
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 30, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+              className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <div className="text-[11px] font-black text-slate-600 uppercase tracking-widest">התחברות</div>
+                  <div className="text-xl font-black text-slate-900">הזן קוד קבוצה</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeModals}
+                  className="h-10 w-10 rounded-xl bg-slate-100 text-slate-700 inline-flex items-center justify-center active:scale-95 transition-transform"
+                  aria-label="סגור"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-3">
+                  <div className="text-[11px] font-black text-slate-600 uppercase tracking-widest">קוד</div>
+                  <input
+                    type="text"
+                    value={groupCode}
+                    onChange={(e) => {
+                      setGroupCode(e.target.value.toUpperCase());
+                      setError('');
+                    }}
+                    placeholder="ABC123"
+                    className="mt-2 w-full h-11 rounded-2xl border-2 border-slate-200 bg-white px-4 text-sm font-black text-slate-900 focus:outline-none focus:border-[#4D96FF]"
+                    dir="ltr"
+                    style={{ textAlign: 'center', letterSpacing: '2px' }}
+                    maxLength={6}
+                    autoFocus
+                  />
+                </div>
+
+                {loading && <p className="text-center text-sm font-black text-slate-500">מחפש...</p>}
+                {error && <p className="text-red-600 text-sm font-black text-center">{error}</p>}
+
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <button
+                    onClick={handleJoinGroup}
+                    disabled={loading}
+                    className="btn-star h-12 rounded-2xl flex items-center justify-center gap-2 disabled:opacity-60 disabled:active:scale-100"
+                  >
+                    התחבר
+                  </button>
+                  <button
+                    type="button"
+                    onClick={closeModals}
+                    className="h-12 rounded-2xl border-2 border-slate-200 bg-white font-black text-slate-700 active:scale-95 transition-transform"
+                  >
+                    ביטול
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

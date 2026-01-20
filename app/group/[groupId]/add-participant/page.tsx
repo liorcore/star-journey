@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronRight, Copy, Palette, Smile, Sparkles, UserPlus, X } from 'lucide-react';
-import { PARTICIPANT_ICONS, ParticipantIcon } from '@/app/lib/participantIcons';
+import { ParticipantIcon } from '@/app/lib/participantIcons';
+import { PARTICIPANT_EMOJIS } from '@/app/lib/participantEmoji';
 
 const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B739', '#52B788', '#FF8FA3', '#C9ADA7'];
 
@@ -33,7 +34,7 @@ export default function AddParticipantPage() {
     const groupId = params.groupId as string;
 
     const [name, setName] = useState('');
-    const [icon, setIcon] = useState(PARTICIPANT_ICONS[0].key);
+    const [icon, setIcon] = useState(PARTICIPANT_EMOJIS[0]);
     const [age, setAge] = useState(5);
     const [color, setColor] = useState(COLORS[0]);
     const [gender, setGender] = useState<'male' | 'female'>('male');
@@ -158,7 +159,7 @@ export default function AddParticipantPage() {
                             className="mt-3 w-full h-14 rounded-2xl border-2 border-slate-200 bg-white flex items-center justify-center text-3xl active:scale-95 transition-transform"
                             aria-label="בחירת אייקון"
                         >
-                            <ParticipantIcon icon={icon} className="w-8 h-8 text-slate-900" />
+                            <ParticipantIcon icon={icon} className="w-9 h-9 text-3xl" />
                         </button>
                     </section>
 
@@ -260,7 +261,7 @@ export default function AddParticipantPage() {
                                     className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
                                     style={{ backgroundColor: `${color}22`, border: `1px solid ${color}` }}
                                 >
-                                    <ParticipantIcon icon={icon} className="w-7 h-7 text-slate-900" />
+                                    <ParticipantIcon icon={icon} className="w-8 h-8 text-3xl" />
                                 </div>
                                 <div className="min-w-0">
                                     <p className="text-base font-black text-slate-900 truncate">{name || 'שם המשתתף'}</p>
@@ -327,18 +328,18 @@ export default function AddParticipantPage() {
 
                             <div className="max-h-[55vh] overflow-y-auto">
                                 <div className="grid grid-cols-6 gap-2">
-                                    {PARTICIPANT_ICONS.map(({ key, label }) => (
+                                    {PARTICIPANT_EMOJIS.map((ic) => (
                                         <button
-                                            key={key}
+                                            key={ic}
                                             type="button"
                                             onClick={() => {
-                                                setIcon(key);
+                                                setIcon(ic);
                                                 setShowIconPicker(false);
                                             }}
                                             className="h-12 rounded-2xl border border-slate-200 bg-white active:scale-95 transition-transform inline-flex items-center justify-center"
-                                            aria-label={`בחר אייקון ${label}`}
+                                            aria-label="בחר אייקון"
                                         >
-                                            <ParticipantIcon icon={key} className="w-6 h-6 text-slate-900" />
+                                            <ParticipantIcon icon={ic} className="w-8 h-8 text-2xl" />
                                         </button>
                                     ))}
                                 </div>
