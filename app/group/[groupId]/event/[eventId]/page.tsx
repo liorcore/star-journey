@@ -381,19 +381,19 @@ export default function EventPage() {
                                             <div className="min-w-0">
                                                 <div className="flex items-center gap-2">
                                                     <h3 className="text-base font-black text-slate-900 truncate">{participant.name}</h3>
-                                                    <span className="text-lg">{participant.gender === 'male' ? '♂️' : '♀️'}</span>
                                                     {isDone && <BadgeCheck className="w-4 h-4 text-green-600" />}
                                                 </div>
-                                                <p className="text-[11px] font-bold text-slate-800/75 mt-0.5">
+                                                <p className="text-xs font-bold text-slate-800/75 mt-0.5">
                                                     גיל {participant.age} {participant.gender === 'male' ? '👦' : '👧'}
                                                 </p>
                                             </div>
                                         </div>
+                                    </div>
 
-                                        <div className="text-center shrink-0">
-                                            <div className="text-2xl font-black text-slate-900 leading-none">{stars}</div>
-                                            <div className="text-[10px] font-black text-slate-800/70 uppercase tracking-widest">כוכבים</div>
-                                        </div>
+                                    {/* Stars count in center */}
+                                    <div className="text-center mt-3">
+                                        <div className="text-4xl font-black text-slate-900 leading-none">{stars}</div>
+                                        <div className="text-xs font-black text-slate-800/70 uppercase tracking-widest">כוכבים</div>
                                     </div>
 
                                     {/* Progress */}
