@@ -257,6 +257,8 @@ export default function EventPage() {
         if (isAboveGoal && !willHitGoal) {
             setStarFlash({ variant: 'normal' });
             setTimeout(() => setStarFlash(null), FEEDBACK_MS.starFlashNormal);
+            // קונפטי לכוכב רגיל
+            burstConfetti({ big: false });
         }
 
         if (willHitGoal) {
@@ -614,12 +616,11 @@ export default function EventPage() {
                             transition={{ type: 'spring', stiffness: 200, damping: 15 }}
                             className="text-center"
                         >
-                            <div className="text-8xl mb-4 animate-bounce">🎉</div>
-                            <div className="text-5xl font-black rainbow-text mb-3 animate-pulse">כל הכבוד!!</div>
-                            <div className="text-6xl mb-2">😄 🏆</div>
-                            <div className="text-3xl font-bold text-yellow-300 animate-pulse">אלוף!</div>
+                            <div className="text-6xl mb-4 animate-bounce">🎉</div>
+                            <div className="text-4xl font-black rainbow-text mb-4 animate-pulse">כל הכבוד!!</div>
+                            <div className="text-8xl animate-bounce">😄</div>
                             {congratsName && (
-                                <div className="mt-3 text-xl font-black text-white drop-shadow-lg">
+                                <div className="mt-4 text-lg font-black text-white drop-shadow-lg">
                                     {congratsName} הגיע/ה ליעד!
                                 </div>
                             )}
