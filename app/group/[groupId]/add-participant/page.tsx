@@ -32,6 +32,8 @@ export default function AddParticipantPage() {
     const params = useParams();
     const router = useRouter();
     const groupId = params.groupId as string;
+    const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    const eventId = searchParams.get('eventId');
 
     const [name, setName] = useState('');
     const [icon, setIcon] = useState(PARTICIPANT_EMOJIS[0]);
@@ -74,9 +76,26 @@ export default function AddParticipantPage() {
         };
 
         groups[groupIndex].participants.push(newParticipant);
+
+        // If we came from an event, add the participant to that event too
+        if (eventId) {
+            const eventIndex = groups[groupIndex].events.findIndex((e: any) => e.id === eventId);
+            if (eventIndex !== -1) {
+                groups[groupIndex].events[eventIndex].participants.push({
+                    participantId: newParticipant.id,
+                    stars: 0
+                });
+            }
+        }
+
         localStorage.setItem('groups', JSON.stringify(groups));
 
-        router.push(`/group/${groupId}`);
+        // Navigate back to event if we came from one, otherwise to group
+        if (eventId) {
+            router.push(`/group/${groupId}/event/${eventId}`);
+        } else {
+            router.push(`/group/${groupId}`);
+        }
     };
 
     return (
