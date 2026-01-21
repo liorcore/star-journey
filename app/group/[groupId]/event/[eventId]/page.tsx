@@ -16,7 +16,7 @@ interface Participant {
     gender: 'male' | 'female';
     totalStars: number;
     eventCount: number;
-    completedEvents: Array<{ eventId: string; stars: number; icon: string; eventName: string }>;
+    completedEvents: Array<{ eventId: string; stars: number; icon: string; eventName: string; eventCompleted: boolean }>;
 }
 
 interface EventParticipant {
@@ -146,6 +146,14 @@ export default function EventPage() {
                 if (!participant.completedEvents) {
                     participant.completedEvents = [];
                 }
+                // Ensure all achievements have eventCompleted field
+                participant.completedEvents.forEach((achievement: any) => {
+                    if (achievement.eventCompleted === undefined) {
+                        // Check if the corresponding event exists and is completed
+                        const event = foundGroup.events.find((e: Event) => e.id === achievement.eventId);
+                        achievement.eventCompleted = event ? event.endDate < Date.now() : false;
+                    }
+                });
             });
             // Ensure all events have icon field
             foundGroup.events.forEach((event: Event) => {
@@ -257,11 +265,13 @@ export default function EventPage() {
 
             // Add event achievement to participant
             if (p && event) {
+                const isEventCompleted = event.endDate < Date.now();
                 const achievement = {
                     eventId: event.id,
                     stars: currentStars + increment,
                     icon: event.icon,
-                    eventName: event.name
+                    eventName: event.name,
+                    eventCompleted: isEventCompleted
                 };
 
                 // Check if achievement already exists, update if so

@@ -49,7 +49,7 @@ interface Participant {
     gender: 'male' | 'female';
     totalStars: number;
     eventCount: number;
-    completedEvents: Array<{ eventId: string; stars: number; icon: string; eventName: string }>;
+    completedEvents: Array<{ eventId: string; stars: number; icon: string; eventName: string; eventCompleted: boolean }>;
 }
 
 interface Event {
@@ -100,6 +100,14 @@ export default function GroupPage() {
                 if (!participant.completedEvents) {
                     participant.completedEvents = [];
                 }
+                // Ensure all achievements have eventCompleted field
+                participant.completedEvents.forEach((achievement: any) => {
+                    if (achievement.eventCompleted === undefined) {
+                        // Check if the corresponding event exists and is completed
+                        const event = foundGroup.events.find((e: Event) => e.id === achievement.eventId);
+                        achievement.eventCompleted = event ? event.endDate < Date.now() : false;
+                    }
+                });
             });
             // Ensure all events have icon field
             foundGroup.events.forEach((event: Event) => {
@@ -331,10 +339,17 @@ export default function GroupPage() {
                                                     <div
                                                         key={`${achievement.eventId}-${idx}`}
                                                         className="relative group"
-                                                        title={`${achievement.eventName}: ${achievement.stars} ⭐`}
+                                                        title={`${achievement.eventName}: ${achievement.stars} ⭐ ${achievement.eventCompleted ? '(הושלם)' : '(פעיל)'}`}
                                                     >
-                                                        <div className="w-4 h-4 sm:w-5 sm:h-5 rounded bg-slate-200 flex items-center justify-center text-[8px] sm:text-[10px]">
+                                                        <div className={`w-4 h-4 sm:w-5 sm:h-5 rounded flex items-center justify-center text-[8px] sm:text-[10px] ${
+                                                            achievement.eventCompleted
+                                                                ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 border-2 border-yellow-500 shadow-sm'
+                                                                : 'bg-slate-200 border border-slate-300'
+                                                        }`}>
                                                             <ParticipantIcon icon={achievement.icon} className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                            {achievement.eventCompleted && (
+                                                                <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-white"></div>
+                                                            )}
                                                         </div>
                                                         {/* Tooltip */}
                                                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
