@@ -706,7 +706,7 @@ export default function EventPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[84] flex items-center justify-center pointer-events-none"
+                        className="fixed inset-0 z-[84] backdrop-blur-sm bg-black/10 flex items-center justify-center pointer-events-none"
                     >
                         <motion.div
                             initial={{ scale: 0.6, opacity: 0, y: 6 }}
@@ -715,13 +715,10 @@ export default function EventPage() {
                             transition={{ type: 'spring', stiffness: 260, damping: 16 }}
                             className="text-center"
                         >
-                            <div className="mx-auto w-20 h-20 rounded-[2.5rem] bg-white/70 backdrop-blur-md border border-white/60 shadow-xl flex items-center justify-center">
-                                <Star className="w-10 h-10" fill="currentColor" style={{ color: '#FFD93D' }} />
-                            </div>
+                            <Star className="w-24 h-24 drop-shadow-2xl" fill="currentColor" style={{ color: '#FFD93D' }} />
                             {starFlash.text && (
-                                <div className="mt-2 text-2xl font-black text-slate-900">
-                                    {starFlash.text}{' '}
-                                    <Star className="inline-block w-5 h-5 align-[-2px]" fill="currentColor" style={{ color: '#FFD93D' }} />
+                                <div className="mt-4 text-4xl font-black text-white drop-shadow-2xl">
+                                    {starFlash.text}
                                 </div>
                             )}
                         </motion.div>
