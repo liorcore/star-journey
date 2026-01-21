@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronRight, Copy, Palette, Smile, Sparkles, UserPlus, X } from 'lucide-react';
+import { ChevronRight, ChevronUp, ChevronDown, Copy, Palette, Smile, Sparkles, UserPlus, X } from 'lucide-react';
 import { ParticipantIcon } from '@/app/lib/participantIcons';
 import { PARTICIPANT_EMOJIS } from '@/app/lib/participantEmoji';
 
@@ -165,23 +165,29 @@ export default function AddParticipantPage() {
 
                     {/* Age */}
                     <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-                        <div className="flex items-baseline justify-between">
+                        <div className="flex items-center justify-between">
                             <span className="control-label text-[11px]">גיל</span>
-                            <span className="text-2xl font-black text-slate-900">{ageLabel}</span>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setAge(Math.max(1, age - 0.5))}
+                                    className="h-8 w-8 rounded-lg bg-slate-100 text-slate-700 inline-flex items-center justify-center active:scale-95 transition-transform"
+                                    aria-label="הורד גיל"
+                                >
+                                    <ChevronDown className="w-4 h-4" />
+                                </button>
+                                <span className="text-2xl font-black text-slate-900 min-w-[60px] text-center">{ageLabel}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setAge(Math.min(100, age + 0.5))}
+                                    className="h-8 w-8 rounded-lg bg-slate-100 text-slate-700 inline-flex items-center justify-center active:scale-95 transition-transform"
+                                    aria-label="העלה גיל"
+                                >
+                                    <ChevronUp className="w-4 h-4" />
+                                </button>
+                            </div>
                         </div>
-                        <input
-                            type="range"
-                            min="1"
-                            max="100"
-                            step="0.5"
-                            value={age}
-                            onChange={(e) => setAge(parseFloat(e.target.value))}
-                            className="mt-4 w-full h-3 rounded-full appearance-none cursor-pointer"
-                            style={{
-                                background: `linear-gradient(to left, #4D96FF 0%, #4D96FF ${(age / 100) * 100}%, #e2e8f0 ${(age / 100) * 100}%, #e2e8f0 100%)`
-                            }}
-                        />
-                        <div className="flex justify-between text-[11px] mt-2 text-slate-400 font-bold">
+                        <div className="flex justify-between text-[11px] mt-4 text-slate-400 font-bold">
                             <span>1</span>
                             <span>100</span>
                         </div>
