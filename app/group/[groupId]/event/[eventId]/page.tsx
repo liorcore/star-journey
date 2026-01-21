@@ -519,7 +519,6 @@ export default function EventPage() {
                                     {/* Stars count in center */}
                                     <div className="text-center mt-3">
                                         <div className="text-4xl font-black text-slate-900 leading-none flex items-center justify-center gap-2">
-                                            <Star className="w-8 h-8" fill="currentColor" style={{ color: '#FFD93D' }} />
                                             {stars}
                                             <Star className="w-8 h-8" fill="currentColor" style={{ color: '#FFD93D' }} />
                                         </div>
