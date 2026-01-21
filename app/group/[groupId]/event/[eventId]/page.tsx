@@ -267,6 +267,11 @@ export default function EventPage() {
 
             // Add event achievement to participant
             if (p && event) {
+                // Ensure completedEvents exists
+                if (!p.completedEvents) {
+                    p.completedEvents = [];
+                }
+
                 const isEventCompleted = event.endDate < Date.now();
                 const achievement = {
                     eventId: event.id,
