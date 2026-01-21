@@ -561,7 +561,7 @@ export default function EventPage() {
                                             onClick={() => handleAddStar(participantId)}
                                             className="btn-star h-12 rounded-2xl flex items-center justify-center gap-2"
                                         >
-                                            <Star className="w-4 h-4" fill="currentColor" style={{ color: '#FFD93D' }} />
+                                            <Star className="w-5 h-5" fill="currentColor" style={{ color: '#FFD93D' }} />
                                         </button>
                                         <button
                                             onClick={() => handleRemoveStar(participantId)}
