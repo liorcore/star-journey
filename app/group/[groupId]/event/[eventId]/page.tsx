@@ -354,9 +354,9 @@ export default function EventPage() {
                                 className="rounded-2xl border shadow-sm p-4 relative overflow-hidden"
                                 style={{
                                     background: isDone
-                                        ? 'linear-gradient(135deg, rgba(255,0,128,0.62) 0%, rgba(255,140,0,0.55) 16%, rgba(255,217,61,0.60) 32%, rgba(0,255,0,0.40) 50%, rgba(0,206,209,0.45) 66%, rgba(77,150,255,0.62) 82%, rgba(187,143,206,0.62) 100%)'
-                                        : hexToRgba(participant.color, 0.14),
-                                    borderColor: isDone ? 'rgba(77,150,255,0.45)' : hexToRgba(participant.color, 0.32),
+                                        ? 'linear-gradient(135deg, #FF0080 0%, #FF8C00 16%, #FFD93D 32%, #00FF00 50%, #00CED1 66%, #4D96FF 82%, #BB8FCE 100%)'
+                                        : participant.color,
+                                    borderColor: isDone ? '#4D96FF' : participant.color,
                                     boxShadow: isDone
                                         ? '0 14px 40px rgba(77,150,255,0.20), 0 0 0 2px rgba(255,217,61,0.30)'
                                         : '0 6px 18px rgba(15, 23, 42, 0.06)',
@@ -367,10 +367,10 @@ export default function EventPage() {
                                     <div className="flex items-center justify-between gap-3">
                                         <div className="flex items-center gap-3 min-w-0">
                                             <div
-                                                className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 bg-white/35 backdrop-blur-md"
+                                                className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 bg-white/35 backdrop-blur-md"
                                                 style={{ border: `1px solid ${hexToRgba(participant.color, 0.35)}` }}
                                             >
-                                                <ParticipantIcon icon={participant.icon} className="w-6 h-6 text-slate-900" />
+                                                <ParticipantIcon icon={participant.icon} className="w-10 h-10 text-slate-900" />
                                             </div>
                                             <div className="min-w-0">
                                                 <div className="flex items-center gap-2">
