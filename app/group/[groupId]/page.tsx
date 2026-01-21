@@ -335,12 +335,17 @@ export default function GroupPage() {
                                         {/* Completed Events Tags */}
                                         {participant.completedEvents && participant.completedEvents.length > 0 && (
                                             <div className="flex flex-wrap gap-1 mt-1">
-                                                {participant.completedEvents.slice(0, 6).map((achievement, idx) => (
-                                                    <div
-                                                        key={`${achievement.eventId}-${idx}`}
-                                                        className="relative group"
-                                                        title={`${achievement.eventName}: ${achievement.stars} ⭐ ${achievement.eventCompleted ? '(הושלם)' : '(פעיל)'}`}
-                                                    >
+                                                {participant.completedEvents.slice(0, 6).map((achievement, idx) => {
+                                                    // Find the event to get the star goal
+                                                    const event = group?.events.find(e => e.id === achievement.eventId);
+                                                    const starGoal = event?.starGoal || 0;
+
+                                                    return (
+                                                        <div
+                                                            key={`${achievement.eventId}-${idx}`}
+                                                            className="relative group"
+                                                            title={`${achievement.eventName}: ${achievement.stars}/${starGoal} ⭐ ${achievement.eventCompleted ? '(הושלם)' : '(פעיל)'}`}
+                                                        >
                                                         <div className={`w-4 h-4 sm:w-5 sm:h-5 rounded flex items-center justify-center text-[8px] sm:text-[10px] ${
                                                             achievement.eventCompleted
                                                                 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 border-2 border-yellow-500 shadow-sm'
@@ -356,12 +361,13 @@ export default function GroupPage() {
                                                             <div className="font-bold">{achievement.eventName}</div>
                                                             <div className="flex items-center gap-1">
                                                                 <Star className="w-3 h-3" fill="currentColor" style={{ color: '#FFD93D' }} />
-                                                                <span>{achievement.stars}</span>
+                                                                <span>{achievement.stars}/{starGoal}</span>
                                                             </div>
                                                             <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
                                                         </div>
                                                     </div>
-                                                ))}
+                                                    );
+                                                })}
                                                 {participant.completedEvents.length > 6 && (
                                                     <div className="w-4 h-4 sm:w-5 sm:h-5 rounded bg-slate-300 flex items-center justify-center text-[8px] sm:text-[10px] font-bold">
                                                         +{participant.completedEvents.length - 6}
