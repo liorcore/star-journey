@@ -192,7 +192,7 @@ export default function GroupPage() {
         return `${hours} שעות`;
     };
 
-    const pAgeLabel = pAge % 1 === 0 ? String(pAge) : pAge.toFixed(1);
+    const pAgeLabel = pAge.toFixed(1);
 
     if (!group) {
         return (

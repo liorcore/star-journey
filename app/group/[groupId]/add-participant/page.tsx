@@ -41,7 +41,7 @@ export default function AddParticipantPage() {
     const [showIconPicker, setShowIconPicker] = useState(false);
     const [showColorPicker, setShowColorPicker] = useState(false);
 
-    const ageLabel = age % 1 === 0 ? String(age) : age.toFixed(1);
+    const ageLabel = age.toFixed(1);
 
     const closePickers = () => {
         setShowIconPicker(false);
