@@ -552,7 +552,7 @@ export default function EventPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[85] flex items-center justify-center pointer-events-none"
+                        className="fixed inset-0 z-[85] backdrop-blur-sm bg-black/10 flex items-center justify-center pointer-events-none"
                     >
                         <motion.div
                             initial={{ scale: 0.5, opacity: 0, rotate: -10 }}
@@ -581,7 +581,7 @@ export default function EventPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[84] flex items-center justify-center pointer-events-none"
+                        className="fixed inset-0 z-[84] backdrop-blur-sm bg-black/10 flex items-center justify-center pointer-events-none"
                     >
                         <motion.div
                             initial={{ scale: 0.3, opacity: 0 }}
@@ -603,7 +603,7 @@ export default function EventPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[83] flex items-center justify-center pointer-events-none"
+                        className="fixed inset-0 z-[83] backdrop-blur-sm bg-black/10 flex items-center justify-center pointer-events-none"
                     >
                         <motion.div
                             initial={{ scale: 0.5, opacity: 0, rotate: -15 }}
