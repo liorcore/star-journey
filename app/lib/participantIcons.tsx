@@ -121,7 +121,7 @@ export function ParticipantIcon({
   // Emoji / unicode icon
   return (
     <span className={className} aria-label="אייקון">
-      <span className="w-full h-full inline-flex items-center justify-center leading-none select-none">
+      <span className="w-full h-full inline-flex items-center justify-center leading-none select-none text-5xl">
         {icon}
       </span>
     </span>

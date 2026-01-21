@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import { BadgeCheck, ChevronRight, Minus, Sparkles, Star, Timer } from 'lucide-react';
+import { BadgeCheck, ChevronRight, Crown, Minus, Sparkles, Star, Timer } from 'lucide-react';
 import { ParticipantIcon } from '@/app/lib/participantIcons';
 
 interface Participant {
@@ -344,7 +344,7 @@ export default function EventPage() {
                     transition={{ delay: 0.05 }}
                     className="space-y-3"
                 >
-                    {sortedParticipants.map(({ participant, participantId, stars }) => {
+                    {sortedParticipants.map(({ participant, participantId, stars }, index) => {
                         const isDone = stars >= event.starGoal;
                         const progress = Math.min((stars / event.starGoal) * 100, 100);
 
@@ -363,6 +363,12 @@ export default function EventPage() {
                                 }}
                             >
                                 <div className="pattern-overlay" />
+                                {index === 0 && (
+                                    <div className="absolute top-1 left-2 bg-yellow-400/95 backdrop-blur-md rounded-lg px-1.5 py-0.5 text-[9px] font-black text-slate-900 border border-yellow-500 shadow-sm flex items-center gap-1">
+                                        <Crown className="w-3 h-3" fill="currentColor" />
+                                        מוביל
+                                    </div>
+                                )}
                                 <div className="relative">
                                     <div className="flex items-center justify-between gap-3">
                                         <div className="flex items-center gap-3 min-w-0">
@@ -370,7 +376,7 @@ export default function EventPage() {
                                                 className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 bg-white/35 backdrop-blur-md"
                                                 style={{ border: `1px solid ${hexToRgba(participant.color, 0.35)}` }}
                                             >
-                                                <ParticipantIcon icon={participant.icon} className="w-10 h-10 text-slate-900" />
+                                                <ParticipantIcon icon={participant.icon} className="w-14 h-14 text-slate-900" />
                                             </div>
                                             <div className="min-w-0">
                                                 <div className="flex items-center gap-2">
@@ -384,7 +390,7 @@ export default function EventPage() {
                                         </div>
 
                                         <div className="text-right shrink-0">
-                                            <div className="text-2xl font-black text-slate-900 leading-none">{stars}</div>
+                                            <div className="text-lg font-black text-slate-900 leading-none">{stars}</div>
                                             <div className="text-[10px] font-black text-slate-800/70 uppercase tracking-widest">כוכבים</div>
                                         </div>
                                     </div>
@@ -397,12 +403,13 @@ export default function EventPage() {
                                             </span>
                                             <span className="text-[11px] font-black text-slate-900/60">{progress.toFixed(0)}%</span>
                                         </div>
-                                        <div className="mt-2 h-3 rounded-full bg-white/55 overflow-hidden">
+                                        <div className="mt-2 h-3 rounded-full bg-white/55">
                                             <div
                                                 className="h-full rounded-full transition-all"
                                                 style={{
                                                     width: `${progress}%`,
-                                                    background: 'linear-gradient(90deg, #FFD93D, #FFA500)',
+                                                    background: 'white',
+                                                    boxShadow: '0 0 12px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.4)',
                                                 }}
                                             />
                                         </div>

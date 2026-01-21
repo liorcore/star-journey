@@ -65,13 +65,6 @@ interface Group {
     events: Event[];
 }
 
-import { Heebo } from 'next/font/google';
-
-const heebo = Heebo({ 
-    subsets: ['hebrew', 'latin'],
-    weight: ['400', '700', '900'],
-    variable: '--font-heebo',
-});
 
 export default function GroupPage() {
     const params = useParams();
@@ -93,6 +86,7 @@ export default function GroupPage() {
     const [pGender, setPGender] = useState<'male' | 'female'>('male');
     const [showPIconPicker, setShowPIconPicker] = useState(false);
     const [showPColorPicker, setShowPColorPicker] = useState(false);
+    const [showPAgeSlider, setShowPAgeSlider] = useState(false);
 
     useEffect(() => {
         const groups = JSON.parse(localStorage.getItem('groups') || '[]');
@@ -125,6 +119,7 @@ export default function GroupPage() {
         setShowEditParticipant(true);
         setShowPIconPicker(false);
         setShowPColorPicker(false);
+        setShowPAgeSlider(false);
     };
 
     const closeParticipantSheets = () => {
@@ -132,6 +127,7 @@ export default function GroupPage() {
         setEditingParticipantId(null);
         setShowPIconPicker(false);
         setShowPColorPicker(false);
+        setShowPAgeSlider(false);
     };
 
     const handleSaveParticipantEdit = () => {
@@ -213,7 +209,7 @@ export default function GroupPage() {
     }
 
     return (
-        <div className={`min-h-screen bg-[#F1F5F9] pb-16 ${heebo.variable} font-sans`} dir="rtl">
+        <div className="min-h-screen bg-[#F1F5F9] pb-16" dir="rtl">
             {/* Navigation Bar */}
             <nav className="fixed top-0 left-0 right-0 h-14 sm:h-20 bg-white border-b border-slate-200 z-50 px-3 sm:px-6">
                 <div className="max-w-5xl mx-auto h-full flex items-center justify-between">
@@ -462,121 +458,188 @@ export default function GroupPage() {
                                     </button>
                                 </div>
 
-                                <div className="space-y-3">
-                                    {/* Name */}
-                                    <div className="bg-slate-50 rounded-2xl border border-slate-200 p-3">
-                                        <div className="text-[11px] font-black text-slate-600 uppercase tracking-wider">שם</div>
-                                        <input
-                                            value={pName}
-                                            onChange={(e) => setPName(e.target.value)}
-                                            className="mt-2 w-full h-11 rounded-2xl border-2 border-slate-200 bg-white px-4 text-sm font-black text-slate-900 focus:outline-none focus:border-[#4D96FF]"
-                                            dir="rtl"
-                                        />
-                                    </div>
+                                {/* Participant Card Preview */}
+                                <div className="rounded-2xl border shadow-sm p-4 relative overflow-hidden mb-6"
+                                    style={{
+                                        background: pColor,
+                                        borderColor: pColor,
+                                        boxShadow: '0 6px 18px rgba(15, 23, 42, 0.06)',
+                                    }}
+                                >
+                                    <div className="pattern-overlay" />
+                                    <div className="relative">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                {/* Icon */}
+                                                <motion.button
+                                                    whileTap={{ scale: 0.95 }}
+                                                    onClick={() => {
+                                                        setShowPColorPicker(false);
+                                                        setShowPIconPicker(true);
+                                                    }}
+                                                    className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 bg-white/35 backdrop-blur-md active:scale-95 transition-transform"
+                                                    style={{ border: `1px solid ${hexToRgba(pColor, 0.35)}` }}
+                                                >
+                                                    <ParticipantIcon icon={pIcon} className="w-16 h-16 text-slate-900" />
+                                                </motion.button>
 
-                                    {/* Icon + Color */}
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setShowPColorPicker(false);
-                                                setShowPIconPicker(true);
-                                            }}
-                                            className="bg-slate-50 rounded-2xl border border-slate-200 p-3 active:scale-95 transition-transform"
-                                        >
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <Smile className="w-4 h-4 text-[#4D96FF]" />
-                                                    <span className="text-[11px] font-black text-slate-600 uppercase tracking-wider">אייקון</span>
+                                                <div className="min-w-0">
+                                                    {/* Name */}
+                                                    <motion.div
+                                                        whileTap={{ scale: 0.98 }}
+                                                        onClick={() => {
+                                                            // Focus name input
+                                                            const nameInput = document.getElementById('participant-name-input');
+                                                            if (nameInput) nameInput.focus();
+                                                        }}
+                                                        className="flex items-center gap-2 cursor-pointer active:scale-95 transition-transform mb-1"
+                                                    >
+                                                        <h3 className="text-2xl font-black text-slate-900 truncate">{pName || 'שם המשתתף'}</h3>
+                                                        <Pencil className="w-3 h-3 text-slate-500" />
+                                                    </motion.div>
+
+                                                    {/* Age & Gender */}
+                                                    <div className="flex flex-col gap-2">
+                                                        <motion.button
+                                                            whileTap={{ scale: 0.95 }}
+                                                            onClick={() => {
+                                                                // This will open age slider
+                                                                setShowPAgeSlider(true);
+                                                            }}
+                                                            className="bg-white/40 backdrop-blur-sm rounded-lg px-3 py-1.5 text-sm font-black text-slate-900 cursor-pointer active:scale-95 transition-transform border border-white/30 flex items-center gap-2 min-w-[80px] justify-center"
+                                                        >
+                                                            גיל {pAgeLabel}
+                                                            <Pencil className="w-3 h-3" />
+                                                        </motion.button>
+
+                                                        {/* Gender Switch */}
+                                                        <div className="flex bg-white/70 backdrop-blur-sm rounded-xl p-1 border border-white/40">
+                                                            <motion.button
+                                                                whileTap={{ scale: 0.95 }}
+                                                                onClick={() => setPGender('male')}
+                                                                className={`px-4 py-2 rounded-lg text-lg font-bold transition-all flex-1 ${
+                                                                    pGender === 'male'
+                                                                        ? 'bg-white text-slate-900 shadow-md'
+                                                                        : 'text-slate-600 hover:text-slate-800'
+                                                                }`}
+                                                            >
+                                                                👦
+                                                            </motion.button>
+                                                            <motion.button
+                                                                whileTap={{ scale: 0.95 }}
+                                                                onClick={() => setPGender('female')}
+                                                                className={`px-4 py-2 rounded-lg text-lg font-bold transition-all flex-1 ${
+                                                                    pGender === 'female'
+                                                                        ? 'bg-white text-slate-900 shadow-md'
+                                                                        : 'text-slate-600 hover:text-slate-800'
+                                                                }`}
+                                                            >
+                                                                👧
+                                                            </motion.button>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <span className="w-7 h-7 inline-flex items-center justify-center text-slate-900">
-                                                    <ParticipantIcon icon={pIcon} className="w-6 h-6" />
-                                                </span>
                                             </div>
-                                        </button>
 
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setShowPIconPicker(false);
-                                                setShowPColorPicker(true);
-                                            }}
-                                            className="bg-slate-50 rounded-2xl border border-slate-200 p-3 active:scale-95 transition-transform"
-                                        >
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <Palette className="w-4 h-4 text-[#4D96FF]" />
-                                                    <span className="text-[11px] font-black text-slate-600 uppercase tracking-wider">צבע</span>
+                                            {/* Color Picker */}
+                                            <motion.button
+                                                whileTap={{ scale: 0.95 }}
+                                                onClick={() => {
+                                                    setShowPIconPicker(false);
+                                                    setShowPColorPicker(true);
+                                                }}
+                                                className="w-16 h-16 rounded-full border-4 shadow-xl active:scale-95 transition-transform shrink-0 flex items-center justify-center relative overflow-hidden"
+                                                style={{
+                                                    background: `conic-gradient(from 0deg, #FF6B6B, #4ECDC4, #45B7D1, #FFA07A, #98D8C8, #F7DC6F, #BB8FCE, #85C1E2, #F8B739, #52B788, #FF8FA3, #C9ADA7)`,
+                                                    border: '4px solid rgba(255,255,255,0.9)'
+                                                }}
+                                                title="שנה צבע"
+                                            >
+                                                <div className="absolute inset-1 rounded-full border-2 border-white/50 flex items-center justify-center bg-white/20 backdrop-blur-sm">
+                                                    <Palette className="w-6 h-6 text-slate-800 drop-shadow-lg" />
                                                 </div>
-                                                <span className="w-7 h-7 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: pColor }} />
-                                            </div>
-                                        </button>
-                                    </div>
-
-                                    {/* Age */}
-                                    <div className="bg-slate-50 rounded-2xl border border-slate-200 p-3">
-                                        <div className="flex items-baseline justify-between">
-                                            <span className="text-[11px] font-black text-slate-600 uppercase tracking-wider">גיל</span>
-                                            <span className="text-xl font-black text-slate-900">{pAgeLabel}</span>
+                                            </motion.button>
                                         </div>
-                                        <input
-                                            type="range"
-                                            min="1"
-                                            max="100"
-                                            step="0.5"
-                                            value={pAge}
-                                            onChange={(e) => setPAge(parseFloat(e.target.value))}
-                                            className="mt-3 w-full h-3 rounded-full appearance-none cursor-pointer"
-                                            style={{
-                                                background: `linear-gradient(to left, #4D96FF 0%, #4D96FF ${(pAge / 100) * 100}%, #e2e8f0 ${(pAge / 100) * 100}%, #e2e8f0 100%)`
-                                            }}
-                                        />
-                                        <div className="flex justify-between text-[11px] mt-2 text-slate-400 font-bold">
-                                            <span>1</span>
-                                            <span>100</span>
-                                        </div>
-                                    </div>
 
-                                    {/* Gender */}
-                                    <div className="bg-slate-50 rounded-2xl border border-slate-200 p-3">
-                                        <div className="text-[11px] font-black text-slate-600 uppercase tracking-wider">מין</div>
-                                        <div className="mt-2 grid grid-cols-2 gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => setPGender('male')}
-                                                className={`h-12 rounded-2xl border-2 font-black text-2xl active:scale-95 transition-transform ${
-                                                    pGender === 'male' ? 'border-[#4D96FF] bg-blue-50' : 'border-slate-200 bg-white'
-                                                }`}
-                                            >
-                                                👦
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => setPGender('female')}
-                                                className={`h-12 rounded-2xl border-2 font-black text-2xl active:scale-95 transition-transform ${
-                                                    pGender === 'female' ? 'border-[#4D96FF] bg-blue-50' : 'border-slate-200 bg-white'
-                                                }`}
-                                            >
-                                                👧
-                                            </button>
-                                        </div>
                                     </div>
+                                </div>
 
-                                    <div className="grid grid-cols-2 gap-3 pt-1">
-                                        <button
-                                            onClick={handleSaveParticipantEdit}
-                                            className="btn-star h-12 rounded-2xl flex items-center justify-center gap-2"
+                                {/* Hidden Name Input */}
+                                <input
+                                    id="participant-name-input"
+                                    value={pName}
+                                    onChange={(e) => setPName(e.target.value)}
+                                    className="absolute opacity-0 pointer-events-none"
+                                    dir="rtl"
+                                />
+
+                                {/* Age Slider Modal */}
+                                <AnimatePresence>
+                                    {showPAgeSlider && (
+                                        <motion.div
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center"
+                                            onClick={() => setShowPAgeSlider(false)}
                                         >
-                                            שמור
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={closeParticipantSheets}
-                                            className="h-12 rounded-2xl border-2 border-slate-200 bg-white font-black text-slate-700 active:scale-95 transition-transform"
-                                        >
-                                            ביטול
-                                        </button>
-                                    </div>
+                                            <motion.div
+                                                initial={{ scale: 0.9, opacity: 0 }}
+                                                animate={{ scale: 1, opacity: 1 }}
+                                                exit={{ scale: 0.9, opacity: 0 }}
+                                                className="bg-white rounded-3xl p-6 mx-4 max-w-sm w-full"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <div className="text-center mb-6">
+                                                    <div className="text-2xl font-black text-slate-900 mb-2">בחר גיל</div>
+                                                    <div className="text-4xl font-black text-[#4D96FF]">{pAgeLabel}</div>
+                                                </div>
+
+                                                <input
+                                                    type="range"
+                                                    min="1"
+                                                    max="100"
+                                                    step="0.5"
+                                                    value={pAge}
+                                                    onChange={(e) => setPAge(parseFloat(e.target.value))}
+                                                    className="w-full h-4 rounded-full appearance-none cursor-pointer mb-4"
+                                                    style={{
+                                                        background: `linear-gradient(to left, #4D96FF 0%, #4D96FF ${(pAge / 100) * 100}%, #e2e8f0 ${(pAge / 100) * 100}%, #e2e8f0 100%)`
+                                                    }}
+                                                />
+
+                                                <div className="flex justify-between text-sm text-slate-400 font-bold mb-6">
+                                                    <span>1</span>
+                                                    <span>100</span>
+                                                </div>
+
+                                                <motion.button
+                                                    whileTap={{ scale: 0.95 }}
+                                                    onClick={() => setShowPAgeSlider(false)}
+                                                    className="w-full btn-star h-12 rounded-2xl flex items-center justify-center gap-2"
+                                                >
+                                                    אישור
+                                                </motion.button>
+                                            </motion.div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+
+                                {/* Save/Cancel Buttons */}
+                                <div className="grid grid-cols-2 gap-3 pt-4">
+                                    <button
+                                        onClick={handleSaveParticipantEdit}
+                                        className="btn-star h-12 rounded-2xl flex items-center justify-center gap-2"
+                                    >
+                                        שמור
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={closeParticipantSheets}
+                                        className="h-12 rounded-2xl border-2 border-slate-200 bg-white font-black text-slate-700 active:scale-95 transition-transform"
+                                    >
+                                        ביטול
+                                    </button>
                                 </div>
 
                                 {/* Icon Picker */}
