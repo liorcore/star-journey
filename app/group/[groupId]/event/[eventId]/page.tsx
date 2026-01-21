@@ -117,6 +117,7 @@ export default function EventPage() {
     const [starFlash, setStarFlash] = useState<{ text?: string; variant?: 'normal' | 'bonus' } | null>(null);
     const [showCelebration, setShowCelebration] = useState(false);
     const [showHappyEmoji, setShowHappyEmoji] = useState(false);
+    const [showBonusStar, setShowBonusStar] = useState(false);
     const [showAddParticipant, setShowAddParticipant] = useState(false);
     const [showExistingParticipants, setShowExistingParticipants] = useState(false);
     const [showEditEvent, setShowEditEvent] = useState(false);
@@ -250,12 +251,10 @@ export default function EventPage() {
         }
 
         if (isAboveGoal) {
-            // מעל היעד: קונפטי + חיווי כוכב עם 2
-            setStarFlash({ text: '2', variant: 'bonus' });
-            setTimeout(() => setStarFlash(null), FEEDBACK_MS.starFlashBonus);
+            // מעל היעד: קונפטי + חיווי כוכב גדול עם 2
+            setShowBonusStar(true);
+            setTimeout(() => setShowBonusStar(false), 2000);
             burstConfetti({ big: true });
-            // גשם סמייליים שמחים קטן
-            emojiRain({ count: 80 });
             return;
         }
 
@@ -592,6 +591,32 @@ export default function EventPage() {
                             className="text-[200px] animate-pulse"
                         >
                             😄
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Bonus star overlay - כוכב גדול עם 2 */}
+            <AnimatePresence>
+                {showBonusStar && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[83] flex items-center justify-center pointer-events-none"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.5, opacity: 0, rotate: -15 }}
+                            animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                            exit={{ scale: 1.3, opacity: 0, rotate: 15 }}
+                            transition={{ type: 'spring', stiffness: 250, damping: 18 }}
+                            className="text-center"
+                        >
+                            <div className="flex items-center justify-center gap-4">
+                                <Star className="w-24 h-24" fill="currentColor" style={{ color: '#FFD93D' }} />
+                                <div className="text-6xl font-black text-white drop-shadow-2xl">2</div>
+                                <Star className="w-24 h-24" fill="currentColor" style={{ color: '#FFD93D' }} />
+                            </div>
                         </motion.div>
                     </motion.div>
                 )}
