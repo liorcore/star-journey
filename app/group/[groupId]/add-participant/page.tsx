@@ -72,7 +72,8 @@ export default function AddParticipantPage() {
             color,
             gender,
             totalStars: 0,
-            eventCount: 0
+            eventCount: 0,
+            completedEvents: []
         };
 
         groups[groupIndex].participants.push(newParticipant);

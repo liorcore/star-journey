@@ -49,11 +49,13 @@ interface Participant {
     gender: 'male' | 'female';
     totalStars: number;
     eventCount: number;
+    completedEvents: Array<{ eventId: string; stars: number; icon: string; eventName: string }>;
 }
 
 interface Event {
     id: string;
     name: string;
+    icon: string;
     endDate: number;
     starGoal: number;
     participants: { participantId: string; stars: number }[];
@@ -93,6 +95,18 @@ export default function GroupPage() {
         const groups = JSON.parse(localStorage.getItem('groups') || '[]');
         const foundGroup = groups.find((g: Group) => g.id === groupId);
         if (foundGroup) {
+            // Ensure all participants have completedEvents field
+            foundGroup.participants.forEach((participant: Participant) => {
+                if (!participant.completedEvents) {
+                    participant.completedEvents = [];
+                }
+            });
+            // Ensure all events have icon field
+            foundGroup.events.forEach((event: Event) => {
+                if (!event.icon) {
+                    event.icon = 'trophy'; // default icon
+                }
+            });
             setGroup(foundGroup);
             setNewGroupName(foundGroup.name);
         } else {
@@ -310,6 +324,36 @@ export default function GroupPage() {
                                                 <Star className="w-2.5 h-2.5 sm:w-4 sm:h-4" fill="currentColor" />
                                             </span>
                                         </div>
+                                        {/* Completed Events Tags */}
+                                        {participant.completedEvents && participant.completedEvents.length > 0 && (
+                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                {participant.completedEvents.slice(0, 6).map((achievement, idx) => (
+                                                    <div
+                                                        key={`${achievement.eventId}-${idx}`}
+                                                        className="relative group"
+                                                        title={`${achievement.eventName}: ${achievement.stars} ⭐`}
+                                                    >
+                                                        <div className="w-4 h-4 sm:w-5 sm:h-5 rounded bg-slate-200 flex items-center justify-center text-[8px] sm:text-[10px]">
+                                                            <ParticipantIcon icon={achievement.icon} className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                        </div>
+                                                        {/* Tooltip */}
+                                                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+                                                            <div className="font-bold">{achievement.eventName}</div>
+                                                            <div className="flex items-center gap-1">
+                                                                <Star className="w-3 h-3" fill="currentColor" style={{ color: '#FFD93D' }} />
+                                                                <span>{achievement.stars}</span>
+                                                            </div>
+                                                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                {participant.completedEvents.length > 6 && (
+                                                    <div className="w-4 h-4 sm:w-5 sm:h-5 rounded bg-slate-300 flex items-center justify-center text-[8px] sm:text-[10px] font-bold">
+                                                        +{participant.completedEvents.length - 6}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                         <div className="w-full h-1 sm:h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
                                             <div 
                                                 className="h-full rounded-full transition-all"

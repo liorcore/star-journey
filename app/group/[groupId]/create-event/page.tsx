@@ -37,6 +37,7 @@ export default function CreateEventPage() {
     const [eventName, setEventName] = useState('');
     const [endDate, setEndDate] = useState('');
     const [starGoal, setStarGoal] = useState(100);
+    const [eventIcon, setEventIcon] = useState('trophy');
     const [selectedParticipants, setSelectedParticipants] = useState<Set<string>>(new Set());
     const [showNewParticipant, setShowNewParticipant] = useState(false);
     const [showIconPicker, setShowIconPicker] = useState(false);
@@ -87,7 +88,8 @@ export default function CreateEventPage() {
             color: newColor,
             gender: newGender,
             totalStars: 0,
-            eventCount: 0
+            eventCount: 0,
+            completedEvents: []
         };
 
         const groups = JSON.parse(localStorage.getItem('groups') || '[]');
@@ -133,6 +135,7 @@ export default function CreateEventPage() {
         const newEvent = {
             id: Date.now().toString(),
             name: eventName.trim(),
+            icon: eventIcon,
             endDate: new Date(endDate).getTime(),
             starGoal,
             participants: Array.from(selectedParticipants).map(pid => ({
@@ -219,6 +222,31 @@ export default function CreateEventPage() {
                             dir="rtl"
                             className="mt-2 w-full h-12 rounded-2xl border-2 border-slate-200 bg-white px-4 text-base font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#4D96FF]"
                         />
+                    </section>
+
+                    {/* Event Icon */}
+                    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Sparkles className="w-4 h-4 text-[#4D96FF]" />
+                                <span className="control-label text-[11px]">אייקון האירוע</span>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setShowIconPicker(true)}
+                                className="h-10 px-4 rounded-2xl bg-slate-100 text-slate-700 font-black text-xs active:scale-95 transition-transform"
+                            >
+                                בחר
+                            </button>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setShowIconPicker(true)}
+                            className="mt-3 w-full h-14 rounded-2xl border-2 border-slate-200 bg-white flex items-center justify-center text-3xl active:scale-95 transition-transform"
+                            aria-label="בחירת אייקון"
+                        >
+                            <ParticipantIcon icon={eventIcon} className="w-9 h-9 text-3xl" />
+                        </button>
                     </section>
 
                     {/* End Date */}
@@ -515,24 +543,24 @@ export default function CreateEventPage() {
                                             </button>
                                         </div>
 
-                                        <div className="max-h-[55vh] overflow-y-auto">
-                                            <div className="grid grid-cols-6 gap-2">
-                                                {PARTICIPANT_EMOJIS.map((ic) => (
-                                                    <button
-                                                        key={ic}
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setNewIcon(ic);
-                                                            setShowIconPicker(false);
-                                                        }}
-                                                        className="h-12 rounded-2xl border border-slate-200 bg-white active:scale-95 transition-transform inline-flex items-center justify-center"
-                                                        aria-label="בחר אייקון"
-                                                    >
-                                                        <ParticipantIcon icon={ic} className="w-8 h-8 text-2xl" />
-                                                    </button>
-                                                ))}
+                                            <div className="max-h-[55vh] overflow-y-auto">
+                                                <div className="grid grid-cols-6 gap-2">
+                                                    {PARTICIPANT_EMOJIS.map((ic) => (
+                                                        <button
+                                                            key={ic}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setEventIcon(ic);
+                                                                setShowIconPicker(false);
+                                                            }}
+                                                            className="h-12 rounded-2xl border border-slate-200 bg-white active:scale-95 transition-transform inline-flex items-center justify-center"
+                                                            aria-label="בחר אייקון"
+                                                        >
+                                                            <ParticipantIcon icon={ic} className="w-8 h-8 text-2xl" />
+                                                        </button>
+                                                    ))}
+                                                </div>
                                             </div>
-                                        </div>
                                     </motion.div>
                                 )}
                             </AnimatePresence>

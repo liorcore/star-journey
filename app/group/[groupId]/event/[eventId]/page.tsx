@@ -16,6 +16,7 @@ interface Participant {
     gender: 'male' | 'female';
     totalStars: number;
     eventCount: number;
+    completedEvents: Array<{ eventId: string; stars: number; icon: string; eventName: string }>;
 }
 
 interface EventParticipant {
@@ -26,6 +27,7 @@ interface EventParticipant {
 interface Event {
     id: string;
     name: string;
+    icon: string;
     endDate: number;
     starGoal: number;
     participants: EventParticipant[];
@@ -124,6 +126,8 @@ export default function EventPage() {
     const [editEventName, setEditEventName] = useState('');
     const [editEventEndDate, setEditEventEndDate] = useState('');
     const [editEventStarGoal, setEditEventStarGoal] = useState(0);
+    const [editEventIcon, setEditEventIcon] = useState('trophy');
+    const [showEventIconPicker, setShowEventIconPicker] = useState(false);
 
     const FEEDBACK_MS = {
         starFlashNormal: 900,
@@ -137,6 +141,18 @@ export default function EventPage() {
         const groups = JSON.parse(localStorage.getItem('groups') || '[]');
         const foundGroup = groups.find((g: Group) => g.id === groupId);
         if (foundGroup) {
+            // Ensure all participants have completedEvents field
+            foundGroup.participants.forEach((participant: Participant) => {
+                if (!participant.completedEvents) {
+                    participant.completedEvents = [];
+                }
+            });
+            // Ensure all events have icon field
+            foundGroup.events.forEach((event: Event) => {
+                if (!event.icon) {
+                    event.icon = 'trophy'; // default icon
+                }
+            });
             setGroup(foundGroup);
             const foundEvent = foundGroup.events.find((e: Event) => e.id === eventId);
             if (foundEvent) {
@@ -238,6 +254,37 @@ export default function EventPage() {
         if (willHitGoal) {
             const p = group?.participants.find((x) => x.id === participantId);
             setCongratsName(p?.name ?? '');
+
+            // Add event achievement to participant
+            if (p && event) {
+                const achievement = {
+                    eventId: event.id,
+                    stars: currentStars + increment,
+                    icon: event.icon,
+                    eventName: event.name
+                };
+
+                // Check if achievement already exists, update if so
+                const existingIndex = p.completedEvents.findIndex(a => a.eventId === event.id);
+                if (existingIndex >= 0) {
+                    p.completedEvents[existingIndex] = achievement;
+                } else {
+                    p.completedEvents.push(achievement);
+                }
+
+                // Update participant in storage
+                const groups = JSON.parse(localStorage.getItem('groups') || '[]');
+                const groupIndex = groups.findIndex((g: Group) => g.id === groupId);
+                if (groupIndex !== -1) {
+                    const participantIndex = groups[groupIndex].participants.findIndex((part: Participant) => part.id === participantId);
+                    if (participantIndex !== -1) {
+                        groups[groupIndex].participants[participantIndex] = p;
+                        localStorage.setItem('groups', JSON.stringify(groups));
+                        setGroup(groups[groupIndex]);
+                    }
+                }
+            }
+
             // הצג חיווי "כל הכבוד!!" ל-3 שניות
             setShowCelebration(true);
             setTimeout(() => {
@@ -295,6 +342,7 @@ export default function EventPage() {
     const openEditEvent = () => {
         if (!event) return;
         setEditEventName(event.name);
+        setEditEventIcon(event.icon);
         setEditEventEndDate(new Date(event.endDate).toISOString().slice(0, 16));
         setEditEventStarGoal(event.starGoal);
         setShowEditEvent(true);
@@ -317,6 +365,7 @@ export default function EventPage() {
         updateEventData({
             ...event,
             name: editEventName.trim(),
+            icon: editEventIcon,
             endDate,
             starGoal: editEventStarGoal
         });
@@ -845,6 +894,31 @@ export default function EventPage() {
                                     />
                                 </section>
 
+                                {/* Event Icon */}
+                                <section className="bg-slate-50 rounded-2xl border border-slate-200 p-4">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Sparkles className="w-4 h-4 text-[#4D96FF]" />
+                                            <span className="control-label text-[11px]">אייקון האירוע</span>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowEventIconPicker(true)}
+                                            className="h-10 px-4 rounded-2xl bg-slate-100 text-slate-700 font-black text-xs active:scale-95 transition-transform"
+                                        >
+                                            בחר
+                                        </button>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowEventIconPicker(true)}
+                                        className="mt-3 w-full h-14 rounded-2xl border-2 border-slate-200 bg-white flex items-center justify-center text-3xl active:scale-95 transition-transform"
+                                        aria-label="בחירת אייקון"
+                                    >
+                                        <ParticipantIcon icon={editEventIcon} className="w-9 h-9 text-3xl" />
+                                    </button>
+                                </section>
+
                                 {/* End Date */}
                                 <section className="bg-slate-50 rounded-2xl border border-slate-200 p-4">
                                     <label className="control-label text-[11px]">מועד סיום</label>
@@ -879,6 +953,52 @@ export default function EventPage() {
                                     </div>
                                 </section>
                             </div>
+
+                            {/* Event Icon Picker */}
+                            <AnimatePresence>
+                                {showEventIconPicker && (
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        className="absolute inset-0 bg-white rounded-t-3xl p-4"
+                                    >
+                                        <div className="flex items-center justify-between mb-3">
+                                            <div className="flex items-center gap-2">
+                                                <Sparkles className="w-4 h-4 text-[#4D96FF]" />
+                                                <span className="text-sm font-black text-slate-900">בחר אייקון לאירוע</span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowEventIconPicker(false)}
+                                                className="h-10 w-10 rounded-xl bg-slate-100 text-slate-700 inline-flex items-center justify-center active:scale-95 transition-transform"
+                                                aria-label="סגור"
+                                            >
+                                                <X className="w-5 h-5" />
+                                            </button>
+                                        </div>
+
+                                        <div className="max-h-[55vh] overflow-y-auto">
+                                            <div className="grid grid-cols-6 gap-2">
+                                                {PARTICIPANT_EMOJIS.map((ic) => (
+                                                    <button
+                                                        key={ic}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setEditEventIcon(ic);
+                                                            setShowEventIconPicker(false);
+                                                        }}
+                                                        className="h-12 rounded-2xl border border-slate-200 bg-white active:scale-95 transition-transform inline-flex items-center justify-center"
+                                                        aria-label="בחר אייקון"
+                                                    >
+                                                        <ParticipantIcon icon={ic} className="w-8 h-8 text-2xl" />
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
 
                             <div className="grid grid-cols-2 gap-3 pt-4">
                                 <motion.button
