@@ -94,12 +94,15 @@ function emojiRain(opts?: { count?: number }) {
 }
 
 function richGoalCelebration() {
-    // קונפטי רגיל ארוך יותר
+    // קונפטי מרשים וארוך במיוחד
     burstConfetti({ big: true });
-    setTimeout(() => burstConfetti({ big: true }), 300);
+    setTimeout(() => burstConfetti({ big: true }), 200);
+    setTimeout(() => burstConfetti({ big: true }), 400);
     setTimeout(() => burstConfetti({ big: true }), 600);
-    setTimeout(() => burstConfetti({ big: true }), 900);
+    setTimeout(() => burstConfetti({ big: true }), 800);
+    setTimeout(() => burstConfetti({ big: true }), 1000);
     setTimeout(() => burstConfetti({ big: true }), 1200);
+    setTimeout(() => burstConfetti({ big: true }), 1400);
 }
 
 export default function EventPage() {
@@ -250,11 +253,8 @@ export default function EventPage() {
 
         updateEventData({ ...event, participants: updatedParticipants });
 
-        // חיווי במרכז למסך (כוכב)
-        if (isAboveGoal) {
-            setStarFlash({ text: '+2', variant: 'bonus' });
-            setTimeout(() => setStarFlash(null), FEEDBACK_MS.starFlashBonus);
-        } else {
+        // חיווי במרכז למסך (כוכב) - רק לכוכבים רגילים, לא להשלמת יעד
+        if (isAboveGoal && !willHitGoal) {
             setStarFlash({ variant: 'normal' });
             setTimeout(() => setStarFlash(null), FEEDBACK_MS.starFlashNormal);
         }
@@ -295,14 +295,9 @@ export default function EventPage() {
                 }
             }
 
-            // הצג חיווי "כל הכבוד!!" ל-3 שניות
+            // הצג חיווי "כל הכבוד!!" למספר שניות
             setShowCelebration(true);
-            setTimeout(() => {
-                setShowCelebration(false);
-                // אחרי "כל הכבוד" - הצג סמיילי שמח גדול לכמה שניות
-                setShowHappyEmoji(true);
-                setTimeout(() => setShowHappyEmoji(false), 2500);
-            }, 3000);
+            setTimeout(() => setShowCelebration(false), 5000);
             richGoalCelebration();
             return;
         }
@@ -619,11 +614,12 @@ export default function EventPage() {
                             transition={{ type: 'spring', stiffness: 200, damping: 15 }}
                             className="text-center"
                         >
-                            <div className="text-6xl mb-4">🎉</div>
-                            <div className="text-4xl font-black rainbow-text mb-2">כל הכבוד!!</div>
-                            <div className="text-2xl">🏆 🥇 ⭐ ✨</div>
+                            <div className="text-8xl mb-4 animate-bounce">🎉</div>
+                            <div className="text-5xl font-black rainbow-text mb-3 animate-pulse">כל הכבוד!!</div>
+                            <div className="text-6xl mb-2">😄 🏆</div>
+                            <div className="text-3xl font-bold text-yellow-300 animate-pulse">אלוף!</div>
                             {congratsName && (
-                                <div className="mt-2 text-lg font-black text-white drop-shadow-lg">
+                                <div className="mt-3 text-xl font-black text-white drop-shadow-lg">
                                     {congratsName} הגיע/ה ליעד!
                                 </div>
                             )}
