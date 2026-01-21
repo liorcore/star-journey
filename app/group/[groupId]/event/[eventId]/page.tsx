@@ -117,6 +117,10 @@ export default function EventPage() {
     const [starFlash, setStarFlash] = useState<{ text?: string; variant?: 'normal' | 'bonus' } | null>(null);
     const [showAddParticipant, setShowAddParticipant] = useState(false);
     const [showExistingParticipants, setShowExistingParticipants] = useState(false);
+    const [showEditEvent, setShowEditEvent] = useState(false);
+    const [editEventName, setEditEventName] = useState('');
+    const [editEventEndDate, setEditEventEndDate] = useState('');
+    const [editEventStarGoal, setEditEventStarGoal] = useState(0);
 
     const FEEDBACK_MS = {
         starFlashNormal: 900,
@@ -280,6 +284,37 @@ export default function EventPage() {
         setShowExistingParticipants(false);
     };
 
+    const openEditEvent = () => {
+        if (!event) return;
+        setEditEventName(event.name);
+        setEditEventEndDate(new Date(event.endDate).toISOString().slice(0, 16));
+        setEditEventStarGoal(event.starGoal);
+        setShowEditEvent(true);
+    };
+
+    const handleSaveEventEdit = () => {
+        if (!event) return;
+
+        const endDate = new Date(editEventEndDate).getTime();
+        if (isNaN(endDate) || endDate <= Date.now()) {
+            alert('נא להזין תאריך עתידי תקין');
+            return;
+        }
+
+        if (editEventStarGoal < 1) {
+            alert('יעד הכוכבים חייב להיות לפחות 1');
+            return;
+        }
+
+        updateEventData({
+            ...event,
+            name: editEventName.trim(),
+            endDate,
+            starGoal: editEventStarGoal
+        });
+        setShowEditEvent(false);
+    };
+
     if (!group || !event) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-[#F1F5F9]">
@@ -330,6 +365,16 @@ export default function EventPage() {
                     className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 mb-4 relative overflow-hidden"
                 >
                     <div className="pattern-overlay" />
+                    {/* Edit button */}
+                    <motion.button
+                        whileTap={{ scale: 0.9 }}
+                        onClick={openEditEvent}
+                        className="absolute top-2 left-2 sm:top-4 sm:left-4 p-1 text-slate-400 hover:text-slate-600 z-10"
+                        title="ערוך אירוע"
+                        aria-label="ערוך אירוע"
+                    >
+                        <Pencil className="w-4 h-4" />
+                    </motion.button>
                     <div className="relative">
                         <h1 className="text-2xl font-black rainbow-text text-center break-words">{event.name}</h1>
 
@@ -674,6 +719,98 @@ export default function EventPage() {
                             >
                                 סגור
                             </motion.button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Edit Event Modal */}
+            <AnimatePresence>
+                {showEditEvent && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center"
+                        onClick={() => setShowEditEvent(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white rounded-3xl p-6 mx-4 max-w-sm w-full"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="text-center mb-6">
+                                <div className="text-2xl font-black text-slate-900 mb-2">ערוך אירוע</div>
+                                <div className="text-sm text-slate-500">שנה את פרטי האירוע</div>
+                            </div>
+
+                            <div className="space-y-4">
+                                {/* Event Name */}
+                                <section className="bg-slate-50 rounded-2xl border border-slate-200 p-4">
+                                    <label className="control-label text-[11px]">שם האירוע</label>
+                                    <input
+                                        type="text"
+                                        value={editEventName}
+                                        onChange={(e) => setEditEventName(e.target.value)}
+                                        placeholder="הזן שם לאירוע"
+                                        dir="rtl"
+                                        className="mt-2 w-full h-12 rounded-2xl border-2 border-slate-200 bg-white px-4 text-base font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#4D96FF]"
+                                    />
+                                </section>
+
+                                {/* End Date */}
+                                <section className="bg-slate-50 rounded-2xl border border-slate-200 p-4">
+                                    <label className="control-label text-[11px]">מועד סיום</label>
+                                    <input
+                                        type="datetime-local"
+                                        value={editEventEndDate}
+                                        onChange={(e) => setEditEventEndDate(e.target.value)}
+                                        className="mt-2 w-full h-12 rounded-2xl border-2 border-slate-200 bg-white px-4 text-base font-bold text-slate-900 focus:outline-none focus:border-[#4D96FF]"
+                                    />
+                                </section>
+
+                                {/* Star Goal */}
+                                <section className="bg-slate-50 rounded-2xl border border-slate-200 p-4">
+                                    <div className="flex items-center justify-between">
+                                        <span className="control-label text-[11px]">יעד כוכבים</span>
+                                        <span className="text-2xl font-black text-slate-900">{editEventStarGoal}</span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="1"
+                                        max="100"
+                                        value={editEventStarGoal}
+                                        onChange={(e) => setEditEventStarGoal(parseInt(e.target.value))}
+                                        className="mt-4 w-full h-3 rounded-full appearance-none cursor-pointer"
+                                        style={{
+                                            background: `linear-gradient(to left, #4D96FF 0%, #4D96FF ${(editEventStarGoal / 100) * 100}%, #e2e8f0 ${(editEventStarGoal / 100) * 100}%, #e2e8f0 100%)`
+                                        }}
+                                    />
+                                    <div className="flex justify-between text-[11px] mt-2 text-slate-400 font-bold">
+                                        <span>1</span>
+                                        <span>100</span>
+                                    </div>
+                                </section>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 pt-4">
+                                <motion.button
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={handleSaveEventEdit}
+                                    className="btn-star h-12 rounded-2xl flex items-center justify-center gap-2"
+                                >
+                                    שמור
+                                </motion.button>
+                                <motion.button
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => setShowEditEvent(false)}
+                                    className="h-12 rounded-2xl border-2 border-slate-200 bg-white font-black text-slate-700 active:scale-95 transition-transform"
+                                >
+                                    ביטול
+                                </motion.button>
+                            </div>
                         </motion.div>
                     </motion.div>
                 )}
