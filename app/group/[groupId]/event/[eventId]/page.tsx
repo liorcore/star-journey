@@ -445,7 +445,10 @@ export default function EventPage() {
                         <Pencil className="w-4 h-4" />
                     </motion.button>
                     <div className="relative">
-                        <h1 className="text-2xl font-black rainbow-text text-center break-words">{event.name}</h1>
+                        <div className="flex items-center justify-center gap-3 mb-2">
+                            <ParticipantIcon icon={event.icon} className="w-8 h-8" />
+                            <h1 className="text-2xl font-black rainbow-text break-words">{event.name}</h1>
+                        </div>
 
                         <div className="mt-4 flex items-center justify-center gap-2">
                             <Star className="w-5 h-5" fill="currentColor" style={{ color: '#FFD93D' }} />
