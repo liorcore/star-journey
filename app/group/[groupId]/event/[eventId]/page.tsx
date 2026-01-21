@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import { BadgeCheck, ChevronRight, Crown, Minus, Sparkles, Star, Timer } from 'lucide-react';
+import { BadgeCheck, ChevronRight, Crown, Minus, Sparkles, Star, Timer, UserPlus } from 'lucide-react';
 import { ParticipantIcon } from '@/app/lib/participantIcons';
 
 interface Participant {
@@ -115,6 +115,7 @@ export default function EventPage() {
     const [congratsName, setCongratsName] = useState<string>('');
     const [bonusToast, setBonusToast] = useState<string | null>(null);
     const [starFlash, setStarFlash] = useState<{ text?: string; variant?: 'normal' | 'bonus' } | null>(null);
+    const [showAddParticipant, setShowAddParticipant] = useState(false);
 
     const FEEDBACK_MS = {
         starFlashNormal: 900,
@@ -294,7 +295,14 @@ export default function EventPage() {
                         <div className="text-sm font-black text-slate-900 truncate max-w-[220px]">{event.name}</div>
                     </div>
 
-                    <div className="w-10" />
+                    <motion.button
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => setShowAddParticipant(true)}
+                        className="h-10 w-10 inline-flex items-center justify-center rounded-xl bg-slate-100 text-slate-700 active:scale-95 transition-transform"
+                        aria-label="הוסף משתתף"
+                    >
+                        <UserPlus className="w-5 h-5" />
+                    </motion.button>
                 </div>
             </nav>
 
@@ -392,7 +400,11 @@ export default function EventPage() {
 
                                     {/* Stars count in center */}
                                     <div className="text-center mt-3">
-                                        <div className="text-4xl font-black text-slate-900 leading-none">{stars}</div>
+                                        <div className="text-4xl font-black text-slate-900 leading-none flex items-center justify-center gap-2">
+                                            <Star className="w-8 h-8" fill="currentColor" style={{ color: '#FFD93D' }} />
+                                            {stars}
+                                            <Star className="w-8 h-8" fill="currentColor" style={{ color: '#FFD93D' }} />
+                                        </div>
                                         <div className="text-xs font-black text-slate-800/70 uppercase tracking-widest">כוכבים</div>
                                     </div>
 
@@ -530,6 +542,60 @@ export default function EventPage() {
                             className="text-[96px]"
                         >
                             😢
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Add Participant Modal */}
+            <AnimatePresence>
+                {showAddParticipant && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center"
+                        onClick={() => setShowAddParticipant(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white rounded-3xl p-6 mx-4 max-w-sm w-full"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="text-center mb-6">
+                                <div className="text-2xl font-black text-slate-900 mb-2">הוסף משתתף</div>
+                                <div className="text-sm text-slate-500">בחר איך להוסיף משתתף לאירוע</div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <motion.button
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => {
+                                        setShowAddParticipant(false);
+                                        // Navigate to add new participant
+                                        router.push(`/group/${groupId}/add-participant`);
+                                    }}
+                                    className="w-full btn-star h-12 rounded-2xl flex items-center justify-center gap-2"
+                                >
+                                    <UserPlus className="w-4 h-4" />
+                                    משתתף חדש
+                                </motion.button>
+
+                                <motion.button
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => {
+                                        setShowAddParticipant(false);
+                                        // Navigate to group to select existing participant
+                                        router.push(`/group/${groupId}`);
+                                    }}
+                                    className="w-full h-12 rounded-2xl border-2 border-slate-200 bg-white font-black text-slate-700 active:scale-95 transition-transform flex items-center justify-center gap-2"
+                                >
+                                    <Sparkles className="w-4 h-4" />
+                                    משתתף קיים מהקבוצה
+                                </motion.button>
+                            </div>
                         </motion.div>
                     </motion.div>
                 )}
