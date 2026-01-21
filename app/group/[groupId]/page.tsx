@@ -3,19 +3,21 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    Home, 
-    Plus, 
-    Calendar, 
-    Users, 
-    Copy, 
-    Check, 
-    Edit2, 
+import {
+    Home,
+    Plus,
+    Calendar,
+    Users,
+    Copy,
+    Check,
+    Edit2,
     Pencil,
-    Trash2, 
-    Star, 
-    Clock, 
+    Trash2,
+    Star,
+    Clock,
     ChevronLeft,
+    ChevronUp,
+    ChevronDown,
     Sparkles,
     UserPlus,
     Palette,
@@ -86,7 +88,6 @@ export default function GroupPage() {
     const [pGender, setPGender] = useState<'male' | 'female'>('male');
     const [showPIconPicker, setShowPIconPicker] = useState(false);
     const [showPColorPicker, setShowPColorPicker] = useState(false);
-    const [showPAgeSlider, setShowPAgeSlider] = useState(false);
 
     useEffect(() => {
         const groups = JSON.parse(localStorage.getItem('groups') || '[]');
@@ -119,7 +120,6 @@ export default function GroupPage() {
         setShowEditParticipant(true);
         setShowPIconPicker(false);
         setShowPColorPicker(false);
-        setShowPAgeSlider(false);
     };
 
     const closeParticipantSheets = () => {
@@ -127,7 +127,6 @@ export default function GroupPage() {
         setEditingParticipantId(null);
         setShowPIconPicker(false);
         setShowPColorPicker(false);
-        setShowPAgeSlider(false);
     };
 
     const handleSaveParticipantEdit = () => {
@@ -500,17 +499,25 @@ export default function GroupPage() {
 
                                                     {/* Age & Gender */}
                                                     <div className="flex flex-col gap-2">
-                                                        <motion.button
-                                                            whileTap={{ scale: 0.95 }}
-                                                            onClick={() => {
-                                                                // This will open age slider
-                                                                setShowPAgeSlider(true);
-                                                            }}
-                                                            className="bg-white/40 backdrop-blur-sm rounded-lg px-3 py-1.5 text-sm font-black text-slate-900 cursor-pointer active:scale-95 transition-transform border border-white/30 flex items-center gap-2 min-w-[80px] justify-center"
-                                                        >
-                                                            גיל {pAgeLabel}
-                                                            <Pencil className="w-3 h-3" />
-                                                        </motion.button>
+                                                        <div className="bg-white/40 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/30 flex items-center gap-2 min-w-[80px] justify-center">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setPAge(Math.max(1, pAge - 0.5))}
+                                                                className="h-6 w-6 rounded flex items-center justify-center text-slate-700 hover:bg-slate-200 active:scale-95 transition-transform"
+                                                                aria-label="הורד גיל"
+                                                            >
+                                                                <ChevronDown className="w-3 h-3" />
+                                                            </button>
+                                                            <span className="text-sm font-black text-slate-900">גיל {pAgeLabel}</span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setPAge(Math.min(100, pAge + 0.5))}
+                                                                className="h-6 w-6 rounded flex items-center justify-center text-slate-700 hover:bg-slate-200 active:scale-95 transition-transform"
+                                                                aria-label="העלה גיל"
+                                                            >
+                                                                <ChevronUp className="w-3 h-3" />
+                                                            </button>
+                                                        </div>
 
                                                         {/* Gender Switch */}
                                                         <div className="flex bg-white/70 backdrop-blur-sm rounded-xl p-1 border border-white/40">
@@ -573,57 +580,6 @@ export default function GroupPage() {
                                     dir="rtl"
                                 />
 
-                                {/* Age Slider Modal */}
-                                <AnimatePresence>
-                                    {showPAgeSlider && (
-                                        <motion.div
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            exit={{ opacity: 0 }}
-                                            className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center"
-                                            onClick={() => setShowPAgeSlider(false)}
-                                        >
-                                            <motion.div
-                                                initial={{ scale: 0.9, opacity: 0 }}
-                                                animate={{ scale: 1, opacity: 1 }}
-                                                exit={{ scale: 0.9, opacity: 0 }}
-                                                className="bg-white rounded-3xl p-6 mx-4 max-w-sm w-full"
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                <div className="text-center mb-6">
-                                                    <div className="text-2xl font-black text-slate-900 mb-2">בחר גיל</div>
-                                                    <div className="text-4xl font-black text-[#4D96FF]">{pAgeLabel}</div>
-                                                </div>
-
-                                                <input
-                                                    type="range"
-                                                    min="1"
-                                                    max="100"
-                                                    step="0.5"
-                                                    value={pAge}
-                                                    onChange={(e) => setPAge(parseFloat(e.target.value))}
-                                                    className="w-full h-4 rounded-full appearance-none cursor-pointer mb-4"
-                                                    style={{
-                                                        background: `linear-gradient(to left, #4D96FF 0%, #4D96FF ${(pAge / 100) * 100}%, #e2e8f0 ${(pAge / 100) * 100}%, #e2e8f0 100%)`
-                                                    }}
-                                                />
-
-                                                <div className="flex justify-between text-sm text-slate-400 font-bold mb-6">
-                                                    <span>1</span>
-                                                    <span>100</span>
-                                                </div>
-
-                                                <motion.button
-                                                    whileTap={{ scale: 0.95 }}
-                                                    onClick={() => setShowPAgeSlider(false)}
-                                                    className="w-full btn-star h-12 rounded-2xl flex items-center justify-center gap-2"
-                                                >
-                                                    אישור
-                                                </motion.button>
-                                            </motion.div>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
 
                                 {/* Save/Cancel Buttons */}
                                 <div className="grid grid-cols-2 gap-3 pt-4">
