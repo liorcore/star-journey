@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import { BadgeCheck, ChevronRight, Crown, Minus, Sparkles, Star, Timer, UserPlus } from 'lucide-react';
+import { BadgeCheck, ChevronRight, Crown, Minus, Pencil, Sparkles, Star, Timer, UserPlus } from 'lucide-react';
 import { ParticipantIcon } from '@/app/lib/participantIcons';
 
 interface Participant {
