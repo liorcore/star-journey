@@ -423,15 +423,13 @@ export default function EventPage() {
                                             className="btn-star h-12 rounded-2xl flex items-center justify-center gap-2"
                                         >
                                             <Star className="w-4 h-4" fill="currentColor" style={{ color: '#FFD93D' }} />
-                                            הוסף
                                         </button>
                                         <button
                                             onClick={() => handleRemoveStar(participantId)}
                                             disabled={stars === 0}
                                             className="h-12 rounded-2xl border-2 border-slate-200 bg-white font-black text-slate-700 active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
                                         >
-                                            <Minus className="w-4 h-4" />
-                                            הסר
+                                            <span className="text-2xl">😢</span>
                                         </button>
                                     </div>
                                 </div>
