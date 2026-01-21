@@ -670,10 +670,10 @@ export default function EventPage() {
                             transition={{ type: 'spring', stiffness: 250, damping: 18 }}
                             className="text-center"
                         >
-                            <div className="flex items-center justify-center gap-4">
-                                <Star className="w-24 h-24" fill="currentColor" style={{ color: '#FFD93D' }} />
-                                <div className="text-6xl font-black text-white drop-shadow-2xl">2</div>
-                                <Star className="w-24 h-24" fill="currentColor" style={{ color: '#FFD93D' }} />
+                            <div className="flex items-center justify-center gap-6">
+                                <Star className="w-32 h-32 drop-shadow-2xl" fill="currentColor" style={{ color: '#FFD93D' }} />
+                                <div className="text-8xl font-black text-white drop-shadow-2xl">2</div>
+                                <Star className="w-32 h-32 drop-shadow-2xl" fill="currentColor" style={{ color: '#FFD93D' }} />
                             </div>
                         </motion.div>
                     </motion.div>
