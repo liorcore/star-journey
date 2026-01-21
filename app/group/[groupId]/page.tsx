@@ -520,13 +520,17 @@ export default function GroupPage() {
                                                         </div>
 
                                                         {/* Gender Switch */}
-                                                        <div className="flex bg-white/70 backdrop-blur-sm rounded-xl p-1 border border-white/40">
+                                                        <div className={`flex backdrop-blur-sm rounded-xl p-1 border transition-all ${
+                                                            pGender === 'male'
+                                                                ? 'bg-blue-200/70 border-blue-300/40'
+                                                                : 'bg-pink-200/70 border-pink-300/40'
+                                                        }`}>
                                                             <motion.button
                                                                 whileTap={{ scale: 0.95 }}
                                                                 onClick={() => setPGender('male')}
                                                                 className={`px-4 py-2 rounded-lg text-lg font-bold transition-all flex-1 ${
                                                                     pGender === 'male'
-                                                                        ? 'bg-white text-slate-900 shadow-md'
+                                                                        ? 'bg-blue-400 text-white shadow-md'
                                                                         : 'text-slate-600 hover:text-slate-800'
                                                                 }`}
                                                             >
@@ -537,7 +541,7 @@ export default function GroupPage() {
                                                                 onClick={() => setPGender('female')}
                                                                 className={`px-4 py-2 rounded-lg text-lg font-bold transition-all flex-1 ${
                                                                     pGender === 'female'
-                                                                        ? 'bg-white text-slate-900 shadow-md'
+                                                                        ? 'bg-pink-400 text-white shadow-md'
                                                                         : 'text-slate-600 hover:text-slate-800'
                                                                 }`}
                                                             >
