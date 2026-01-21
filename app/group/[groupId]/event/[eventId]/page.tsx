@@ -92,12 +92,39 @@ function emojiRain(opts?: { count?: number }) {
 }
 
 function richGoalCelebration() {
-    // “עשיר”: כמה פיצוצים + גשם סמיילים
+    // "עשיר": כמה פיצוצים + גשם סמיילים + מדליות
     burstConfetti({ big: true });
     setTimeout(() => burstConfetti({ big: true }), 160);
     setTimeout(() => burstConfetti({ big: true }), 380);
     setTimeout(() => burstConfetti({ big: true }), 620);
-    emojiRain({ count: 170 });
+
+    // גשם סמייליים שמחים ומדליות
+    const happyEmojis = ['😄', '😁', '😆', '😊', '🥳', '🤩', '😎', '🏆', '🥇', '🎉', '⭐', '✨'];
+    for (let i = 0; i < 120; i++) {
+        const el = document.createElement('div');
+        el.textContent = happyEmojis[Math.floor(Math.random() * happyEmojis.length)];
+        el.style.position = 'fixed';
+        el.style.left = `${Math.random() * 100}vw`;
+        el.style.top = '-40px';
+        el.style.fontSize = `${20 + Math.random() * 30}px`;
+        el.style.zIndex = '9999';
+        el.style.pointerEvents = 'none';
+        el.style.willChange = 'transform, opacity';
+        document.body.appendChild(el);
+
+        const duration = 2200 + Math.random() * 1200;
+        const endY = window.innerHeight + 80;
+        const driftX = (Math.random() - 0.5) * 300;
+        const rotate = (Math.random() - 0.5) * 720;
+
+        el.animate(
+            [
+                { transform: 'translate3d(0, 0, 0) rotate(0deg)', opacity: 1 },
+                { transform: `translate3d(${driftX}px, ${endY}px, 0) rotate(${rotate}deg)`, opacity: 0 }
+            ],
+            { duration, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' }
+        ).onfinish = () => el.remove();
+    }
 }
 
 export default function EventPage() {
@@ -115,6 +142,7 @@ export default function EventPage() {
     const [congratsName, setCongratsName] = useState<string>('');
     const [bonusToast, setBonusToast] = useState<string | null>(null);
     const [starFlash, setStarFlash] = useState<{ text?: string; variant?: 'normal' | 'bonus' } | null>(null);
+    const [showCelebration, setShowCelebration] = useState(false);
     const [showAddParticipant, setShowAddParticipant] = useState(false);
     const [showExistingParticipants, setShowExistingParticipants] = useState(false);
     const [showEditEvent, setShowEditEvent] = useState(false);
@@ -237,16 +265,20 @@ export default function EventPage() {
             setCongratsName(p?.name ?? '');
             setShowCongrats(true);
             setTimeout(() => setShowCongrats(false), FEEDBACK_MS.congrats);
+            // הצג חיווי "כל הכבוד!!" עם סמייליים ומדליות
+            setShowCelebration(true);
+            setTimeout(() => setShowCelebration(false), 3500);
             richGoalCelebration();
             return;
         }
 
         if (isAboveGoal) {
-            // מעל היעד: קונפטי רגיל + סמיילי + טוסט +2⭐
-            setBonusToast('+2');
-            setTimeout(() => setBonusToast(null), FEEDBACK_MS.bonusToast);
-            burstConfetti({ big: false });
-            emojiRain({ count: 110 });
+            // מעל היעד: קונפטי + חיווי כוכב עם 2
+            setStarFlash({ text: '2', variant: 'bonus' });
+            setTimeout(() => setStarFlash(null), FEEDBACK_MS.starFlashBonus);
+            burstConfetti({ big: true });
+            // גשם סמייליים שמחים קטן
+            emojiRain({ count: 80 });
             return;
         }
 
@@ -531,6 +563,35 @@ export default function EventPage() {
                             <div className="text-3xl font-black rainbow-text">כל הכבוד!</div>
                             {congratsName && (
                                 <div className="mt-1 text-sm font-black text-slate-800">{congratsName} הגיע/ה ליעד</div>
+                            )}
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Celebration overlay - כל הכבוד עם סמייליים ומדליות */}
+            <AnimatePresence>
+                {showCelebration && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[85] flex items-center justify-center pointer-events-none"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.5, opacity: 0, rotate: -10 }}
+                            animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                            exit={{ scale: 0.8, opacity: 0, rotate: 10 }}
+                            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                            className="text-center"
+                        >
+                            <div className="text-6xl mb-4">🎉</div>
+                            <div className="text-4xl font-black rainbow-text mb-2">כל הכבוד!!</div>
+                            <div className="text-2xl">🏆 🥇 ⭐ ✨</div>
+                            {congratsName && (
+                                <div className="mt-2 text-lg font-black text-white drop-shadow-lg">
+                                    {congratsName} הגיע/ה ליעד!
+                                </div>
                             )}
                         </motion.div>
                     </motion.div>
