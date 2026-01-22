@@ -569,7 +569,7 @@ export default function EventPage() {
                                     {/* Actions */}
                                     <div className="mt-4 relative">
                                         <div className="absolute inset-0 backdrop-blur-sm bg-black/10 rounded-lg"></div>
-                                        <div className="relative flex items-center justify-between gap-3 px-2">
+                                        <div className="relative flex items-center justify-between gap-3 px-2 py-2">
                                             <button
                                                 onClick={() => handleAddStar(participantId)}
                                                 className="w-12 h-12 rounded-lg backdrop-blur-sm bg-white/20 border-2 border-white/30 active:scale-95 transition-transform flex items-center justify-center gap-2"
