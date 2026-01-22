@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronRight, ChevronUp, ChevronDown, Copy, Palette, Smile, Sparkles, UserPlus, X } from 'lucide-react';
@@ -29,7 +29,7 @@ interface Group {
 }
 
 export default function AddParticipantPage() {
-    const params = useParams();
+    const params = use(useParams());
     const router = useRouter();
     const groupId = params.groupId as string;
     const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');

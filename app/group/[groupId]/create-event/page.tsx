@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CalendarClock, CalendarPlus, Check, ChevronRight, Palette, Smile, Sparkles, Star, Users, X } from 'lucide-react';
@@ -29,7 +29,7 @@ interface Group {
 }
 
 export default function CreateEventPage() {
-    const params = useParams();
+    const params = use(useParams());
     const router = useRouter();
     const groupId = params.groupId as string;
 

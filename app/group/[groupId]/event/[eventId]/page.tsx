@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, use } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
@@ -106,7 +106,7 @@ function richGoalCelebration() {
 }
 
 export default function EventPage() {
-    const params = useParams();
+    const params = use(useParams());
     const router = useRouter();
     const groupId = params.groupId as string;
     const eventId = params.eventId as string;

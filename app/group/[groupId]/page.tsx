@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -71,7 +71,7 @@ interface Group {
 
 
 export default function GroupPage() {
-    const params = useParams();
+    const params = use(useParams());
     const router = useRouter();
     const groupId = params.groupId as string;
 
