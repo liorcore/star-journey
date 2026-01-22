@@ -29,17 +29,9 @@ interface Group {
 }
 
 export default function AddParticipantPage() {
-    const params = useParams();
+    const params = use(useParams());
     const router = useRouter();
-    const [groupId, setGroupId] = useState<string>('');
-
-    useEffect(() => {
-        const getParams = async () => {
-            const resolvedParams = await params;
-            setGroupId(resolvedParams.groupId as string);
-        };
-        getParams();
-    }, [params]);
+    const groupId = params.groupId as string;
     const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
     const eventId = searchParams.get('eventId');
 

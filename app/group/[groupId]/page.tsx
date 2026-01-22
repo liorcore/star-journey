@@ -71,17 +71,9 @@ interface Group {
 
 
 export default function GroupPage() {
-    const params = useParams();
+    const params = use(useParams());
     const router = useRouter();
-    const [groupId, setGroupId] = useState<string>('');
-
-    useEffect(() => {
-        const getParams = async () => {
-            const resolvedParams = await params;
-            setGroupId(resolvedParams.groupId as string);
-        };
-        getParams();
-    }, [params]);
+    const groupId = params.groupId as string;
 
     const [group, setGroup] = useState<Group | null>(null);
     const [showEditName, setShowEditName] = useState(false);
