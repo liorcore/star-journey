@@ -520,7 +520,7 @@ export default function EventPage() {
                             >
                                 <div className="pattern-overlay" />
                                 {index === 0 && (
-                                    <div className="absolute top-1 left-2 bg-yellow-400/95 backdrop-blur-md rounded-lg px-1.5 py-0.5 text-[9px] font-black text-slate-900 border border-yellow-500 shadow-sm flex items-center gap-1">
+                                    <div className="absolute top-0 left-3 bg-yellow-400/95 backdrop-blur-md rounded-lg px-1.5 py-0.5 text-[9px] font-black text-slate-900 border border-yellow-500 shadow-sm flex items-center gap-1">
                                         <Crown className="w-3 h-3" fill="currentColor" />
                                         מוביל
                                     </div>
