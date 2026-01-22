@@ -458,7 +458,7 @@ export default function GroupPage() {
                                             e.stopPropagation();
                                             handleDeleteEvent(event.id);
                                         }}
-                                        className="absolute top-1/2 -translate-y-1/2 right-2 sm:right-3 p-1 text-slate-300 hover:text-red-500 z-10"
+                                        className="absolute top-1/2 -translate-y-1/2 left-2 sm:left-3 p-1 text-slate-300 hover:text-red-500 z-10"
                                     >
                                         <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                     </button>
