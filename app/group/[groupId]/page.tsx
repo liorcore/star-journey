@@ -449,7 +449,7 @@ export default function GroupPage() {
                                     <div className="pattern-overlay" />
 
                                     {/* Event icon in top-right corner */}
-                                    <div className="absolute top-2 right-2 sm:top-4 sm:right-4">
+                                    <div className="absolute top-1 left-1 sm:top-2 sm:left-2">
                                         <ParticipantIcon icon={event.icon} className="w-5 h-5 sm:w-6 sm:h-6 text-slate-600" />
                                     </div>
 
