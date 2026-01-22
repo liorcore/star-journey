@@ -507,7 +507,7 @@ export default function EventPage() {
                         return (
                             <div
                                 key={participantId}
-                                className="rounded-2xl border shadow-sm p-4 relative overflow-hidden"
+                                className="rounded-3xl border shadow-sm p-4 relative overflow-hidden"
                                 style={{
                                     background: isDone
                                         ? 'linear-gradient(135deg, #FF0080 0%, #FF8C00 16%, #FFD93D 32%, #00FF00 50%, #00CED1 66%, #4D96FF 82%, #BB8FCE 100%)'
