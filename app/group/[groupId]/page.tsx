@@ -330,7 +330,7 @@ export default function GroupPage() {
                                         style={{ backgroundColor: `${participant.color}22`, border: `1px solid ${participant.color}` }}
                                     >
                                         <div className="pattern-overlay" />
-                                        <ParticipantIcon icon={participant.icon} className="w-3 h-3 sm:w-4 sm:h-4 text-slate-900" emojiSize="text-lg" />
+                                        <ParticipantIcon icon={participant.icon} className="w-4 h-4 sm:w-5 sm:h-5 text-slate-900" emojiSize="text-lg" />
                                     </div>
                                     
                                     <div className="flex-1 min-w-0">
@@ -340,6 +340,10 @@ export default function GroupPage() {
                                                 {participant.totalStars}
                                                 <Star className="w-2.5 h-2.5 sm:w-4 sm:h-4" fill="currentColor" />
                                             </span>
+                                        </div>
+                                        <div className="flex items-center gap-1 text-[10px] sm:text-xs text-slate-600 mt-0.5">
+                                            <span>גיל {participant.age.toFixed(1)}</span>
+                                            <span>{participant.gender === 'male' ? '♂️' : '♀️'}</span>
                                         </div>
                                         {/* Completed Events Tags */}
                                         {participant.completedEvents && participant.completedEvents.length > 0 && (
