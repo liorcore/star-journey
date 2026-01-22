@@ -335,7 +335,7 @@ export default function GroupPage() {
                                         style={{ backgroundColor: `${participant.color}22`, border: `1px solid ${participant.color}` }}
                                     >
                                         <div className="pattern-overlay" />
-                                        <ParticipantIcon icon={participant.icon} className="w-5 h-5 sm:w-6 sm:h-6 text-slate-900" emojiSize="text-sm" />
+                                        <ParticipantIcon icon={participant.icon} className="text-slate-900" emojiSize="text-base" />
                                     </div>
                                     
                                     <div className="flex-1 min-w-0">
