@@ -575,20 +575,23 @@ export default function EventPage() {
                                     </div>
 
                                     {/* Actions */}
-                                    <div className="mt-4 grid grid-cols-2 gap-3">
-                                        <button
-                                            onClick={() => handleAddStar(participantId)}
-                                            className="btn-star h-12 rounded-2xl flex items-center justify-center gap-2"
-                                        >
-                                            <Star className="w-5 h-5" fill="currentColor" style={{ color: '#FFD93D' }} />
-                                        </button>
-                                        <button
-                                            onClick={() => handleRemoveStar(participantId)}
-                                            disabled={stars === 0}
-                                            className="h-12 rounded-2xl border-2 border-slate-200 bg-white font-black text-slate-700 active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
-                                        >
-                                            <span className="text-2xl">😢</span>
-                                        </button>
+                                    <div className="mt-4 relative">
+                                        <div className="absolute inset-0 backdrop-blur-sm bg-black/10 rounded-2xl"></div>
+                                        <div className="relative grid grid-cols-2 gap-3">
+                                            <button
+                                                onClick={() => handleAddStar(participantId)}
+                                                className="btn-star h-12 rounded-2xl flex items-center justify-center gap-2"
+                                            >
+                                                <Star className="w-5 h-5" fill="currentColor" style={{ color: '#FFD93D' }} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleRemoveStar(participantId)}
+                                                disabled={stars === 0}
+                                                className="h-12 rounded-2xl border-2 border-slate-200 bg-white font-black text-slate-700 active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
+                                            >
+                                                <span className="text-2xl">😢</span>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
