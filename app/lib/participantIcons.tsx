@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import {
   Award,
+  Baby,
   BookOpen,
   Camera,
   Cat,
@@ -52,7 +53,8 @@ export type ParticipantIconKey =
   | 'heart'
   | 'plane'
   | 'cat'
-  | 'dog';
+  | 'dog'
+  | 'baby';
 
 export const PARTICIPANT_ICONS: Array<{
   key: ParticipantIconKey;
@@ -84,6 +86,7 @@ export const PARTICIPANT_ICONS: Array<{
   { key: 'plane', label: 'מטוס', Icon: Plane },
   { key: 'cat', label: 'חתול', Icon: Cat },
   { key: 'dog', label: 'כלב', Icon: Dog },
+  { key: 'baby', label: 'תינוק', Icon: Baby },
 ];
 
 const ICON_MAP: Record<ParticipantIconKey, ComponentType<{ className?: string }>> =
