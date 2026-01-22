@@ -448,8 +448,8 @@ export default function GroupPage() {
                                 >
                                     <div className="pattern-overlay" />
 
-                                    {/* Event icon in top-right corner */}
-                                    <div className="absolute top-1 left-1 sm:top-2 sm:left-2">
+                                    {/* Event icon in top-left corner */}
+                                    <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
                                         <ParticipantIcon icon={event.icon} className="w-5 h-5 sm:w-6 sm:h-6 text-slate-600" />
                                     </div>
 
@@ -458,7 +458,7 @@ export default function GroupPage() {
                                             e.stopPropagation();
                                             handleDeleteEvent(event.id);
                                         }}
-                                        className="absolute top-2 left-2 sm:top-4 sm:left-4 p-1 text-slate-300 hover:text-red-500 z-10"
+                                        className="absolute top-1/2 -translate-y-1/2 right-2 sm:right-3 p-1 text-slate-300 hover:text-red-500 z-10"
                                     >
                                         <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                     </button>
