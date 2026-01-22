@@ -489,11 +489,11 @@ export default function GroupPage() {
                                                         <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 truncate block">{p.name}</span>
                                                     </div>
                                                     <div
-                                                        className="inline-flex items-center gap-0.5 font-black text-sm"
+                                                        className="inline-flex items-center gap-0.5 font-black text-xs"
                                                         style={{ color: p.color }}
                                                     >
                                                         <span>{ep.stars}</span>
-                                                        <Star className="w-3 h-3" fill="currentColor" />
+                                                        <Star className="w-2 h-2" fill="currentColor" />
                                                     </div>
                                                 </div>
                                             ) : null;
