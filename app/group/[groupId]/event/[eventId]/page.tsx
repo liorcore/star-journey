@@ -467,7 +467,6 @@ export default function EventPage() {
                         <h1 className="text-2xl font-black rainbow-text text-center break-words">{event.name}</h1>
 
                         <div className="mt-4 flex items-center justify-center gap-2">
-                            <Star className="w-5 h-5" fill="currentColor" style={{ color: '#FFD93D' }} />
                             <span className="text-sm font-black text-slate-900">יעד: {event.starGoal}</span>
                             <BadgeCheck className="w-4 h-4 text-[#4D96FF]" />
                         </div>
