@@ -550,7 +550,6 @@ export default function EventPage() {
                                     <div className="text-center mt-3">
                                         <div className="text-4xl font-black text-slate-900 leading-none flex items-center justify-center gap-2">
                                             {stars}
-                                            <Star className="w-8 h-8" fill="currentColor" style={{ color: '#FFD93D' }} />
                                         </div>
                                         <div className="text-xs font-black text-slate-800/70 uppercase tracking-widest">כוכבים</div>
                                     </div>
