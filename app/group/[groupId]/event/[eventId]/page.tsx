@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState, use } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import { BadgeCheck, ChevronRight, Crown, Minus, Pencil, Sparkles, Star, Timer, UserPlus } from 'lucide-react';
+import { BadgeCheck, ChevronRight, Crown, Minus, Pencil, Sparkles, Star, Timer, UserPlus, X } from 'lucide-react';
 import { ParticipantIcon } from '@/app/lib/participantIcons';
+import { PARTICIPANT_EMOJIS } from '@/app/lib/participantEmoji';
 
 interface Participant {
     id: string;
@@ -478,7 +479,7 @@ export default function EventPage() {
                         </div>
 
                         {/* Countdown (LTR) */}
-                        <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2" dir="ltr">
+                        <div className="mt-3 grid grid-cols-4 gap-2" dir="ltr">
                             {([
                                 { label: 'ימים', value: timeRemaining.days },
                                 { label: 'שעות', value: timeRemaining.hours },
@@ -1007,7 +1008,7 @@ export default function EventPage() {
 
                                         <div className="max-h-[55vh] overflow-y-auto">
                                             <div className="grid grid-cols-6 gap-2">
-                                                {PARTICIPANT_EMOJIS.map((ic) => (
+                                                {PARTICIPANT_EMOJIS.map((ic: string) => (
                                                     <button
                                                         key={ic}
                                                         type="button"
