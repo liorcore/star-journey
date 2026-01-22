@@ -9,20 +9,6 @@ import { PARTICIPANT_EMOJIS } from '@/app/lib/participantEmoji';
 
 const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B739', '#52B788', '#FF8FA3', '#C9ADA7'];
 
-const COMMON_NAMES = [
-    'אליה', 'אליהו', 'אריאל', 'אביאל', 'אבי', 'אברהם', 'אדם', 'אדיר', 'אור', 'אורי',
-    'בן', 'בניה', 'ברק', 'גל', 'גיא', 'דוד', 'דור', 'דניאל', 'הוד', 'יואב',
-    'יונתן', 'יעקב', 'ירון', 'ישי', 'ליאור', 'מאור', 'מאיר', 'מיכאל', 'נועם', 'ניר',
-    'עומר', 'עידו', 'עמית', 'פלג', 'צבי', 'רועי', 'רונן', 'רון', 'שי', 'שלום',
-    'שלמה', 'שמעון', 'תום', 'תומר',
-    'אביגיל', 'אביה', 'אביטל', 'אדווה', 'איה', 'אלונה', 'אלין', 'אמילי', 'אן', 'אסנת',
-    'אפרת', 'אריאל', 'ברכה', 'גיל', 'גילי', 'דנה', 'דניאלה', 'הילה', 'יעל', 'יהב',
-    'יובל', 'יוכי', 'כרמל', 'ליאור', 'ליה', 'ליאן', 'מור', 'מיה', 'מיכל', 'מעיין',
-    'נגה', 'נועה', 'נועם', 'נועה', 'נועה', 'נועה', 'נועה', 'נועה', 'נועה', 'נועה',
-    'עדי', 'עדן', 'עמית', 'פז', 'צופיה', 'קרן', 'רונה', 'רוני', 'רותם', 'שירה',
-    'שיראל', 'שלומית', 'תאיר', 'תמר'
-];
-
 interface Participant {
     id: string;
     name: string;
@@ -76,14 +62,12 @@ export default function AddParticipantPage() {
     const [gender, setGender] = useState<'male' | 'female'>('male');
     const [showIconPicker, setShowIconPicker] = useState(false);
     const [showColorPicker, setShowColorPicker] = useState(false);
-    const [showNamePicker, setShowNamePicker] = useState(false);
 
     const ageLabel = age.toFixed(1);
 
     const closePickers = () => {
         setShowIconPicker(false);
         setShowColorPicker(false);
-        setShowNamePicker(false);
     };
 
     const handleSave = () => {
@@ -176,7 +160,6 @@ export default function AddParticipantPage() {
                                     type="button"
                                     onClick={() => {
                                         setShowColorPicker(false);
-                                        setShowNamePicker(false);
                                         setShowIconPicker(true);
                                     }}
                                     className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 bg-white/35 backdrop-blur-md cursor-pointer active:scale-95 transition-transform"
@@ -185,19 +168,14 @@ export default function AddParticipantPage() {
                                     <ParticipantIcon icon={icon} className="w-14 h-14 text-slate-900" emojiSize="text-4xl" />
                                 </button>
                                 <div className="min-w-0 flex-1">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setShowIconPicker(false);
-                                            setShowColorPicker(false);
-                                            setShowNamePicker(true);
-                                        }}
-                                        className="w-full text-right"
-                                    >
-                                        <h3 className="text-base font-black text-slate-900 truncate">
-                                            {name || 'לחץ לבחירת שם'}
-                                        </h3>
-                                    </button>
+                                    <input
+                                        type="text"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        placeholder="הזן שם"
+                                        dir="rtl"
+                                        className="w-full text-base font-black text-slate-900 bg-transparent border-none outline-none placeholder:text-slate-400"
+                                    />
                                     <div className="flex items-center gap-2 mt-1">
                                         <div className="flex items-center gap-1">
                                             <button
@@ -247,7 +225,6 @@ export default function AddParticipantPage() {
                                 type="button"
                                 onClick={() => {
                                     setShowIconPicker(false);
-                                    setShowNamePicker(false);
                                     setShowColorPicker(true);
                                 }}
                                 className="w-10 h-10 rounded-full flex items-center justify-center bg-white/40 backdrop-blur-sm border-2 border-white/50 shadow-sm active:scale-95 transition-transform shrink-0"
@@ -326,73 +303,6 @@ export default function AddParticipantPage() {
                                             aria-label="בחר אייקון"
                                         >
                                             <ParticipantIcon icon={ic} className="w-8 h-8" emojiSize="text-2xl" />
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Name Picker Sheet */}
-            <AnimatePresence>
-                {showNamePicker && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
-                        onClick={closePickers}
-                    >
-                        <motion.div
-                            initial={{ y: 30, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: 30, opacity: 0 }}
-                            transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-                            className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-4"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="flex items-center justify-between mb-3">
-                                <div className="flex items-center gap-2">
-                                    <UserPlus className="w-4 h-4 text-[#4D96FF]" />
-                                    <span className="text-sm font-black text-slate-900">בחר שם</span>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={closePickers}
-                                    className="h-10 w-10 rounded-xl bg-slate-100 text-slate-700 inline-flex items-center justify-center active:scale-95 transition-transform"
-                                    aria-label="סגור"
-                                >
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
-
-                            <div className="mb-3">
-                                <input
-                                    type="text"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    placeholder="הזן שם מותאם אישית"
-                                    dir="rtl"
-                                    className="w-full h-12 rounded-2xl border-2 border-slate-200 bg-white px-4 text-base font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#4D96FF]"
-                                    autoFocus
-                                />
-                            </div>
-
-                            <div className="max-h-[50vh] overflow-y-auto">
-                                <div className="grid grid-cols-3 gap-2">
-                                    {COMMON_NAMES.map((nameOption) => (
-                                        <button
-                                            key={nameOption}
-                                            type="button"
-                                            onClick={() => {
-                                                setName(nameOption);
-                                                setShowNamePicker(false);
-                                            }}
-                                            className="h-12 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 active:scale-95 transition-transform text-sm font-bold text-slate-900"
-                                        >
-                                            {nameOption}
                                         </button>
                                     ))}
                                 </div>
