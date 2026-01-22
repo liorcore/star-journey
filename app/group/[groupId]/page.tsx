@@ -348,7 +348,7 @@ export default function GroupPage() {
                                         </div>
                                         <div className="flex items-center gap-1 text-[10px] sm:text-xs text-slate-600 mt-0.5">
                                             <span>גיל {participant.age.toFixed(1)}</span>
-                                            <span>{participant.gender === 'male' ? '♂️' : '♀️'}</span>
+                                            <span>{participant.gender === 'male' ? '👦' : '👧'}</span>
                                         </div>
                                         {/* Completed Events Tags */}
                                         {participant.completedEvents && participant.completedEvents.length > 0 && (
