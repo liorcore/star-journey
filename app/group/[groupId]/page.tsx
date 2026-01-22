@@ -475,9 +475,9 @@ export default function GroupPage() {
                                                     key={p.id}
                                                     className="inline-flex flex-col items-center gap-1 bg-slate-100 rounded-lg px-3 py-2 text-center min-w-[80px]"
                                                 >
-                                                    <div className="flex items-center gap-2">
-                                                        <ParticipantIcon icon={p.icon} className="w-3 h-3" />
-                                                        <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 truncate max-w-[60px]">{p.name}</span>
+                                                    <div className="relative w-full">
+                                                        <ParticipantIcon icon={p.icon} className="absolute -top-1 -right-1 w-3 h-3" />
+                                                        <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 truncate block">{p.name}</span>
                                                     </div>
                                                     <div
                                                         className="inline-flex items-center gap-0.5 font-black text-sm"
