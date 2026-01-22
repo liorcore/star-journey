@@ -71,9 +71,17 @@ interface Group {
 
 
 export default function GroupPage() {
-    const params = use(useParams());
+    const params = useParams();
     const router = useRouter();
-    const groupId = params.groupId as string;
+    const [groupId, setGroupId] = useState<string>('');
+
+    useEffect(() => {
+        const getParams = async () => {
+            const resolvedParams = await params;
+            setGroupId(resolvedParams.groupId as string);
+        };
+        getParams();
+    }, [params]);
 
     const [group, setGroup] = useState<Group | null>(null);
     const [showEditName, setShowEditName] = useState(false);
@@ -92,6 +100,7 @@ export default function GroupPage() {
     const [showPColorPicker, setShowPColorPicker] = useState(false);
 
     useEffect(() => {
+        if (!groupId) return;
         const groups = JSON.parse(localStorage.getItem('groups') || '[]');
         const foundGroup = groups.find((g: Group) => g.id === groupId);
         if (foundGroup) {

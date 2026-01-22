@@ -106,10 +106,19 @@ function richGoalCelebration() {
 }
 
 export default function EventPage() {
-    const params = use(useParams());
+    const params = useParams();
     const router = useRouter();
-    const groupId = params.groupId as string;
-    const eventId = params.eventId as string;
+    const [groupId, setGroupId] = useState<string>('');
+    const [eventId, setEventId] = useState<string>('');
+
+    useEffect(() => {
+        const getParams = async () => {
+            const resolvedParams = await params;
+            setGroupId(resolvedParams.groupId as string);
+            setEventId(resolvedParams.eventId as string);
+        };
+        getParams();
+    }, [params]);
 
     const [group, setGroup] = useState<Group | null>(null);
     const [event, setEvent] = useState<Event | null>(null);
@@ -141,6 +150,7 @@ export default function EventPage() {
     } as const;
 
     useEffect(() => {
+        if (!groupId || !eventId) return;
         const groups = JSON.parse(localStorage.getItem('groups') || '[]');
         const foundGroup = groups.find((g: Group) => g.id === groupId);
         if (foundGroup) {

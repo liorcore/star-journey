@@ -29,9 +29,17 @@ interface Group {
 }
 
 export default function CreateEventPage() {
-    const params = use(useParams());
+    const params = useParams();
     const router = useRouter();
-    const groupId = params.groupId as string;
+    const [groupId, setGroupId] = useState<string>('');
+
+    useEffect(() => {
+        const getParams = async () => {
+            const resolvedParams = await params;
+            setGroupId(resolvedParams.groupId as string);
+        };
+        getParams();
+    }, [params]);
 
     const [group, setGroup] = useState<Group | null>(null);
     const [eventName, setEventName] = useState('');
@@ -58,6 +66,7 @@ export default function CreateEventPage() {
     const newAgeLabel = newAge % 1 === 0 ? String(newAge) : newAge.toFixed(1);
 
     useEffect(() => {
+        if (!groupId) return;
         const groups = JSON.parse(localStorage.getItem('groups') || '[]');
         const foundGroup = groups.find((g: Group) => g.id === groupId);
         if (foundGroup) {
