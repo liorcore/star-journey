@@ -18,6 +18,7 @@ interface Participant {
     gender: 'male' | 'female';
     totalStars: number;
     eventCount: number;
+    completedEvents?: any[];
 }
 
 interface Group {

@@ -3,9 +3,16 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CalendarClock, CalendarPlus, Check, ChevronRight, Palette, Smile, Sparkles, Star, Users, X } from 'lucide-react';
-import { ParticipantIcon } from '@/app/lib/participantIcons';
+import { CalendarClock, CalendarPlus, Check, ChevronRight, ChevronUp, ChevronDown, Palette, Smile, Sparkles, Star, Users, X, BadgeCheck } from 'lucide-react';
+import { ParticipantIcon, PARTICIPANT_ICONS } from '@/app/lib/participantIcons';
 import { PARTICIPANT_EMOJIS } from '@/app/lib/participantEmoji';
+
+// Event-specific icons (using Lucide icons, not emojis)
+const EVENT_ICONS = [
+    'trophy', 'star', 'crown', 'award', 'sparkles', 'rocket', 'flame', 'gem',
+    'heart', 'sun', 'moon', 'compass', 'book', 'music', 'camera', 'plane',
+    'zap', 'shield', 'sword', 'wand', 'gamepad', 'palette'
+];
 
 const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B739', '#52B788', '#FF8FA3', '#C9ADA7'];
 
@@ -18,6 +25,7 @@ interface Participant {
     gender: 'male' | 'female';
     totalStars: number;
     eventCount: number;
+    completedEvents?: any[];
 }
 
 interface Group {
@@ -66,6 +74,7 @@ export default function CreateEventPage() {
     const closePickers = () => {
         setShowIconPicker(false);
         setShowColorPicker(false);
+        setShowEventIconPicker(false);
     };
 
     const newAgeLabel = newAge % 1 === 0 ? String(newAge) : newAge.toFixed(1);
@@ -208,97 +217,92 @@ export default function CreateEventPage() {
             </nav>
 
             <main className="max-w-md mx-auto px-3 pt-20">
-                <motion.header
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-center mb-6"
-                >
-                    <h1 className="text-2xl font-black text-slate-900">צור אירוע חדש</h1>
-                    <p className="text-sm text-slate-500 mt-2">
-                        מגדירים יעד, זמן, ובוחרים צוות — ואז משגרים.
-                    </p>
-                </motion.header>
-
                 <motion.div
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.05 }}
                     className="space-y-4"
                 >
-                    {/* Event Name */}
-                    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-                        <label className="control-label text-[11px]">שם האירוע</label>
-                        <input
-                            type="text"
-                            value={eventName}
-                            onChange={(e) => setEventName(e.target.value)}
-                            placeholder="למשל: משימת ירח"
-                            dir="rtl"
-                            className="mt-2 w-full h-12 rounded-2xl border-2 border-slate-200 bg-white px-4 text-base font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#4D96FF]"
-                        />
-                    </section>
-
-                    {/* Event Icon */}
-                    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <Sparkles className="w-4 h-4 text-[#4D96FF]" />
-                                <span className="control-label text-[11px]">אייקון האירוע</span>
-                            </div>
+                    {/* Header Card - Similar to Event Card */}
+                    <motion.section
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-slate-50 rounded-2xl border border-slate-200 shadow-sm p-4 mb-4 relative overflow-hidden"
+                    >
+                        <div className="relative">
+                            {/* Event icon in top-right corner - clickable */}
                             <button
                                 type="button"
-                                onClick={() => setShowIconPicker(true)}
-                                className="h-10 px-4 rounded-2xl bg-slate-100 text-slate-700 font-black text-xs active:scale-95 transition-transform"
+                                onClick={() => setShowEventIconPicker(true)}
+                                className="absolute top-2 right-2 p-1 hover:bg-slate-100 rounded-lg transition-colors"
+                                aria-label="בחר אייקון"
                             >
-                                בחר
+                                <ParticipantIcon icon={eventIcon} className="w-6 h-6 text-slate-600" emojiSize="text-lg" />
                             </button>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => setShowIconPicker(true)}
-                            className="mt-3 w-full h-14 rounded-2xl border-2 border-slate-200 bg-white flex items-center justify-center text-3xl active:scale-95 transition-transform"
-                            aria-label="בחירת אייקון"
-                        >
-                            <ParticipantIcon icon={eventIcon} className="w-9 h-9" emojiSize="text-3xl" />
-                        </button>
-                    </section>
+                            
+                            {/* Event Name */}
+                            <input
+                                type="text"
+                                value={eventName}
+                                onChange={(e) => setEventName(e.target.value)}
+                                placeholder="שם האירוע"
+                                dir="rtl"
+                                className="w-full text-2xl font-black text-slate-900 text-center bg-transparent border-none outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-[#4D96FF] rounded-lg px-2"
+                            />
 
-                    {/* End Date */}
-                    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-                        <div className="flex items-center gap-2">
-                            <CalendarClock className="w-4 h-4 text-[#4D96FF]" />
-                            <span className="control-label text-[11px]">תאריך סיום</span>
-                        </div>
-                        <input
-                            type="datetime-local"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                            className="mt-2 w-full h-12 rounded-2xl border-2 border-slate-200 bg-white px-4 text-sm font-black text-slate-900 focus:outline-none focus:border-[#4D96FF]"
-                        />
-                    </section>
-
-                    {/* Star Goal */}
-                    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
+                            {/* Star Goal */}
+                            <div className="mt-4 flex items-center justify-center gap-2 bg-white/70 backdrop-blur-md rounded-lg px-3 py-2 border border-white/50">
+                                <span className="text-sm font-black text-slate-900">יעד:</span>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setStarGoal(Math.max(1, starGoal - 1))}
+                                        className="h-6 w-6 rounded flex items-center justify-center text-slate-700 hover:bg-slate-100 active:scale-95 transition-transform"
+                                        aria-label="הורד יעד"
+                                    >
+                                        <ChevronDown className="w-3 h-3" />
+                                    </button>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max="100"
+                                        value={starGoal}
+                                        onChange={(e) => setStarGoal(Math.max(1, Math.min(100, parseInt(e.target.value) || 1)))}
+                                        className="w-12 text-sm font-black text-slate-900 text-center bg-transparent border-none outline-none"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setStarGoal(Math.min(100, starGoal + 1))}
+                                        className="h-6 w-6 rounded flex items-center justify-center text-slate-700 hover:bg-slate-100 active:scale-95 transition-transform"
+                                        aria-label="העלה יעד"
+                                    >
+                                        <ChevronUp className="w-3 h-3" />
+                                    </button>
+                                </div>
                                 <Star className="w-4 h-4" fill="currentColor" style={{ color: '#FFD93D' }} />
-                                <span className="control-label text-[11px]">יעד כוכבים</span>
+                                <BadgeCheck className="w-4 h-4 text-[#4D96FF]" />
                             </div>
-                            <span className="text-2xl font-black text-slate-900">{starGoal}</span>
-                        </div>
-                        <input
-                            type="number"
-                            value={starGoal}
-                            onChange={(e) => setStarGoal(parseInt(e.target.value) || 0)}
-                            min={1}
-                            className="mt-3 w-full h-12 rounded-2xl border-2 border-slate-200 bg-white px-4 text-base font-black text-slate-900 focus:outline-none focus:border-[#4D96FF]"
-                            inputMode="numeric"
-                        />
-                    </section>
 
-                    {/* Participants */}
-                    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-                        <div className="flex items-center justify-between">
+                            {/* End Date */}
+                            <div className="mt-4">
+                                <label className="text-xs font-black text-slate-500 uppercase tracking-widest block text-center mb-2">מועד סיום</label>
+                                <input
+                                    type="datetime-local"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="w-full h-10 rounded-lg border-2 border-slate-200 bg-white px-3 text-sm font-bold text-slate-900 focus:outline-none focus:border-[#4D96FF]"
+                                />
+                            </div>
+                        </div>
+                    </motion.section>
+
+                    {/* Participants Section */}
+                    <motion.section
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-slate-50 rounded-2xl border border-slate-200 shadow-sm p-4 mb-4"
+                    >
+                        <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
                                 <Users className="w-4 h-4 text-[#4D96FF]" />
                                 <span className="control-label text-[11px]">משתתפים</span>
@@ -354,7 +358,7 @@ export default function CreateEventPage() {
                                                     )}
                                                 </div>
                                                 <p className="text-[11px] font-bold text-slate-500 mt-0.5">
-                                                    גיל {participant.age} {participant.gender === 'male' ? '👦' : '👧'}
+                                                    גיל {participant.age.toFixed(1)} {participant.gender === 'male' ? '👦' : '👧'}
                                                 </p>
                                             </div>
                                         </button>
@@ -362,13 +366,26 @@ export default function CreateEventPage() {
                                 })}
                             </div>
                         )}
-                    </section>
+                    </motion.section>
 
                     {/* Create Button */}
-                    <button onClick={handleCreateEvent} className="btn-star h-12 rounded-2xl w-full flex items-center justify-center gap-2">
-                        צור אירוע
-                        <Sparkles className="w-4 h-4" />
-                    </button>
+                    <div className="grid grid-cols-2 gap-3 pt-4">
+                        <motion.button
+                            whileTap={{ scale: 0.95 }}
+                            onClick={handleCreateEvent}
+                            className="btn-star h-12 rounded-2xl flex items-center justify-center gap-2"
+                        >
+                            צור אירוע
+                            <Sparkles className="w-4 h-4" />
+                        </motion.button>
+                        <motion.button
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => router.push(`/group/${groupId}`)}
+                            className="h-12 rounded-2xl border-2 border-slate-200 bg-white font-black text-slate-700 active:scale-95 transition-transform"
+                        >
+                            ביטול
+                        </motion.button>
+                    </div>
                 </motion.div>
             </main>
 
@@ -557,24 +574,27 @@ export default function CreateEventPage() {
                                             </button>
                                         </div>
 
-                                            <div className="max-h-[55vh] overflow-y-auto">
-                                                <div className="grid grid-cols-6 gap-2">
-                                                    {PARTICIPANT_EMOJIS.map((ic) => (
+                                        <div className="max-h-[55vh] overflow-y-auto">
+                                            <div className="grid grid-cols-6 gap-2">
+                                                {EVENT_ICONS.map((iconKey) => {
+                                                    const iconData = PARTICIPANT_ICONS.find(icon => icon.key === iconKey);
+                                                    return iconData ? (
                                                         <button
-                                                            key={ic}
+                                                            key={iconKey}
                                                             type="button"
                                                             onClick={() => {
-                                                                setEventIcon(ic);
+                                                                setEventIcon(iconKey);
                                                                 setShowIconPicker(false);
                                                             }}
                                                             className="h-12 rounded-2xl border border-slate-200 bg-white active:scale-95 transition-transform inline-flex items-center justify-center"
-                                                            aria-label="בחר אייקון"
+                                                            aria-label={`בחר אייקון ${iconData.label}`}
                                                         >
-                                                            <ParticipantIcon icon={ic} className="w-8 h-8" emojiSize="text-2xl" />
+                                                            <iconData.Icon className="w-6 h-6 text-slate-700" />
                                                         </button>
-                                                    ))}
-                                                </div>
+                                                    ) : null;
+                                                })}
                                             </div>
+                                        </div>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -624,6 +644,65 @@ export default function CreateEventPage() {
                                     </motion.div>
                                 )}
                             </AnimatePresence>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Event Icon Picker Sheet */}
+            <AnimatePresence>
+                {showEventIconPicker && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-sm"
+                        onClick={() => setShowEventIconPicker(false)}
+                    >
+                        <motion.div
+                            initial={{ y: 30, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: 30, opacity: 0 }}
+                            transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+                            className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-4"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                    <Sparkles className="w-4 h-4 text-[#4D96FF]" />
+                                    <span className="text-sm font-black text-slate-900">בחר אייקון לאירוע</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowEventIconPicker(false)}
+                                    className="h-10 w-10 rounded-xl bg-slate-100 text-slate-700 inline-flex items-center justify-center active:scale-95 transition-transform"
+                                    aria-label="סגור"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <div className="max-h-[55vh] overflow-y-auto">
+                                <div className="grid grid-cols-6 gap-2">
+                                    {EVENT_ICONS.map((iconKey) => {
+                                        const iconData = PARTICIPANT_ICONS.find(icon => icon.key === iconKey);
+                                        return iconData ? (
+                                            <button
+                                                key={iconKey}
+                                                type="button"
+                                                onClick={() => {
+                                                    setEventIcon(iconKey);
+                                                    setShowEventIconPicker(false);
+                                                }}
+                                                className="h-12 rounded-2xl border border-slate-200 bg-white active:scale-95 transition-transform inline-flex items-center justify-center"
+                                                aria-label={`בחר אייקון ${iconData.label}`}
+                                            >
+                                                <iconData.Icon className="w-6 h-6 text-slate-700" />
+                                            </button>
+                                        ) : null;
+                                    })}
+                                </div>
+                            </div>
                         </motion.div>
                     </motion.div>
                 )}

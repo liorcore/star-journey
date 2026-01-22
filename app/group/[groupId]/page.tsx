@@ -295,7 +295,7 @@ export default function GroupPage() {
                                 className="cursor-pointer py-1"
                                 onClick={() => setShowEditName(true)}
                             >
-                                <h1 className="text-xl sm:text-5xl font-black rainbow-text mb-1 px-2 break-words leading-tight">
+                                <h1 className="text-2xl sm:text-6xl font-black rainbow-text mb-1 px-2 break-words leading-tight">
                                     {group.name}
                                 </h1>
                                 <div className="flex justify-center items-center text-slate-400">
@@ -497,7 +497,7 @@ export default function GroupPage() {
                                                         <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 truncate block">{p.name}</span>
                                                     </div>
                                                     <div
-                                                        className="inline-flex items-center gap-0.5 font-black text-[10px] ml-1"
+                                                        className="inline-flex items-center gap-0.5 font-black text-[10px]"
                                                         style={{ color: p.color }}
                                                     >
                                                         <span>{ep.stars}</span>

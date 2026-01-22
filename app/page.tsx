@@ -204,26 +204,19 @@ export default function Home() {
                     <div className="min-w-0">
                       <div className="text-lg font-black text-slate-900 truncate">{group.name}</div>
                       <div className="mt-1 inline-flex items-center gap-2">
-                        <span className="px-3 py-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-mono font-black text-slate-700 tracking-wider">
-                          {group.code}
-                        </span>
                         <button
                           onClick={(e) => handleCopyGroupCode(e, group.code)}
-                          className="h-9 px-3 rounded-xl bg-slate-100 border border-slate-200 font-black text-slate-700 active:scale-95 transition-transform inline-flex items-center gap-2"
-                          title="העתק קוד"
+                          className="px-3 py-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-mono font-black text-slate-700 tracking-wider active:scale-95 transition-transform inline-flex items-center gap-2 hover:bg-slate-200"
+                          title="לחץ להעתקה"
                         >
-                          {copiedGroupCode === group.code ? (
-                            <>
-                              <Check className="w-4 h-4 text-green-500" />
-                              <span className="text-xs">הועתק</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-4 h-4" />
-                              <span className="text-xs">העתק</span>
-                            </>
+                          {group.code}
+                          {copiedGroupCode === group.code && (
+                            <Check className="w-3 h-3 text-green-500" />
                           )}
                         </button>
+                        {copiedGroupCode === group.code && (
+                          <span className="text-xs font-black text-green-500">הועתק</span>
+                        )}
                       </div>
                     </div>
                     <div className="shrink-0 w-12 h-12 rounded-2xl bg-yellow-50 border border-yellow-100 flex items-center justify-center">

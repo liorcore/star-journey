@@ -4,9 +4,15 @@ import { useEffect, useMemo, useState, use } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import { BadgeCheck, ChevronRight, ChevronUp, ChevronDown, Crown, Minus, Pencil, Sparkles, Star, Timer, UserPlus, X } from 'lucide-react';
-import { ParticipantIcon } from '@/app/lib/participantIcons';
-import { PARTICIPANT_EMOJIS } from '@/app/lib/participantEmoji';
+import { BadgeCheck, ChevronRight, ChevronUp, ChevronDown, Crown, Minus, Pencil, Sparkles, Star, Timer, UserPlus, X, Users } from 'lucide-react';
+import { ParticipantIcon, PARTICIPANT_ICONS } from '@/app/lib/participantIcons';
+
+// Event-specific icons (using Lucide icons, not emojis)
+const EVENT_ICONS = [
+    'trophy', 'star', 'crown', 'award', 'sparkles', 'rocket', 'flame', 'gem',
+    'heart', 'sun', 'moon', 'compass', 'book', 'music', 'camera', 'plane',
+    'zap', 'shield', 'sword', 'wand', 'gamepad', 'palette'
+];
 
 interface Participant {
     id: string;
@@ -365,6 +371,20 @@ export default function EventPage() {
         const updatedParticipants = [...event.participants, { participantId, stars: 0 }];
         updateEventData({ ...event, participants: updatedParticipants });
         setShowExistingParticipants(false);
+    };
+
+    const handleAddExistingParticipantInEdit = (participantId: string) => {
+        if (!event) return;
+
+        // Check if participant is already in the event
+        const alreadyInEvent = event.participants.some(ep => ep.participantId === participantId);
+        if (alreadyInEvent) {
+            alert('המשתתף כבר באירוע!');
+            return;
+        }
+
+        const updatedParticipants = [...event.participants, { participantId, stars: 0 }];
+        updateEventData({ ...event, participants: updatedParticipants });
     };
 
     const openEditEvent = () => {
@@ -908,9 +928,8 @@ export default function EventPage() {
                             <motion.section
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 mb-4 relative overflow-hidden"
+                                className="bg-slate-50 rounded-2xl border border-slate-200 shadow-sm p-4 mb-4 relative overflow-hidden"
                             >
-                                <div className="pattern-overlay" />
                                 <div className="relative">
                                     {/* Event icon in top-right corner - clickable */}
                                     <button
@@ -978,6 +997,66 @@ export default function EventPage() {
                                 </div>
                             </motion.section>
 
+                            {/* Add Participants Section */}
+                            <motion.section
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="bg-slate-50 rounded-2xl border border-slate-200 shadow-sm p-4 mb-4"
+                            >
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-2">
+                                        <Users className="w-4 h-4 text-[#4D96FF]" />
+                                        <span className="control-label text-[11px]">משתתפים</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            router.push(`/group/${groupId}/add-participant?eventId=${eventId}`);
+                                        }}
+                                        className="h-10 px-4 rounded-2xl bg-slate-100 text-slate-700 font-black text-xs active:scale-95 transition-transform"
+                                    >
+                                        הוסף חדש
+                                    </button>
+                                </div>
+
+                                {!group || group.participants.filter(p => !event?.participants.some(ep => ep.participantId === p.id)).length === 0 ? (
+                                    <div className="mt-4 p-4 rounded-2xl border-2 border-dashed border-slate-200 text-center">
+                                        <Sparkles className="w-6 h-6 text-slate-300 mx-auto mb-2" />
+                                        <p className="text-sm font-black text-slate-400">כל המשתתפים כבר באירוע</p>
+                                    </div>
+                                ) : (
+                                    <div className="mt-4 grid grid-cols-1 gap-2">
+                                        {group.participants
+                                            .filter(p => !event?.participants.some(ep => ep.participantId === p.id))
+                                            .map((participant) => (
+                                                <button
+                                                    key={participant.id}
+                                                    type="button"
+                                                    onClick={() => handleAddExistingParticipantInEdit(participant.id)}
+                                                    className="w-full text-right bg-white rounded-2xl border-2 border-slate-200 px-3 py-2.5 flex items-center gap-3 active:scale-95 transition-transform hover:border-[#4D96FF]"
+                                                >
+                                                    <div
+                                                        className="w-11 h-11 rounded-2xl flex items-center justify-center text-2xl shrink-0 relative overflow-hidden"
+                                                        style={{ backgroundColor: `${participant.color}22`, border: `1px solid ${participant.color}` }}
+                                                    >
+                                                        <div className="pattern-overlay" />
+                                                        <ParticipantIcon icon={participant.icon} className="w-6 h-6" emojiSize="text-2xl" />
+                                                    </div>
+
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center justify-between gap-2">
+                                                            <p className="font-black text-slate-900 truncate text-sm">{participant.name}</p>
+                                                            <span className="text-slate-400 font-black text-xs">לחץ להוספה</span>
+                                                        </div>
+                                                        <p className="text-[11px] font-bold text-slate-500 mt-0.5">
+                                                            גיל {participant.age.toFixed(1)} {participant.gender === 'male' ? '👦' : '👧'}
+                                                        </p>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                    </div>
+                                )}
+                            </motion.section>
 
                             <div className="grid grid-cols-2 gap-3 pt-4">
                                 <motion.button
@@ -1035,20 +1114,23 @@ export default function EventPage() {
 
                             <div className="max-h-[55vh] overflow-y-auto">
                                 <div className="grid grid-cols-6 gap-2">
-                                    {PARTICIPANT_EMOJIS.map((ic: string) => (
-                                        <button
-                                            key={ic}
-                                            type="button"
-                                            onClick={() => {
-                                                setEditEventIcon(ic);
-                                                setShowEventIconPicker(false);
-                                            }}
-                                            className="h-12 rounded-2xl border border-slate-200 bg-white active:scale-95 transition-transform inline-flex items-center justify-center"
-                                            aria-label="בחר אייקון"
-                                        >
-                                            <ParticipantIcon icon={ic} className="w-8 h-8" emojiSize="text-2xl" />
-                                        </button>
-                                    ))}
+                                    {EVENT_ICONS.map((iconKey) => {
+                                        const iconData = PARTICIPANT_ICONS.find(icon => icon.key === iconKey);
+                                        return iconData ? (
+                                            <button
+                                                key={iconKey}
+                                                type="button"
+                                                onClick={() => {
+                                                    setEditEventIcon(iconKey);
+                                                    setShowEventIconPicker(false);
+                                                }}
+                                                className="h-12 rounded-2xl border border-slate-200 bg-white active:scale-95 transition-transform inline-flex items-center justify-center"
+                                                aria-label={`בחר אייקון ${iconData.label}`}
+                                            >
+                                                <iconData.Icon className="w-6 h-6 text-slate-700" />
+                                            </button>
+                                        ) : null;
+                                    })}
                                 </div>
                             </div>
                         </motion.div>
