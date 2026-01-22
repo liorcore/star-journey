@@ -438,7 +438,12 @@ export default function GroupPage() {
                                     onClick={() => router.push(`/group/${groupId}/event/${event.id}`)}
                                 >
                                     <div className="pattern-overlay" />
-                                    
+
+                                    {/* Event icon in top-right corner */}
+                                    <div className="absolute top-2 right-2 sm:top-4 sm:right-4">
+                                        <ParticipantIcon icon={event.icon} className="w-5 h-5 sm:w-6 sm:h-6 text-slate-600" />
+                                    </div>
+
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
@@ -468,17 +473,19 @@ export default function GroupPage() {
                                             return p ? (
                                                 <div
                                                     key={p.id}
-                                                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] sm:text-xs font-black text-slate-900 border"
-                                                    style={{
-                                                        backgroundColor: hexToRgba(p.color, 0.22),
-                                                        borderColor: hexToRgba(p.color, 0.35),
-                                                    }}
+                                                    className="inline-flex flex-col items-center gap-1 bg-slate-100 rounded-lg px-3 py-2 text-center min-w-[80px]"
                                                 >
-                                                    <span className="truncate max-w-[110px] sm:max-w-[160px]">{p.name}</span>
-                                                    <span className="inline-flex items-center gap-0.5 text-slate-800">
-                                                        <span className="font-black">{ep.stars}</span>
-                                                        <Star className="w-3 h-3" fill="currentColor" style={{ color: '#FFD93D' }} />
-                                                    </span>
+                                                    <div className="flex items-center gap-2">
+                                                        <ParticipantIcon icon={p.icon} className="w-4 h-4" />
+                                                        <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 truncate max-w-[60px]">{p.name}</span>
+                                                    </div>
+                                                    <div
+                                                        className="inline-flex items-center gap-0.5 font-black text-sm"
+                                                        style={{ color: p.color }}
+                                                    >
+                                                        <span>{ep.stars}</span>
+                                                        <Star className="w-3 h-3" fill="currentColor" />
+                                                    </div>
                                                 </div>
                                             ) : null;
                                         })}
