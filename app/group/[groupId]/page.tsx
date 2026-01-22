@@ -343,7 +343,6 @@ export default function GroupPage() {
                                             <h3 className="font-black text-slate-900 truncate text-xs sm:text-base">{participant.name}</h3>
                                             <span className="font-black text-xs sm:text-base text-[#FFD93D] flex items-center gap-0.5 shrink-0">
                                                 {participant.totalStars}
-                                                <Star className="w-2.5 h-2.5 sm:w-4 sm:h-4" fill="currentColor" />
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-1 text-[10px] sm:text-xs text-slate-600 mt-0.5">
