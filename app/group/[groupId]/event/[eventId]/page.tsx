@@ -580,14 +580,14 @@ export default function EventPage() {
                                         <div className="relative grid grid-cols-2 gap-3">
                                             <button
                                                 onClick={() => handleAddStar(participantId)}
-                                                className="btn-star h-12 rounded-lg flex items-center justify-center gap-2"
+                                                className="h-12 rounded-lg backdrop-blur-sm bg-white/20 border-2 border-white/30 active:scale-95 transition-transform flex items-center justify-center gap-2"
                                             >
                                                 <Star className="w-5 h-5" fill="currentColor" style={{ color: '#FFD93D' }} />
                                             </button>
                                             <button
                                                 onClick={() => handleRemoveStar(participantId)}
                                                 disabled={stars === 0}
-                                                className="h-12 rounded-lg border-2 border-slate-200 bg-white font-black text-slate-700 active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
+                                                className="h-12 rounded-lg backdrop-blur-sm bg-white/20 border-2 border-white/30 active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
                                             >
                                                 <span className="text-2xl">😢</span>
                                             </button>
