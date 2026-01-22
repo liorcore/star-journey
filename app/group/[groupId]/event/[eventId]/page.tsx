@@ -466,8 +466,9 @@ export default function EventPage() {
                         </div>
                         <h1 className="text-2xl font-black rainbow-text text-center break-words">{event.name}</h1>
 
-                        <div className="mt-4 flex items-center justify-center gap-2">
+                        <div className="mt-4 flex items-center justify-center gap-2 bg-white/50 backdrop-blur-sm rounded-lg px-3 py-2">
                             <span className="text-sm font-black text-slate-900">יעד: {event.starGoal}</span>
+                            <Star className="w-4 h-4" fill="currentColor" style={{ color: '#FFD93D' }} />
                             <BadgeCheck className="w-4 h-4 text-[#4D96FF]" />
                         </div>
 
