@@ -546,14 +546,6 @@ export default function EventPage() {
                                         </div>
                                     </div>
 
-                                    {/* Stars count in center */}
-                                    <div className="text-center mt-3">
-                                        <div className="text-4xl font-black text-slate-900 leading-none flex items-center justify-center gap-2">
-                                            {stars}
-                                        </div>
-                                        <div className="text-xs font-black text-slate-800/70 uppercase tracking-widest">כוכבים</div>
-                                    </div>
-
                                     {/* Progress */}
                                     <div className="mt-4">
                                         <div className="flex items-center justify-between">
@@ -577,13 +569,19 @@ export default function EventPage() {
                                     {/* Actions */}
                                     <div className="mt-4 relative">
                                         <div className="absolute inset-0 backdrop-blur-sm bg-black/10 rounded-lg"></div>
-                                        <div className="relative grid grid-cols-2 gap-3">
+                                        <div className="relative grid grid-cols-[1fr_auto_1fr] gap-3 items-center">
                                             <button
                                                 onClick={() => handleAddStar(participantId)}
                                                 className="h-12 rounded-lg backdrop-blur-sm bg-white/20 border-2 border-white/30 active:scale-95 transition-transform flex items-center justify-center gap-2"
                                             >
                                                 <Star className="w-5 h-5" fill="currentColor" style={{ color: '#FFD93D' }} />
                                             </button>
+                                            <div className="text-center">
+                                                <div className="text-4xl font-black text-slate-900 leading-none">
+                                                    {stars}
+                                                </div>
+                                                <div className="text-xs font-black text-slate-800/70 uppercase tracking-widest">כוכבים</div>
+                                            </div>
                                             <button
                                                 onClick={() => handleRemoveStar(participantId)}
                                                 disabled={stars === 0}
