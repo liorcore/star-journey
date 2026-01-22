@@ -104,9 +104,11 @@ export function normalizeParticipantIconKey(value: string): ParticipantIconKey {
 export function ParticipantIcon({
   icon,
   className,
+  emojiSize = 'text-4xl',
 }: {
   icon: string;
   className?: string;
+  emojiSize?: string;
 }) {
   // Wrap so Tailwind `w-*/h-*` works for both SVG and emoji
   if (isParticipantIconKey(icon)) {
@@ -121,7 +123,7 @@ export function ParticipantIcon({
   // Emoji / unicode icon
   return (
     <span className={className} aria-label="אייקון">
-      <span className="w-full h-full inline-flex items-center justify-center leading-none select-none text-4xl">
+      <span className={`w-full h-full inline-flex items-center justify-center leading-none select-none ${emojiSize}`}>
         {icon}
       </span>
     </span>

@@ -457,7 +457,7 @@ export default function EventPage() {
                     <div className="relative">
                         {/* Event icon in top-right corner */}
                         <div className="absolute top-2 right-2">
-                            <ParticipantIcon icon={event.icon} className="w-6 h-6 text-slate-600" />
+                            <ParticipantIcon icon={event.icon} className="w-6 h-6 text-slate-600" emojiSize="text-lg" />
                         </div>
                         <h1 className="text-2xl font-black rainbow-text text-center break-words">{event.name}</h1>
 
@@ -528,7 +528,7 @@ export default function EventPage() {
                                                 className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 bg-white/35 backdrop-blur-md"
                                                 style={{ border: `1px solid ${hexToRgba(participant.color, 0.35)}` }}
                                             >
-                                                <ParticipantIcon icon={participant.icon} className="w-14 h-14 text-slate-900" />
+                                                <ParticipantIcon icon={participant.icon} className="w-14 h-14 text-slate-900" emojiSize="text-4xl" />
                                             </div>
                                             <div className="min-w-0">
                                                 <div className="flex items-center gap-2">
@@ -853,7 +853,7 @@ export default function EventPage() {
                                                 className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
                                                 style={{ backgroundColor: `${participant.color}22`, border: `1px solid ${participant.color}` }}
                                             >
-                                                <ParticipantIcon icon={participant.icon} className="w-6 h-6 text-slate-900" />
+                                                <ParticipantIcon icon={participant.icon} className="w-6 h-6 text-slate-900" emojiSize="text-lg" />
                                             </div>
                                             <div className="text-right flex-1">
                                                 <div className="text-sm font-black text-slate-900">{participant.name}</div>
@@ -937,7 +937,7 @@ export default function EventPage() {
                                         className="mt-3 w-full h-14 rounded-2xl border-2 border-slate-200 bg-white flex items-center justify-center text-3xl active:scale-95 transition-transform"
                                         aria-label="בחירת אייקון"
                                     >
-                                        <ParticipantIcon icon={editEventIcon} className="w-9 h-9 text-3xl" />
+                                        <ParticipantIcon icon={editEventIcon} className="w-9 h-9" emojiSize="text-3xl" />
                                     </button>
                                 </section>
 
@@ -1013,7 +1013,7 @@ export default function EventPage() {
                                                         className="h-12 rounded-2xl border border-slate-200 bg-white active:scale-95 transition-transform inline-flex items-center justify-center"
                                                         aria-label="בחר אייקון"
                                                     >
-                                                        <ParticipantIcon icon={ic} className="w-8 h-8 text-2xl" />
+                                                        <ParticipantIcon icon={ic} className="w-8 h-8" emojiSize="text-2xl" />
                                                     </button>
                                                 ))}
                                             </div>

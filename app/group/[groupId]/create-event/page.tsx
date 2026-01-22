@@ -254,7 +254,7 @@ export default function CreateEventPage() {
                             className="mt-3 w-full h-14 rounded-2xl border-2 border-slate-200 bg-white flex items-center justify-center text-3xl active:scale-95 transition-transform"
                             aria-label="בחירת אייקון"
                         >
-                            <ParticipantIcon icon={eventIcon} className="w-9 h-9 text-3xl" />
+                            <ParticipantIcon icon={eventIcon} className="w-9 h-9" emojiSize="text-3xl" />
                         </button>
                     </section>
 
@@ -333,7 +333,7 @@ export default function CreateEventPage() {
                                                 style={{ backgroundColor: `${participant.color}22`, border: `1px solid ${participant.color}` }}
                                             >
                                                 <div className="pattern-overlay" />
-                                                <ParticipantIcon icon={participant.icon} className="w-6 h-6 text-2xl" />
+                                                <ParticipantIcon icon={participant.icon} className="w-6 h-6" emojiSize="text-2xl" />
                                             </div>
 
                                             <div className="flex-1 min-w-0">
@@ -435,7 +435,7 @@ export default function CreateEventPage() {
                                                 <span className="text-[11px] font-black text-slate-600 uppercase tracking-wider">אייקון</span>
                                             </div>
                                             <span className="w-7 h-7 inline-flex items-center justify-center">
-                                                <ParticipantIcon icon={newIcon} className="w-7 h-7 text-2xl" />
+                                                <ParticipantIcon icon={newIcon} className="w-7 h-7" emojiSize="text-2xl" />
                                             </span>
                                         </div>
                                     </button>
@@ -565,7 +565,7 @@ export default function CreateEventPage() {
                                                             className="h-12 rounded-2xl border border-slate-200 bg-white active:scale-95 transition-transform inline-flex items-center justify-center"
                                                             aria-label="בחר אייקון"
                                                         >
-                                                            <ParticipantIcon icon={ic} className="w-8 h-8 text-2xl" />
+                                                            <ParticipantIcon icon={ic} className="w-8 h-8" emojiSize="text-2xl" />
                                                         </button>
                                                     ))}
                                                 </div>

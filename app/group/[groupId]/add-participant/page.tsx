@@ -187,7 +187,7 @@ export default function AddParticipantPage() {
                             className="mt-3 w-full h-14 rounded-2xl border-2 border-slate-200 bg-white flex items-center justify-center text-3xl active:scale-95 transition-transform"
                             aria-label="בחירת אייקון"
                         >
-                            <ParticipantIcon icon={icon} className="w-9 h-9 text-3xl" />
+                            <ParticipantIcon icon={icon} className="w-9 h-9" emojiSize="text-3xl" />
                         </button>
                     </section>
 
@@ -295,7 +295,7 @@ export default function AddParticipantPage() {
                                     className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
                                     style={{ backgroundColor: `${color}22`, border: `1px solid ${color}` }}
                                 >
-                                    <ParticipantIcon icon={icon} className="w-8 h-8 text-3xl" />
+                                    <ParticipantIcon icon={icon} className="w-8 h-8" emojiSize="text-3xl" />
                                 </div>
                                 <div className="min-w-0">
                                     <p className="text-base font-black text-slate-900 truncate">{name || 'שם המשתתף'}</p>
@@ -373,7 +373,7 @@ export default function AddParticipantPage() {
                                             className="h-12 rounded-2xl border border-slate-200 bg-white active:scale-95 transition-transform inline-flex items-center justify-center"
                                             aria-label="בחר אייקון"
                                         >
-                                            <ParticipantIcon icon={ic} className="w-8 h-8 text-2xl" />
+                                            <ParticipantIcon icon={ic} className="w-8 h-8" emojiSize="text-2xl" />
                                         </button>
                                     ))}
                                 </div>
