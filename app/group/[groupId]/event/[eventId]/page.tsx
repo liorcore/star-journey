@@ -569,10 +569,10 @@ export default function EventPage() {
                                     {/* Actions */}
                                     <div className="mt-4 relative">
                                         <div className="absolute inset-0 backdrop-blur-sm bg-black/10 rounded-lg"></div>
-                                        <div className="relative grid grid-cols-[1fr_auto_1fr] gap-3 items-center">
+                                        <div className="relative grid grid-cols-[auto_auto_auto] gap-3 items-center justify-center">
                                             <button
                                                 onClick={() => handleAddStar(participantId)}
-                                                className="h-12 rounded-lg backdrop-blur-sm bg-white/20 border-2 border-white/30 active:scale-95 transition-transform flex items-center justify-center gap-2"
+                                                className="w-12 h-12 rounded-lg backdrop-blur-sm bg-white/20 border-2 border-white/30 active:scale-95 transition-transform flex items-center justify-center gap-2"
                                             >
                                                 <Star className="w-5 h-5" fill="currentColor" style={{ color: '#FFD93D' }} />
                                             </button>
@@ -585,7 +585,7 @@ export default function EventPage() {
                                             <button
                                                 onClick={() => handleRemoveStar(participantId)}
                                                 disabled={stars === 0}
-                                                className="h-12 rounded-lg backdrop-blur-sm bg-white/20 border-2 border-white/30 active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
+                                                className="w-12 h-12 rounded-lg backdrop-blur-sm bg-white/20 border-2 border-white/30 active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
                                             >
                                                 <span className="text-2xl">😢</span>
                                             </button>
