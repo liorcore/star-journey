@@ -29,9 +29,22 @@ interface Group {
 }
 
 export default function CreateEventPage() {
-    const params = use(useParams());
+    const params = useParams();
     const router = useRouter();
-    const groupId = params.groupId as string;
+    const [groupId, setGroupId] = useState<string>('');
+
+    useEffect(() => {
+        const getParams = async () => {
+            try {
+                const resolvedParams = await params;
+                setGroupId(resolvedParams.groupId as string);
+            } catch (error) {
+                console.error('Error resolving params:', error);
+                router.push('/');
+            }
+        };
+        getParams();
+    }, [params, router]);
 
     const [group, setGroup] = useState<Group | null>(null);
     const [eventName, setEventName] = useState('');

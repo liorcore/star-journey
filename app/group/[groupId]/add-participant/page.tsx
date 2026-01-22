@@ -29,9 +29,22 @@ interface Group {
 }
 
 export default function AddParticipantPage() {
-    const params = use(useParams());
+    const params = useParams();
     const router = useRouter();
-    const groupId = params.groupId as string;
+    const [groupId, setGroupId] = useState<string>('');
+
+    useEffect(() => {
+        const getParams = async () => {
+            try {
+                const resolvedParams = await params;
+                setGroupId(resolvedParams.groupId as string);
+            } catch (error) {
+                console.error('Error resolving params:', error);
+                router.push('/');
+            }
+        };
+        getParams();
+    }, [params, router]);
     const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
     const eventId = searchParams.get('eventId');
 
