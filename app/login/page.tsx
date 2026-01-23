@@ -87,7 +87,12 @@ export default function LoginPage() {
       await signInWithGoogle();
       router.push('/');
     } catch (err: any) {
-      setError(getErrorMessage(err.code));
+      // Check if error has a custom message (for account linking)
+      if (err.message && typeof err.message === 'string' && err.message.includes('קיים כבר חשבון')) {
+        setError(err.message);
+      } else {
+        setError(getErrorMessage(err.code));
+      }
     } finally {
       setLoading(false);
     }
@@ -126,6 +131,8 @@ export default function LoginPage() {
         return 'כתובת אימייל לא תקינה';
       case 'auth/too-many-requests':
         return 'יותר מדי ניסיונות. נסה שוב מאוחר יותר';
+      case 'auth/account-exists-with-different-credential':
+        return 'קיים כבר חשבון עם האימייל הזה. אנא התחבר קודם עם אימייל וסיסמה, ואז תוכל לקשר את חשבון Google.';
       default:
         return 'שגיאה בהתחברות. נסה שוב';
     }

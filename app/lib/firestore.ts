@@ -19,7 +19,7 @@ import { db } from './firebase';
 // Helper to check if Firebase is available
 const isFirebaseAvailable = () => {
   if (!db) {
-    console.warn('⚠️ Firebase not configured. Running in demo mode with localStorage.');
+    // Demo mode - using localStorage
     return false;
   }
   return true;
@@ -116,7 +116,7 @@ export async function getUserGroups(userId: string): Promise<Group[]> {
       ...doc.data(),
     })) as Group[];
   } catch (error) {
-    console.error('Error getting user groups:', error);
+    // Error getting user groups
     throw error;
   }
 }
@@ -152,7 +152,7 @@ export async function createGroup(userId: string, groupData: Omit<Group, 'id' | 
     const docRef = await addDoc(groupsRef, newGroup);
     return docRef.id;
   } catch (error) {
-    console.error('Error creating group:', error);
+    // Error creating group
     throw error;
   }
 }
@@ -195,7 +195,51 @@ export async function updateGroup(
       updatedAt: serverTimestamp(),
     });
   } catch (error) {
-    console.error('Error updating group:', error);
+    // Error updating group
+    throw error;
+  }
+}
+
+export async function deleteParticipantFromGroup(
+  userId: string,
+  groupId: string,
+  participantId: string
+): Promise<void> {
+  if (!isFirebaseAvailable()) {
+    // Demo mode - update in localStorage
+    const groups = await getUserGroups(userId);
+    const groupIndex = groups.findIndex(g => g.id === groupId);
+    if (groupIndex === -1) {
+      throw new Error('קבוצה לא נמצאה');
+    }
+    const group = groups[groupIndex];
+    const updatedParticipants = group.participants.filter(p => p.id !== participantId);
+    groups[groupIndex] = { ...group, participants: updatedParticipants };
+    localStorage.setItem('demo_groups', JSON.stringify(groups));
+    return;
+  }
+  
+  try {
+    const groupRef = doc(db!, 'users', userId, 'groups', groupId);
+    const groupDoc = await getDoc(groupRef);
+
+    if (!groupDoc.exists()) {
+      throw new Error('קבוצה לא נמצאה');
+    }
+
+    const group = groupDoc.data() as Group;
+    if (group.ownerId !== userId) {
+      throw new Error('אין הרשאה לערוך קבוצה זו');
+    }
+
+    const updatedParticipants = group.participants.filter(p => p.id !== participantId);
+    
+    await updateDoc(groupRef, {
+      participants: updatedParticipants,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    // Error deleting participant from group
     throw error;
   }
 }
@@ -216,7 +260,7 @@ export async function deleteGroup(userId: string, groupId: string): Promise<void
 
     await deleteDoc(groupRef);
   } catch (error) {
-    console.error('Error deleting group:', error);
+    // Error deleting group
     throw error;
   }
 }
@@ -244,7 +288,7 @@ export async function getGroupEvents(userId: string, groupId: string): Promise<E
       ...doc.data(),
     })) as Event[];
   } catch (error) {
-    console.error('Error getting group events:', error);
+    // Error getting group events
     throw error;
   }
 }
@@ -256,8 +300,6 @@ export async function createEvent(
 ): Promise<string> {
   if (!isFirebaseAvailable()) {
     // Demo mode - save to localStorage
-    console.log('Creating event in demo mode:', { userId, groupId, eventData });
-    
     validateString(eventData.name, 100, 'שם אירוע');
     validateNumber(eventData.starGoal, 0, 1000, 'יעד כוכבים');
     validateNumber(eventData.endDate, Date.now() - 24 * 60 * 60 * 1000, Date.now() + 365 * 24 * 60 * 60 * 1000, 'תאריך סיום');
@@ -270,18 +312,10 @@ export async function createEvent(
       participants: [],
     };
     
-    console.log('New event object:', newEvent);
-    
     const events = await getGroupEvents(userId, groupId);
-    console.log('Existing events before push:', events.length);
-    
     events.push(newEvent);
     const storageKey = `demo_events_${groupId}`;
     localStorage.setItem(storageKey, JSON.stringify(events));
-    
-    // Verify it was saved
-    const verify = localStorage.getItem(storageKey);
-    console.log('Event saved to localStorage:', { storageKey, eventsCount: events.length, verifyExists: !!verify });
     
     return newEvent.id;
   }
@@ -302,7 +336,7 @@ export async function createEvent(
     const docRef = await addDoc(eventsRef, newEvent);
     return docRef.id;
   } catch (error) {
-    console.error('Error creating event:', error);
+    // Error creating event
     throw error;
   }
 }
@@ -337,7 +371,7 @@ export async function updateEvent(
       updatedAt: serverTimestamp(),
     });
   } catch (error) {
-    console.error('Error updating event:', error);
+    // Error updating event
     throw error;
   }
 }
@@ -358,7 +392,7 @@ export async function deleteEvent(userId: string, groupId: string, eventId: stri
 
     await deleteDoc(eventRef);
   } catch (error) {
-    console.error('Error deleting event:', error);
+    // Error deleting event
     throw error;
   }
 }
@@ -451,7 +485,7 @@ export async function addParticipantToEvent(
       });
     });
   } catch (error) {
-    console.error('Error adding participant to event:', error);
+    // Error adding participant to event
     throw error;
   }
 }
@@ -499,7 +533,7 @@ export async function updateParticipantStars(
       });
     });
   } catch (error) {
-    console.error('Error updating participant stars:', error);
+    // Error updating participant stars
     throw error;
   }
 }
@@ -559,7 +593,7 @@ export async function updateParticipant(
       });
     });
   } catch (error) {
-    console.error('Error updating participant:', error);
+    // Error updating participant
     throw error;
   }
 }
@@ -606,7 +640,7 @@ export async function deleteParticipant(
       });
     });
   } catch (error) {
-    console.error('Error deleting participant:', error);
+    // Error deleting participant
     throw error;
   }
 }
@@ -677,7 +711,7 @@ export async function getUserEvents(userId: string): Promise<Event[]> {
 
     return allEvents;
   } catch (error) {
-    console.error('Error getting user events:', error);
+    // Error getting user events
     throw error;
   }
 }
@@ -726,7 +760,7 @@ export async function inviteUserToEvent(
       });
     });
   } catch (error) {
-    console.error('Error inviting user to event:', error);
+    // Error inviting user to event
     throw error;
   }
 }

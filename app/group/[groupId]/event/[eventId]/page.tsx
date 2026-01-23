@@ -131,7 +131,7 @@ export default function EventPage() {
                 setGroupId(resolvedParams.groupId as string);
                 setEventId(resolvedParams.eventId as string);
             } catch (error) {
-                console.error('Error resolving params:', error);
+                // Error resolving params
                 router.push('/');
             }
         };
@@ -258,7 +258,7 @@ export default function EventPage() {
             await updateParticipantStars(user.uid, groupId, eventId, participantId, currentStars + increment);
             // Real-time listener will update automatically
         } catch (error) {
-            console.error('Error adding star:', error);
+            // Error adding star
             alert('שגיאה בהוספת כוכב');
             return;
         }
@@ -342,7 +342,7 @@ export default function EventPage() {
             setShowSadEmoji(true);
             setTimeout(() => setShowSadEmoji(false), FEEDBACK_MS.sad);
         } catch (error) {
-            console.error('Error removing star:', error);
+            // Error removing star
             alert('שגיאה בהסרת כוכב');
         }
     };
@@ -364,7 +364,7 @@ export default function EventPage() {
             await addParticipantToEvent(user.uid, groupId, eventId, participant);
             setShowExistingParticipants(false);
         } catch (error) {
-            console.error('Error adding participant:', error);
+            // Error adding participant
             alert('שגיאה בהוספת משתתף');
         }
     };
@@ -385,7 +385,7 @@ export default function EventPage() {
         try {
             await addParticipantToEvent(user.uid, groupId, eventId, participant);
         } catch (error) {
-            console.error('Error adding participant:', error);
+            // Error adding participant
             alert('שגיאה בהוספת משתתף');
         }
     };
@@ -429,7 +429,7 @@ export default function EventPage() {
             });
             setShowEditEvent(false);
         } catch (error) {
-            console.error('Error saving event edit:', error);
+            // Error saving event edit
             alert('שגיאה בשמירת שינויים');
         }
     };
@@ -464,8 +464,9 @@ export default function EventPage() {
                     </button>
 
                     <div className="min-w-0 text-center">
-                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">אירוע</div>
-                        <div className="text-sm font-black text-slate-900 truncate max-w-[220px]">{event.name}</div>
+                        <div className="text-sm font-black text-slate-900 truncate max-w-[220px]">
+                            {group?.name || 'טוען...'}
+                        </div>
                     </div>
 
                     <motion.button
@@ -502,12 +503,17 @@ export default function EventPage() {
                         <div className="absolute top-2 right-2">
                             <ParticipantIcon icon={event.icon} className="w-6 h-6 text-slate-600" emojiSize="text-lg" />
                         </div>
-                        <h1 className="text-2xl font-black rainbow-text text-center break-words">{event.name}</h1>
+                        <div className="flex flex-col items-center gap-2">
+                            <span className="px-3 py-1 rounded-full bg-[#4D96FF]/10 text-[#4D96FF] text-xs font-black uppercase tracking-wider border border-[#4D96FF]/20">
+                                אירוע
+                            </span>
+                            <h1 className="text-2xl font-black rainbow-text text-center break-words">{event.name}</h1>
+                        </div>
 
-                        <div className="mt-4 flex items-center justify-center gap-2 bg-white/70 backdrop-blur-md rounded-lg px-3 py-2 border border-white/50">
-                            <span className="text-sm font-black text-slate-900">יעד: {event.starGoal}</span>
-                            <Star className="w-4 h-4" fill="currentColor" style={{ color: '#FFD93D' }} />
-                            <BadgeCheck className="w-4 h-4 text-[#4D96FF]" />
+                        <div className="mt-4 flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-50 to-blue-50 rounded-xl px-4 py-3 border-2 border-yellow-200/50 shadow-sm">
+                            <span className="text-base font-black text-slate-900">יעד: {event.starGoal}</span>
+                            <Star className="w-5 h-5" fill="currentColor" style={{ color: '#FFD93D' }} />
+                            <BadgeCheck className="w-5 h-5 text-[#4D96FF]" />
                         </div>
 
                         <div className="mt-4 flex items-center justify-center gap-2 text-slate-500">

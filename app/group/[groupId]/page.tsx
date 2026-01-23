@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuth } from '@/app/contexts/AuthContext';
-import { subscribeToGroup, updateGroup as updateGroupFirestore, deleteEvent, getGroupEvents, Group as FirestoreGroup, Event as FirestoreEvent } from '@/app/lib/firestore';
+import { subscribeToGroup, updateGroup as updateGroupFirestore, deleteEvent, getGroupEvents, deleteParticipantFromGroup, Group as FirestoreGroup, Event as FirestoreEvent } from '@/app/lib/firestore';
 import { db } from '@/app/lib/firebase';
 import { collection, onSnapshot } from 'firebase/firestore';
 import AuthGuard from '@/app/components/AuthGuard';
@@ -87,7 +87,7 @@ export default function GroupPage() {
                 const resolvedParams = await params;
                 setGroupId(resolvedParams.groupId as string);
             } catch (error) {
-                console.error('Error resolving params:', error);
+                // Error resolving params
                 router.push('/');
             }
         };
@@ -98,6 +98,8 @@ export default function GroupPage() {
     const [showEditName, setShowEditName] = useState(false);
     const [newGroupName, setNewGroupName] = useState('');
     const [copiedCode, setCopiedCode] = useState(false);
+    const [showDeleteParticipantDialog, setShowDeleteParticipantDialog] = useState(false);
+    const [participantToDelete, setParticipantToDelete] = useState<Participant | null>(null);
 
     const [showEditParticipant, setShowEditParticipant] = useState(false);
     const [editingParticipantId, setEditingParticipantId] = useState<string | null>(null);
@@ -155,7 +157,7 @@ export default function GroupPage() {
                     });
                 }
             } catch (error) {
-                console.error('Error loading events:', error);
+                // Error loading events
             }
         };
 
@@ -202,7 +204,7 @@ export default function GroupPage() {
             await updateGroupFirestore(user.uid, groupId, updatedGroup);
             // The real-time listener will update the state automatically
         } catch (error) {
-            console.error('Error updating group:', error);
+            // Error updating group
             alert('שגיאה בעדכון קבוצה');
         }
     };
@@ -249,6 +251,25 @@ export default function GroupPage() {
         closeParticipantSheets();
     };
 
+    const handleDeleteParticipant = (participant: Participant) => {
+        setParticipantToDelete(participant);
+        setShowDeleteParticipantDialog(true);
+    };
+
+    const confirmDeleteParticipant = async () => {
+        if (!user || !group || !participantToDelete) return;
+
+        try {
+            await deleteParticipantFromGroup(user.uid, groupId, participantToDelete.id);
+            setShowDeleteParticipantDialog(false);
+            setParticipantToDelete(null);
+            // The real-time listener will update the state automatically
+        } catch (error) {
+            // Error deleting participant
+            alert('שגיאה במחיקת משתתף');
+        }
+    };
+
     const handleUpdateName = () => {
         if (group && newGroupName.trim()) {
             updateGroup({ ...group, name: newGroupName });
@@ -280,8 +301,8 @@ export default function GroupPage() {
             await deleteEvent(user.uid, groupId, eventId);
             // Real-time listener will update automatically
         } catch (error: any) {
-            console.error('Error deleting event:', error);
-            alert(error.message || 'שגיאה במחיקת אירוע');
+            // Error deleting event
+            alert('שגיאה במחיקת אירוע');
         }
     };
 
@@ -329,13 +350,19 @@ export default function GroupPage() {
                         <Home size={18} className="sm:w-6 sm:h-6" />
                     </motion.button>
                     
+                    <div className="flex-1 text-center px-4">
+                        <div className="text-[10px] sm:text-xs font-black text-slate-500 uppercase tracking-widest">
+                            קבוצה
+                        </div>
+                    </div>
+                    
                     <motion.button
                         whileTap={{ scale: 0.95 }}
                         onClick={handleCopyCode}
                         className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-slate-100 text-slate-700 font-black text-[10px] sm:text-sm"
                     >
                         {copiedCode ? <Check size={12} className="text-green-500 sm:w-4 sm:h-4" /> : <Copy size={12} className="sm:w-4 sm:h-4" />}
-                        <span className="font-mono">{group.code}</span>
+                        <span className="font-mono">{group?.code || ''}</span>
                     </motion.button>
                 </div>
             </nav>
@@ -485,11 +512,20 @@ export default function GroupPage() {
                                         <motion.button
                                             whileTap={{ scale: 0.9 }}
                                             onClick={() => openEditParticipant(participant)}
-                                            className="h-8 w-8 sm:h-9 sm:w-9 inline-flex items-center justify-center rounded-lg bg-slate-100 text-slate-600"
+                                            className="h-8 w-8 sm:h-9 sm:w-9 inline-flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200"
                                             title="ערוך משתתף"
                                             aria-label={`ערוך ${participant.name}`}
                                         >
                                             <Pencil className="w-4 h-4" />
+                                        </motion.button>
+                                        <motion.button
+                                            whileTap={{ scale: 0.9 }}
+                                            onClick={() => handleDeleteParticipant(participant)}
+                                            className="h-8 w-8 sm:h-9 sm:w-9 inline-flex items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100"
+                                            title="מחק משתתף"
+                                            aria-label={`מחק ${participant.name}`}
+                                        >
+                                            <Trash2 className="w-4 h-4" />
                                         </motion.button>
                                     </div>
                                 </div>
@@ -854,6 +890,68 @@ export default function GroupPage() {
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Delete Participant Dialog */}
+                <AnimatePresence>
+                    {showDeleteParticipantDialog && participantToDelete && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4"
+                            onClick={() => {
+                                setShowDeleteParticipantDialog(false);
+                                setParticipantToDelete(null);
+                            }}
+                        >
+                            <motion.div
+                                initial={{ y: 100, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                exit={{ y: 100, opacity: 0 }}
+                                onClick={(e) => e.stopPropagation()}
+                                className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl"
+                            >
+                                <div className="text-center mb-6">
+                                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+                                        <Trash2 className="w-8 h-8 text-red-600" />
+                                    </div>
+                                    <h3 className="text-2xl font-black text-slate-900 mb-2">
+                                        מחיקת משתתף
+                                    </h3>
+                                    <p className="text-slate-600 mb-4">
+                                        האם אתה בטוח שברצונך למחוק את <strong>{participantToDelete.name}</strong>?
+                                    </p>
+                                    <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-4 mb-4">
+                                        <p className="text-sm font-black text-red-800 mb-2">⚠️ אזהרה:</p>
+                                        <ul className="text-sm text-red-700 text-right space-y-1">
+                                            <li>• כל הנתונים של המשתתף יאבדו</li>
+                                            <li>• כל הכוכבים וההישגים ימחקו</li>
+                                            <li>• המשתתף יוסר מכל האירועים</li>
+                                            <li>• הפעולה לא ניתנת לביטול</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                        onClick={() => {
+                                            setShowDeleteParticipantDialog(false);
+                                            setParticipantToDelete(null);
+                                        }}
+                                        className="h-12 rounded-2xl border-2 border-slate-200 bg-white font-black text-slate-700 active:scale-95 transition-transform"
+                                    >
+                                        ביטול
+                                    </button>
+                                    <button
+                                        onClick={confirmDeleteParticipant}
+                                        className="h-12 rounded-2xl bg-red-600 text-white font-black active:scale-95 transition-transform hover:bg-red-700"
+                                    >
+                                        מחק
+                                    </button>
+                                </div>
                             </motion.div>
                         </motion.div>
                     )}

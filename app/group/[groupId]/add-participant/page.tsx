@@ -51,7 +51,7 @@ export default function AddParticipantPage() {
                 const resolvedParams = await params;
                 setGroupId(resolvedParams.groupId as string);
             } catch (error) {
-                console.error('Error resolving params:', error);
+                // Error resolving params
                 router.push('/');
             }
         };
@@ -124,7 +124,7 @@ export default function AddParticipantPage() {
                 router.push(`/group/${groupId}`);
             }
         } catch (error) {
-            console.error('Error saving participant:', error);
+            // Error saving participant
             alert('שגיאה בשמירת משתתף');
         }
     };

@@ -32,10 +32,10 @@ if (isFirebaseConfigured) {
     auth = getAuth(app);
     db = getFirestore(app);
   } catch (error) {
-    console.warn('Firebase initialization failed:', error);
+    // Firebase initialization failed
   }
 } else {
-  console.warn('⚠️ Firebase not configured. Running in demo mode. Create .env.local with Firebase credentials to enable full functionality.');
+  // Firebase not configured - running in demo mode
 }
 
 export { auth, db };

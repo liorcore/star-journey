@@ -63,7 +63,7 @@ export default function CreateEventPage() {
                     setGroupId(resolvedParams.groupId as string);
                 }
             }).catch((error) => {
-                console.error('Error resolving params:', error);
+                // Error resolving params
                 router.push('/');
             });
         }
@@ -149,7 +149,7 @@ export default function CreateEventPage() {
             setNewGender('male');
             closePickers();
         } catch (error) {
-            console.error('Error adding participant:', error);
+            // Error adding participant
             alert('שגיאה בהוספת משתתף');
         }
     };
@@ -178,7 +178,7 @@ export default function CreateEventPage() {
         
         if (!currentGroupId) {
             alert('שגיאה: לא נמצא מזהה קבוצה');
-            console.error('groupId is missing:', { groupId, params });
+            // Group ID is missing
             return;
         }
 
@@ -191,16 +191,6 @@ export default function CreateEventPage() {
                 return;
             }
 
-            console.log('Creating event with:', {
-                userId: user.uid,
-                groupId: currentGroupId,
-                eventName: eventName.trim(),
-                icon: eventIcon,
-                endDate: endDateTimestamp,
-                starGoal,
-                participantsCount: selectedParticipants.size
-            });
-
             const eventId = await createEvent(user.uid, currentGroupId, {
                 name: eventName.trim(),
                 icon: eventIcon,
@@ -208,31 +198,17 @@ export default function CreateEventPage() {
                 starGoal,
             });
 
-            console.log('Event created with ID:', eventId);
-
             // Add participants to event
             for (const participantId of selectedParticipants) {
                 const participant = group.participants.find((p) => p.id === participantId);
                 if (participant) {
-                    console.log('Adding participant to event:', participant.name);
                     await addParticipantToEvent(user.uid, currentGroupId, eventId, participant);
                 }
             }
-
-            console.log('Event creation completed, navigating to group page');
             router.push(`/group/${currentGroupId}`);
         } catch (error) {
-            console.error('Error creating event:', error);
-            const errorMessage = error instanceof Error ? error.message : 'שגיאה לא ידועה';
-            console.error('Error details:', {
-                error,
-                userId: user?.uid,
-                groupId: currentGroupId,
-                eventName: eventName.trim(),
-                endDate,
-                starGoal
-            });
-            alert(`שגיאה ביצירת אירוע: ${errorMessage}`);
+            // Error creating event
+            alert('שגיאה ביצירת אירוע');
         }
     };
 

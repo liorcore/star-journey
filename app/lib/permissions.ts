@@ -29,7 +29,7 @@ export async function getUserRole(
 
     return 'none';
   } catch (error) {
-    console.error('Error getting user role:', error);
+    // Error getting user role
     return 'none';
   }
 }
@@ -72,7 +72,7 @@ export async function canEditParticipant(
 
     return false;
   } catch (error) {
-    console.error('Error checking participant edit permission:', error);
+    // Error checking participant edit permission
     return false;
   }
 }
@@ -106,7 +106,7 @@ export async function canManageStars(
 
     return false;
   } catch (error) {
-    console.error('Error checking stars management permission:', error);
+    // Error checking stars management permission
     return false;
   }
 }

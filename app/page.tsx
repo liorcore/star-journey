@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, Copy, Plus, Rocket, Star, Users, X, LogOut } from 'lucide-react';
+import { Check, Copy, Plus, Rocket, Star, Users, X, LogOut, Trash2 } from 'lucide-react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import AuthGuard from '@/app/components/AuthGuard';
-import { getUserGroups, createGroup, Group } from '@/app/lib/firestore';
+import { getUserGroups, createGroup, deleteGroup, Group } from '@/app/lib/firestore';
 
 interface RecentGroup {
   id: string;
@@ -26,6 +26,8 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [copiedGroupCode, setCopiedGroupCode] = useState<string | null>(null);
+  const [showDeleteGroupDialog, setShowDeleteGroupDialog] = useState(false);
+  const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -41,7 +43,7 @@ export default function Home() {
       setGroups(userGroups);
     } catch (err: any) {
       setError('שגיאה בטעינת קבוצות');
-      console.error(err);
+      // Error loading groups
     } finally {
       setLoading(false);
     }
@@ -83,7 +85,7 @@ export default function Home() {
       closeModals();
       router.push(`/group/${groupId}`);
     } catch (err: any) {
-      setError(err.message || 'שגיאה ביצירת קבוצה');
+      setError('שגיאה ביצירת קבוצה');
       setLoading(false);
     }
   };
@@ -117,7 +119,7 @@ export default function Home() {
       closeModals();
       router.push(`/group/${group.id}`);
     } catch (err: any) {
-      setError(err.message || 'שגיאה בחיפוש קבוצה');
+      setError('שגיאה בחיפוש קבוצה');
       setLoading(false);
     }
   };
@@ -127,7 +129,7 @@ export default function Home() {
       await logout();
       router.push('/login');
     } catch (err) {
-      console.error('Error logging out:', err);
+      // Error logging out
     }
   };
 
@@ -140,6 +142,26 @@ export default function Home() {
     navigator.clipboard.writeText(code);
     setCopiedGroupCode(code);
     setTimeout(() => setCopiedGroupCode(null), 2000);
+  };
+
+  const handleDeleteGroup = (e: React.MouseEvent, group: Group) => {
+    e.stopPropagation();
+    setGroupToDelete(group);
+    setShowDeleteGroupDialog(true);
+  };
+
+  const confirmDeleteGroup = async () => {
+    if (!user || !groupToDelete) return;
+
+    try {
+      await deleteGroup(user.uid, groupToDelete.id);
+      await loadGroups();
+      setShowDeleteGroupDialog(false);
+      setGroupToDelete(null);
+    } catch (error: any) {
+      // Error deleting group
+      alert('שגיאה במחיקת קבוצה');
+    }
   };
 
   const closeModals = () => {
@@ -157,7 +179,11 @@ export default function Home() {
         <main className="max-w-md mx-auto px-3 pt-10 sm:pt-16">
           {/* Header with logout */}
           <div className="flex items-center justify-between mb-6">
-            <div></div>
+            {user && (
+              <div className="text-sm font-black text-slate-900">
+                שלום <span className="text-[#4D96FF]">{user.displayName || user.email?.split('@')[0] || 'משתמש'}</span>
+              </div>
+            )}
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-black text-slate-700 active:scale-95 transition-transform"
@@ -184,11 +210,86 @@ export default function Home() {
             </p>
           </motion.section>
 
-        {/* Actions */}
+        {/* My Groups */}
         <motion.section
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
+          className="mt-8"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest">
+              הקבוצות שלי
+            </h2>
+            {groups.length > 0 && (
+              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                לחץ כדי להיכנס
+              </div>
+            )}
+          </div>
+
+          {groups.length > 0 ? (
+            <div className="space-y-3">
+              {groups.map((group) => (
+                <div
+                  key={group.id}
+                  className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4"
+                >
+                  <div 
+                    onClick={() => handleRecentGroupClick(group.id)}
+                    className="cursor-pointer active:scale-[0.99] transition-transform"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-lg font-black text-slate-900 truncate">{group.name}</div>
+                        <div className="mt-1 inline-flex items-center gap-2">
+                          <button
+                            onClick={(e) => handleCopyGroupCode(e, group.code)}
+                            className="px-3 py-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-mono font-black text-slate-700 tracking-wider active:scale-95 transition-transform inline-flex items-center gap-2 hover:bg-slate-200"
+                            title="לחץ להעתקה"
+                          >
+                            {group.code}
+                            {copiedGroupCode === group.code && (
+                              <Check className="w-3 h-3 text-green-500" />
+                            )}
+                          </button>
+                          {copiedGroupCode === group.code && (
+                            <span className="text-xs font-black text-green-500">הועתק</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="shrink-0 w-12 h-12 rounded-2xl bg-yellow-50 border border-yellow-100 flex items-center justify-center">
+                        <Star className="w-6 h-6" fill="currentColor" style={{ color: '#FFD93D' }} />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-slate-100 flex justify-end">
+                    <motion.button
+                      whileTap={{ scale: 0.9 }}
+                      onClick={(e) => handleDeleteGroup(e, group)}
+                      className="h-8 w-8 rounded-xl bg-white border border-slate-200 text-red-600 hover:bg-slate-50 inline-flex items-center justify-center active:scale-95 transition-transform"
+                      title="מחק קבוצה"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </motion.button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border-2 border-dashed border-slate-200 p-8 text-center">
+              <Star className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+              <p className="text-sm font-black text-slate-400 mb-1">עוד לא יצרת קבוצות</p>
+              <p className="text-xs text-slate-400">צור קבוצה חדשה או התחבר לקבוצה קיימת</p>
+            </div>
+          )}
+        </motion.section>
+
+        {/* Actions */}
+        <motion.section
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
           className="mt-8 grid grid-cols-1 gap-3"
         >
           <button
@@ -213,59 +314,6 @@ export default function Home() {
             התחבר לקבוצה קיימת
           </button>
         </motion.section>
-
-        {/* My Groups */}
-        {groups.length > 0 && (
-          <motion.section
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="mt-10"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest">
-                הקבוצות שלי
-              </h2>
-              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                לחץ כדי להיכנס
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {groups.map((group) => (
-                <div
-                  key={group.id}
-                  onClick={() => handleRecentGroupClick(group.id)}
-                  className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 cursor-pointer active:scale-[0.99] transition-transform"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="text-lg font-black text-slate-900 truncate">{group.name}</div>
-                      <div className="mt-1 inline-flex items-center gap-2">
-                        <button
-                          onClick={(e) => handleCopyGroupCode(e, group.code)}
-                          className="px-3 py-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-mono font-black text-slate-700 tracking-wider active:scale-95 transition-transform inline-flex items-center gap-2 hover:bg-slate-200"
-                          title="לחץ להעתקה"
-                        >
-                          {group.code}
-                          {copiedGroupCode === group.code && (
-                            <Check className="w-3 h-3 text-green-500" />
-                          )}
-                        </button>
-                        {copiedGroupCode === group.code && (
-                          <span className="text-xs font-black text-green-500">הועתק</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="shrink-0 w-12 h-12 rounded-2xl bg-yellow-50 border border-yellow-100 flex items-center justify-center">
-                      <Star className="w-6 h-6" fill="currentColor" style={{ color: '#FFD93D' }} />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.section>
-        )}
       </main>
 
       {/* Create Group Sheet */}
@@ -413,6 +461,68 @@ export default function Home() {
                     ביטול
                   </button>
                 </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Group Dialog */}
+      <AnimatePresence>
+        {showDeleteGroupDialog && groupToDelete && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4"
+            onClick={() => {
+              setShowDeleteGroupDialog(false);
+              setGroupToDelete(null);
+            }}
+          >
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl"
+            >
+              <div className="text-center mb-6">
+                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
+                  <Trash2 className="w-6 h-6 text-slate-600" />
+                </div>
+                <h3 className="text-xl font-black text-slate-900 mb-2">
+                  מחיקת קבוצה
+                </h3>
+                <p className="text-slate-600 mb-4">
+                  האם אתה בטוח שברצונך למחוק את הקבוצה <strong>{groupToDelete.name}</strong>?
+                </p>
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-4 text-right">
+                  <p className="text-sm font-black text-slate-700 mb-2">משמעות המחיקה:</p>
+                  <ul className="text-sm text-slate-600 space-y-1">
+                    <li>• כל הנתונים של הקבוצה יאבדו</li>
+                    <li>• כל האירועים והמשתתפים ימחקו</li>
+                    <li>• כל הכוכבים וההישגים יאבדו</li>
+                    <li>• הפעולה לא ניתנת לביטול</li>
+                  </ul>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteGroupDialog(false);
+                    setGroupToDelete(null);
+                  }}
+                  className="h-12 rounded-2xl border-2 border-slate-200 bg-white font-black text-slate-700 active:scale-95 transition-transform"
+                >
+                  ביטול
+                </button>
+                <button
+                  onClick={confirmDeleteGroup}
+                  className="h-12 rounded-2xl bg-red-600 text-white font-black active:scale-95 transition-transform hover:bg-red-700"
+                >
+                  מחק
+                </button>
               </div>
             </motion.div>
           </motion.div>

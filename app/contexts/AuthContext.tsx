@@ -11,6 +11,8 @@ import {
   onAuthStateChanged,
   sendPasswordResetEmail,
   UserCredential,
+  fetchSignInMethodsForEmail,
+  linkWithPopup,
 } from 'firebase/auth';
 import { auth } from '@/app/lib/firebase';
 
@@ -20,6 +22,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<UserCredential>;
   signUp: (email: string, password: string) => Promise<UserCredential>;
   signInWithGoogle: () => Promise<UserCredential>;
+  linkGoogleAccount: () => Promise<UserCredential>;
   resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -92,13 +95,67 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(mockUser as User);
       return { user: mockUser as User } as UserCredential;
     }
+    
     const provider = new GoogleAuthProvider();
-    return signInWithPopup(auth, provider);
+    
+    try {
+      // Try to sign in with Google
+      return await signInWithPopup(auth, provider);
+    } catch (error: any) {
+      // If account exists with different credential, try to link accounts
+      if (error.code === 'auth/account-exists-with-different-credential') {
+        const email = error.customData?.email || null;
+        
+        if (!email) {
+          throw error;
+        }
+        
+        // Check if user is already signed in
+        if (auth.currentUser && auth.currentUser.email === email) {
+          // User is signed in with the same email - link the Google credential
+          try {
+            return await linkWithPopup(auth.currentUser, provider);
+          } catch (linkError: any) {
+            // If linking fails, throw original error
+            throw error;
+          }
+        }
+        
+        // User is not signed in - check what sign-in methods are available
+        const signInMethods = await fetchSignInMethodsForEmail(auth, email);
+        
+        if (signInMethods.includes('password')) {
+          // Account exists with email/password - user needs to sign in first
+          throw new Error(
+            'קיים כבר חשבון עם האימייל הזה. אנא התחבר קודם עם אימייל וסיסמה, ואז תוכל לקשר את חשבון Google.'
+          );
+        }
+        
+        // Re-throw original error if we can't handle it
+        throw error;
+      }
+      
+      // Re-throw other errors
+      throw error;
+    }
+  };
+
+  const linkGoogleAccount = async () => {
+    if (!auth) {
+      throw new Error('Firebase לא מוגדר');
+    }
+    
+    if (!auth.currentUser) {
+      throw new Error('עליך להתחבר קודם כדי לקשר חשבון Google');
+    }
+    
+    const provider = new GoogleAuthProvider();
+    return linkWithPopup(auth.currentUser, provider);
   };
 
   const resetPassword = async (email: string) => {
     if (!auth) {
-      console.warn('Demo mode: Password reset not available');
+      // Demo mode: Password reset not available
       return;
     }
     return sendPasswordResetEmail(auth, email);
@@ -120,6 +177,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn,
     signUp,
     signInWithGoogle,
+    linkGoogleAccount,
     resetPassword,
     logout,
   };
