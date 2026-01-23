@@ -246,7 +246,7 @@ export async function deleteParticipantFromGroup(
 
 export async function deleteGroup(userId: string, groupId: string): Promise<void> {
   try {
-    const groupRef = doc(db, 'users', userId, 'groups', groupId);
+    const groupRef = doc(db!, 'users', userId, 'groups', groupId);
     const groupDoc = await getDoc(groupRef);
 
     if (!groupDoc.exists()) {
@@ -348,7 +348,7 @@ export async function updateEvent(
   eventData: Partial<Omit<Event, 'id' | 'ownerId' | 'guests' | 'participants'>>
 ): Promise<void> {
   try {
-    const eventRef = doc(db, 'users', userId, 'groups', groupId, 'events', eventId);
+    const eventRef = doc(db!, 'users', userId, 'groups', groupId, 'events', eventId);
     const eventDoc = await getDoc(eventRef);
 
     if (!eventDoc.exists()) {
@@ -378,7 +378,7 @@ export async function updateEvent(
 
 export async function deleteEvent(userId: string, groupId: string, eventId: string): Promise<void> {
   try {
-    const eventRef = doc(db, 'users', userId, 'groups', groupId, 'events', eventId);
+    const eventRef = doc(db!, 'users', userId, 'groups', groupId, 'events', eventId);
     const eventDoc = await getDoc(eventRef);
 
     if (!eventDoc.exists()) {
@@ -500,9 +500,9 @@ export async function updateParticipantStars(
   try {
     validateNumber(stars, 0, 1000, 'כוכבים');
 
-    const eventRef = doc(db, 'users', userId, 'groups', groupId, 'events', eventId);
+    const eventRef = doc(db!, 'users', userId, 'groups', groupId, 'events', eventId);
     
-    await runTransaction(db, async (transaction) => {
+    await runTransaction(db!, async (transaction) => {
       const eventDoc = await transaction.get(eventRef);
       if (!eventDoc.exists()) {
         throw new Error('אירוע לא נמצא');
@@ -550,9 +550,9 @@ export async function updateParticipant(
     if (participantData.name) validateString(participantData.name, 100, 'שם משתתף');
     if (participantData.age !== undefined) validateNumber(participantData.age, 0, 100, 'גיל');
 
-    const eventRef = doc(db, 'users', userId, 'groups', groupId, 'events', eventId);
+    const eventRef = doc(db!, 'users', userId, 'groups', groupId, 'events', eventId);
     
-    await runTransaction(db, async (transaction) => {
+    await runTransaction(db!, async (transaction) => {
       const eventDoc = await transaction.get(eventRef);
       if (!eventDoc.exists()) {
         throw new Error('אירוע לא נמצא');
@@ -574,7 +574,7 @@ export async function updateParticipant(
       }
 
       // Update participant in group (if name, age, etc. changed)
-      const groupRef = doc(db, 'users', userId, 'groups', groupId);
+      const groupRef = doc(db!, 'users', userId, 'groups', groupId);
       const groupDoc = await transaction.get(groupRef);
       
       if (groupDoc.exists()) {
@@ -606,9 +606,9 @@ export async function deleteParticipant(
   participantId: string
 ): Promise<void> {
   try {
-    const eventRef = doc(db, 'users', userId, 'groups', groupId, 'events', eventId);
+    const eventRef = doc(db!, 'users', userId, 'groups', groupId, 'events', eventId);
     
-    await runTransaction(db, async (transaction) => {
+    await runTransaction(db!, async (transaction) => {
       const eventDoc = await transaction.get(eventRef);
       if (!eventDoc.exists()) {
         throw new Error('אירוע לא נמצא');
@@ -724,9 +724,9 @@ export async function inviteUserToEvent(
   guestUserId: string
 ): Promise<void> {
   try {
-    const eventRef = doc(db, 'users', ownerUserId, 'groups', groupId, 'events', eventId);
+    const eventRef = doc(db!, 'users', ownerUserId, 'groups', groupId, 'events', eventId);
     
-    await runTransaction(db, async (transaction) => {
+    await runTransaction(db!, async (transaction) => {
       const eventDoc = await transaction.get(eventRef);
       if (!eventDoc.exists()) {
         throw new Error('אירוע לא נמצא');
