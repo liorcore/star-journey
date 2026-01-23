@@ -31,6 +31,30 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+הפרויקט מוכן לפריסה ב-Vercel.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### הוראות מפורטות
+
+ראה את [VERCEL_DEPLOY.md](./VERCEL_DEPLOY.md) למדריך מפורט לפריסה תוך שמירה על אבטחת מידע.
+
+### סיכום מהיר
+
+1. **הגדר משתני סביבה ב-Vercel:**
+   - `NEXT_PUBLIC_FIREBASE_API_KEY`
+   - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+   - `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+   - `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
+   - `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+   - `NEXT_PUBLIC_FIREBASE_APP_ID`
+
+2. **חבר את ה-repository ל-Vercel** דרך [Vercel Dashboard](https://vercel.com/dashboard)
+
+3. **ודא ש-Firebase Security Rules מוגדרים** - ראה `firestore.rules`
+
+### אבטחת מידע
+
+- ✅ כל משתני ה-Firebase config בטוחים לחשיפה (NEXT_PUBLIC_*)
+- ✅ האבטחה מתבצעת ב-Firestore Security Rules
+- ✅ `.env.local` לא נשמר ב-Git (כבר ב-.gitignore)
+
+למידע נוסף, ראה [VERCEL_DEPLOY.md](./VERCEL_DEPLOY.md).
