@@ -245,6 +245,10 @@ export async function deleteParticipantFromGroup(
 }
 
 export async function deleteGroup(userId: string, groupId: string): Promise<void> {
+  if (!isFirebaseAvailable()) {
+    throw new Error('Firebase לא מוגדר');
+  }
+  
   try {
     const groupRef = doc(db!, 'users', userId, 'groups', groupId);
     const groupDoc = await getDoc(groupRef);
@@ -347,6 +351,10 @@ export async function updateEvent(
   eventId: string,
   eventData: Partial<Omit<Event, 'id' | 'ownerId' | 'guests' | 'participants'>>
 ): Promise<void> {
+  if (!isFirebaseAvailable()) {
+    throw new Error('Firebase לא מוגדר');
+  }
+  
   try {
     const eventRef = doc(db!, 'users', userId, 'groups', groupId, 'events', eventId);
     const eventDoc = await getDoc(eventRef);
@@ -497,6 +505,10 @@ export async function updateParticipantStars(
   participantId: string,
   stars: number
 ): Promise<void> {
+  if (!isFirebaseAvailable()) {
+    throw new Error('Firebase לא מוגדר');
+  }
+  
   try {
     validateNumber(stars, 0, 1000, 'כוכבים');
 
@@ -546,6 +558,10 @@ export async function updateParticipant(
   participantId: string,
   participantData: Partial<Participant>
 ): Promise<void> {
+  if (!isFirebaseAvailable()) {
+    throw new Error('Firebase לא מוגדר');
+  }
+  
   try {
     if (participantData.name) validateString(participantData.name, 100, 'שם משתתף');
     if (participantData.age !== undefined) validateNumber(participantData.age, 0, 100, 'גיל');
@@ -605,6 +621,10 @@ export async function deleteParticipant(
   eventId: string,
   participantId: string
 ): Promise<void> {
+  if (!isFirebaseAvailable()) {
+    throw new Error('Firebase לא מוגדר');
+  }
+  
   try {
     const eventRef = doc(db!, 'users', userId, 'groups', groupId, 'events', eventId);
     
@@ -723,6 +743,10 @@ export async function inviteUserToEvent(
   eventId: string,
   guestUserId: string
 ): Promise<void> {
+  if (!isFirebaseAvailable()) {
+    throw new Error('Firebase לא מוגדר');
+  }
+  
   try {
     const eventRef = doc(db!, 'users', ownerUserId, 'groups', groupId, 'events', eventId);
     
