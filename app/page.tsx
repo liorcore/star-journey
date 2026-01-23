@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, Copy, Plus, Rocket, Star, Users, X, LogOut, Trash2 } from 'lucide-react';
+import { Check, Copy, Plus, Rocket, Star, Users, X, LogOut, Trash2, Shield } from 'lucide-react';
 import { useAuth } from '@/app/contexts/AuthContext';
+import { useAdmin } from '@/app/contexts/AdminContext';
+import { useRouter } from 'next/navigation';
 import AuthGuard from '@/app/components/AuthGuard';
 import { getUserGroups, createGroup, deleteGroup, Group } from '@/app/lib/firestore';
 
@@ -18,6 +20,7 @@ interface RecentGroup {
 export default function Home() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { isAdmin } = useAdmin();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [groupName, setGroupName] = useState('');
@@ -313,6 +316,16 @@ export default function Home() {
             <Users className="w-4 h-4 text-[#4D96FF]" />
             התחבר לקבוצה קיימת
           </button>
+
+          {isAdmin && (
+            <button
+              onClick={() => router.push('/admin')}
+              className="h-12 rounded-[2.5rem] w-full border-2 border-slate-300 bg-slate-50 font-black text-slate-700 active:scale-95 transition-transform flex items-center justify-center gap-2"
+            >
+              <Shield className="w-4 h-4 text-slate-600" />
+              דשבורד אדמין
+            </button>
+          )}
         </motion.section>
       </main>
 

@@ -84,7 +84,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(mockUser as User);
       return { user: mockUser as User } as UserCredential;
     }
-    return createUserWithEmailAndPassword(auth, email, password);
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    
+    // Send Telegram notification for new user
+    try {
+      await fetch('/api/admin/notify-user-signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: result.user.uid,
+          email: result.user.email,
+          displayName: result.user.displayName,
+          method: 'email',
+        }),
+      });
+    } catch (error) {
+      // Silently fail - don't block user registration
+      console.error('Error sending signup notification:', error);
+    }
+    
+    return result;
   };
 
   const signInWithGoogle = async () => {
@@ -100,7 +119,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     try {
       // Try to sign in with Google
-      return await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      
+      // Check if this is a new user (first time sign in)
+      // If user metadata shows creation time is very recent, it's a new user
+      const isNewUser = result.user.metadata.creationTime && 
+        new Date(result.user.metadata.creationTime).getTime() > Date.now() - 5000; // Within last 5 seconds
+      
+      if (isNewUser) {
+        // Send Telegram notification for new user
+        try {
+          await fetch('/api/admin/notify-user-signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: result.user.uid,
+              email: result.user.email,
+              displayName: result.user.displayName,
+              method: 'google',
+            }),
+          });
+        } catch (error) {
+          // Silently fail - don't block user registration
+          console.error('Error sending signup notification:', error);
+        }
+      }
+      
+      return result;
     } catch (error: any) {
       // If account exists with different credential, try to link accounts
       if (error.code === 'auth/account-exists-with-different-credential') {

@@ -1,0 +1,36 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background with rounded corners effect -->
+  <rect width="512" height="512" rx="120" fill="#F1F5F9"/>
+  
+  <!-- Rocket body (main triangle) -->
+  <path d="M256 140 L300 220 L212 220 Z" fill="#4D96FF" stroke="#3b82f6" stroke-width="2"/>
+  
+  <!-- Rocket body (rectangle) -->
+  <rect x="220" y="220" width="72" height="140" rx="8" fill="#4D96FF"/>
+  
+  <!-- Rocket window -->
+  <circle cx="256" cy="260" r="18" fill="#FFFFFF" stroke="#4D96FF" stroke-width="2"/>
+  <circle cx="256" cy="260" r="12" fill="#4D96FF"/>
+  
+  <!-- Rocket fins (left) -->
+  <path d="M212 220 L200 280 L212 280 Z" fill="#3b82f6"/>
+  <path d="M212 220 L200 280 L212 280 Z" stroke="#2563eb" stroke-width="2"/>
+  
+  <!-- Rocket fins (right) -->
+  <path d="M300 220 L312 280 L300 280 Z" fill="#3b82f6"/>
+  <path d="M300 220 L312 280 L300 280 Z" stroke="#2563eb" stroke-width="2"/>
+  
+  <!-- Rocket flame (outer) -->
+  <path d="M230 360 L256 420 L282 360 Z" fill="#FF8C00" opacity="0.9"/>
+  
+  <!-- Rocket flame (inner) -->
+  <path d="M238 360 L256 400 L274 360 Z" fill="#FFD700"/>
+  
+  <!-- Small stars decoration -->
+  <circle cx="160" cy="160" r="4" fill="#FFD93D"/>
+  <circle cx="360" cy="180" r="3.5" fill="#FFD93D"/>
+  <circle cx="180" cy="320" r="3" fill="#FFD93D"/>
+  <circle cx="340" cy="300" r="3.5" fill="#FFD93D"/>
+  <circle cx="140" cy="280" r="2.5" fill="#FFD93D"/>
+  <circle cx="380" cy="240" r="3" fill="#FFD93D"/>
+</svg>

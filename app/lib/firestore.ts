@@ -15,6 +15,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from './firebase';
+import { sendTelegramNotification } from './telegram';
 
 // Helper to check if Firebase is available
 const isFirebaseAvailable = () => {
@@ -150,9 +151,26 @@ export async function createGroup(userId: string, groupData: Omit<Group, 'id' | 
       createdAt: serverTimestamp(),
     };
     const docRef = await addDoc(groupsRef, newGroup);
+    
+    // Send error notification if creation fails (but don't block)
+    // Note: This is a success case, so we don't send notification here
+    // Error notifications are sent in catch blocks
+    
     return docRef.id;
-  } catch (error) {
-    // Error creating group
+  } catch (error: any) {
+    // Error creating group - send notification
+    try {
+      await sendTelegramNotification('user_error', {
+        userId,
+        userEmail: userId, // We don't have email here, use userId
+        errorType: 'group_creation_failed',
+        location: 'createGroup',
+        errorMessage: error.message || 'Failed to create group',
+      });
+    } catch (notifError) {
+      // Silently fail notification
+    }
+    
     throw error;
   }
 }
@@ -339,8 +357,20 @@ export async function createEvent(
     };
     const docRef = await addDoc(eventsRef, newEvent);
     return docRef.id;
-  } catch (error) {
-    // Error creating event
+  } catch (error: any) {
+    // Error creating event - send notification
+    try {
+      await sendTelegramNotification('user_error', {
+        userId,
+        userEmail: userId,
+        errorType: 'event_creation_failed',
+        location: 'createEvent',
+        errorMessage: error.message || 'Failed to create event',
+      });
+    } catch (notifError) {
+      // Silently fail notification
+    }
+    
     throw error;
   }
 }
