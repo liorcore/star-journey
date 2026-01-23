@@ -26,25 +26,8 @@ function hexToRgba(hex: string, alpha: number): string {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-interface Participant {
-    id: string;
-    name: string;
-    icon: string;
-    age: number;
-    color: string;
-    gender: 'male' | 'female';
-    totalStars: number;
-    eventCount: number;
-    completedEvents?: any[];
-}
-
-interface Group {
-    id: string;
-    name: string;
-    code: string;
-    participants: Participant[];
-    events?: any[]; // Optional - loaded separately
-}
+// Use types from firestore
+type Group = FirestoreGroup;
 
 export default function CreateEventPage() {
     const params = useParams();
@@ -56,9 +39,9 @@ export default function CreateEventPage() {
         // useParams() returns params directly, not a Promise
         if (params && typeof params === 'object' && 'groupId' in params) {
             setGroupId(params.groupId as string);
-        } else if (params && typeof params.then === 'function') {
+        } else if (params && typeof (params as any).then === 'function') {
             // Handle Promise case (Next.js 15+)
-            params.then((resolvedParams: any) => {
+            (params as Promise<any>).then((resolvedParams: any) => {
                 if (resolvedParams?.groupId) {
                     setGroupId(resolvedParams.groupId as string);
                 }

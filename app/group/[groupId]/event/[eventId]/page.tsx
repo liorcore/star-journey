@@ -18,40 +18,9 @@ const EVENT_ICONS = [
     'zap', 'shield', 'sword', 'wand', 'gamepad', 'palette'
 ];
 
-interface Participant {
-    id: string;
-    name: string;
-    icon: string; // lucide key (or legacy emoji)
-    age: number;
-    color: string;
-    gender: 'male' | 'female';
-    totalStars: number;
-    eventCount: number;
-    completedEvents: Array<{ eventId: string; stars: number; icon: string; eventName: string; eventCompleted: boolean }>;
-}
-
-interface EventParticipant {
-    participantId: string;
-    stars: number;
-    addedBy?: string;
-}
-
-interface Event {
-    id: string;
-    name: string;
-    icon: string;
-    endDate: number;
-    starGoal: number;
-    participants: EventParticipant[];
-}
-
-interface Group {
-    id: string;
-    name: string;
-    code: string;
-    participants: Participant[];
-    events?: Event[]; // Optional - loaded separately
-}
+// Use types from firestore
+type Event = FirestoreEvent;
+type Group = FirestoreGroup;
 
 function hexToRgba(hex: string, alpha: number) {
     const clean = hex.replace('#', '').trim();

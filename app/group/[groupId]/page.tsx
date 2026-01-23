@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuth } from '@/app/contexts/AuthContext';
-import { subscribeToGroup, updateGroup as updateGroupFirestore, deleteEvent, getGroupEvents, deleteParticipantFromGroup, Group as FirestoreGroup, Event as FirestoreEvent } from '@/app/lib/firestore';
+import { subscribeToGroup, updateGroup as updateGroupFirestore, deleteEvent, getGroupEvents, deleteParticipantFromGroup, Group as FirestoreGroup, Event as FirestoreEvent, Participant } from '@/app/lib/firestore';
 import { db } from '@/app/lib/firebase';
 import { collection, onSnapshot } from 'firebase/firestore';
 import AuthGuard from '@/app/components/AuthGuard';
@@ -45,34 +45,9 @@ function hexToRgba(hex: string, alpha: number) {
     return `rgba(${r},${g},${b},${alpha})`;
 }
 
-interface Participant {
-    id: string;
-    name: string;
-    icon: string;
-    age: number;
-    color: string;
-    gender: 'male' | 'female';
-    totalStars: number;
-    eventCount: number;
-    completedEvents: Array<{ eventId: string; stars: number; icon: string; eventName: string; eventCompleted: boolean }>;
-}
-
-interface Event {
-    id: string;
-    name: string;
-    icon: string;
-    endDate: number;
-    starGoal: number;
-    participants: { participantId: string; stars: number; addedBy?: string }[];
-}
-
-interface Group {
-    id: string;
-    name: string;
-    code: string;
-    participants: Participant[];
-    events?: Event[]; // Optional - loaded separately from subcollection
-}
+// Use types from firestore
+type Event = FirestoreEvent;
+type Group = FirestoreGroup;
 
 
 export default function GroupPage() {

@@ -7,30 +7,14 @@ import { ChevronRight, ChevronUp, ChevronDown, Palette, Smile, Sparkles, UserPlu
 import { ParticipantIcon } from '@/app/lib/participantIcons';
 import { PARTICIPANT_EMOJIS } from '@/app/lib/participantEmoji';
 import { useAuth } from '@/app/contexts/AuthContext';
-import { updateGroup, addParticipantToEvent, getUserGroups, Participant } from '@/app/lib/firestore';
+import { updateGroup, addParticipantToEvent, getUserGroups, Participant as FirestoreParticipant, Group as FirestoreGroup } from '@/app/lib/firestore';
 import AuthGuard from '@/app/components/AuthGuard';
 
 const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B739', '#52B788', '#FF8FA3', '#C9ADA7'];
 
-interface Participant {
-    id: string;
-    name: string;
-    icon: string;
-    age: number;
-    color: string;
-    gender: 'male' | 'female';
-    totalStars: number;
-    eventCount: number;
-    completedEvents?: any[];
-}
-
-interface Group {
-    id: string;
-    name: string;
-    code: string;
-    participants: Participant[];
-    events: any[];
-}
+// Use types from firestore
+type Group = FirestoreGroup;
+type Participant = FirestoreParticipant;
 
 function hexToRgba(hex: string, alpha: number): string {
     const r = parseInt(hex.slice(1, 3), 16);
