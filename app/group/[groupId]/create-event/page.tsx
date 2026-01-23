@@ -1,11 +1,14 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CalendarClock, CalendarPlus, Check, ChevronRight, ChevronUp, ChevronDown, Palette, Smile, Sparkles, Star, Users, X, BadgeCheck } from 'lucide-react';
+import { CalendarClock, CalendarPlus, Check, ChevronRight, ChevronUp, ChevronDown, Palette, Smile, Sparkles, Star, Users, X, BadgeCheck, UserPlus } from 'lucide-react';
 import { ParticipantIcon, PARTICIPANT_ICONS } from '@/app/lib/participantIcons';
 import { PARTICIPANT_EMOJIS } from '@/app/lib/participantEmoji';
+import { useAuth } from '@/app/contexts/AuthContext';
+import { subscribeToGroup, createEvent, updateGroup, addParticipantToEvent, Group as FirestoreGroup, Participant } from '@/app/lib/firestore';
+import AuthGuard from '@/app/components/AuthGuard';
 
 // Event-specific icons (using Lucide icons, not emojis)
 const EVENT_ICONS = [
@@ -15,6 +18,13 @@ const EVENT_ICONS = [
 ];
 
 const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B739', '#52B788', '#FF8FA3', '#C9ADA7'];
+
+function hexToRgba(hex: string, alpha: number): string {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 interface Participant {
     id: string;
@@ -33,25 +43,30 @@ interface Group {
     name: string;
     code: string;
     participants: Participant[];
-    events: any[];
+    events?: any[]; // Optional - loaded separately
 }
 
 export default function CreateEventPage() {
     const params = useParams();
     const router = useRouter();
+    const { user } = useAuth();
     const [groupId, setGroupId] = useState<string>('');
 
     useEffect(() => {
-        const getParams = async () => {
-            try {
-                const resolvedParams = await params;
-                setGroupId(resolvedParams.groupId as string);
-            } catch (error) {
+        // useParams() returns params directly, not a Promise
+        if (params && typeof params === 'object' && 'groupId' in params) {
+            setGroupId(params.groupId as string);
+        } else if (params && typeof params.then === 'function') {
+            // Handle Promise case (Next.js 15+)
+            params.then((resolvedParams: any) => {
+                if (resolvedParams?.groupId) {
+                    setGroupId(resolvedParams.groupId as string);
+                }
+            }).catch((error) => {
                 console.error('Error resolving params:', error);
                 router.push('/');
-            }
-        };
-        getParams();
+            });
+        }
     }, [params, router]);
 
     const [group, setGroup] = useState<Group | null>(null);
@@ -63,6 +78,7 @@ export default function CreateEventPage() {
     const [showNewParticipant, setShowNewParticipant] = useState(false);
     const [showIconPicker, setShowIconPicker] = useState(false);
     const [showColorPicker, setShowColorPicker] = useState(false);
+    const [showEventIconPicker, setShowEventIconPicker] = useState(false);
 
     // New participant fields
     const [newName, setNewName] = useState('');
@@ -80,15 +96,18 @@ export default function CreateEventPage() {
     const newAgeLabel = newAge % 1 === 0 ? String(newAge) : newAge.toFixed(1);
 
     useEffect(() => {
-        if (!groupId) return;
-        const groups = JSON.parse(localStorage.getItem('groups') || '[]');
-        const foundGroup = groups.find((g: Group) => g.id === groupId);
-        if (foundGroup) {
-            setGroup(foundGroup);
-        } else {
-            router.push('/');
-        }
-    }, [groupId, router]);
+        if (!groupId || !user) return;
+
+        const unsubscribe = subscribeToGroup(user.uid, groupId, (firestoreGroup) => {
+            if (firestoreGroup) {
+                setGroup(firestoreGroup as Group);
+            } else {
+                router.push('/');
+            }
+        });
+
+        return () => unsubscribe();
+    }, [groupId, user, router]);
 
     const toggleParticipant = (participantId: string) => {
         const newSet = new Set(selectedParticipants);
@@ -100,8 +119,8 @@ export default function CreateEventPage() {
         setSelectedParticipants(newSet);
     };
 
-    const handleAddNewParticipant = () => {
-        if (!newName.trim() || !group) return;
+    const handleAddNewParticipant = async () => {
+        if (!newName.trim() || !group || !user) return;
 
         const newParticipant: Participant = {
             id: Date.now().toString(),
@@ -115,25 +134,27 @@ export default function CreateEventPage() {
             completedEvents: []
         };
 
-        const groups = JSON.parse(localStorage.getItem('groups') || '[]');
-        const groupIndex = groups.findIndex((g: Group) => g.id === groupId);
-        groups[groupIndex].participants.push(newParticipant);
-        localStorage.setItem('groups', JSON.stringify(groups));
+        try {
+            const updatedParticipants = [...group.participants, newParticipant];
+            await updateGroup(user.uid, groupId, { participants: updatedParticipants });
+            setSelectedParticipants((prev) => new Set([...prev, newParticipant.id]));
+            setGroup((prev) => (prev ? { ...prev, participants: updatedParticipants } : null));
+            setShowNewParticipant(false);
 
-        setGroup(groups[groupIndex]);
-        setSelectedParticipants(new Set([...selectedParticipants, newParticipant.id]));
-        setShowNewParticipant(false);
-
-        // Reset form
-        setNewName('');
-        setNewIcon(PARTICIPANT_EMOJIS[0]);
-        setNewAge(5);
-        setNewColor(COLORS[0]);
-        setNewGender('male');
-        closePickers();
+            // Reset form
+            setNewName('');
+            setNewIcon(PARTICIPANT_EMOJIS[0]);
+            setNewAge(5);
+            setNewColor(COLORS[0]);
+            setNewGender('male');
+            closePickers();
+        } catch (error) {
+            console.error('Error adding participant:', error);
+            alert('שגיאה בהוספת משתתף');
+        }
     };
 
-    const handleCreateEvent = () => {
+    const handleCreateEvent = async () => {
         if (!eventName.trim()) {
             alert('נא להזין שם אירוע');
             return;
@@ -147,55 +168,92 @@ export default function CreateEventPage() {
             return;
         }
 
-        const groups = JSON.parse(localStorage.getItem('groups') || '[]');
-        const groupIndex = groups.findIndex((g: Group) => g.id === groupId);
-
-        if (groupIndex === -1) {
+        if (!user || !group) {
             router.push('/');
             return;
         }
 
-        const newEvent = {
-            id: Date.now().toString(),
-            name: eventName.trim(),
-            icon: eventIcon,
-            endDate: new Date(endDate).getTime(),
-            starGoal,
-            participants: Array.from(selectedParticipants).map(pid => ({
-                participantId: pid,
-                stars: 0
-            }))
-        };
+        // Get groupId from params if state is empty
+        const currentGroupId = groupId || (params?.groupId as string) || (typeof params === 'object' && 'groupId' in params ? params.groupId as string : '');
+        
+        if (!currentGroupId) {
+            alert('שגיאה: לא נמצא מזהה קבוצה');
+            console.error('groupId is missing:', { groupId, params });
+            return;
+        }
 
-        groups[groupIndex].events.push(newEvent);
-
-        // Update participant event counts
-        selectedParticipants.forEach(pid => {
-            const participant = groups[groupIndex].participants.find((p: Participant) => p.id === pid);
-            if (participant) {
-                participant.eventCount = (participant.eventCount || 0) + 1;
+        try {
+            // Convert datetime-local string to timestamp
+            const endDateTimestamp = new Date(endDate).getTime();
+            
+            if (isNaN(endDateTimestamp)) {
+                alert('תאריך לא תקין');
+                return;
             }
-        });
 
-        localStorage.setItem('groups', JSON.stringify(groups));
-        router.push(`/group/${groupId}`);
+            console.log('Creating event with:', {
+                userId: user.uid,
+                groupId: currentGroupId,
+                eventName: eventName.trim(),
+                icon: eventIcon,
+                endDate: endDateTimestamp,
+                starGoal,
+                participantsCount: selectedParticipants.size
+            });
+
+            const eventId = await createEvent(user.uid, currentGroupId, {
+                name: eventName.trim(),
+                icon: eventIcon,
+                endDate: endDateTimestamp,
+                starGoal,
+            });
+
+            console.log('Event created with ID:', eventId);
+
+            // Add participants to event
+            for (const participantId of selectedParticipants) {
+                const participant = group.participants.find((p) => p.id === participantId);
+                if (participant) {
+                    console.log('Adding participant to event:', participant.name);
+                    await addParticipantToEvent(user.uid, currentGroupId, eventId, participant);
+                }
+            }
+
+            console.log('Event creation completed, navigating to group page');
+            router.push(`/group/${currentGroupId}`);
+        } catch (error) {
+            console.error('Error creating event:', error);
+            const errorMessage = error instanceof Error ? error.message : 'שגיאה לא ידועה';
+            console.error('Error details:', {
+                error,
+                userId: user?.uid,
+                groupId: currentGroupId,
+                eventName: eventName.trim(),
+                endDate,
+                starGoal
+            });
+            alert(`שגיאה ביצירת אירוע: ${errorMessage}`);
+        }
     };
 
     if (!group) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-[#F1F5F9]">
-                <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-                >
-                    <Sparkles className="w-12 h-12 text-[#4D96FF]" />
-                </motion.div>
-            </div>
+            <AuthGuard>
+                <div className="min-h-screen flex items-center justify-center bg-[#F1F5F9]">
+                    <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                    >
+                        <Sparkles className="w-12 h-12 text-[#4D96FF]" />
+                    </motion.div>
+                </div>
+            </AuthGuard>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[#F1F5F9] pb-10" dir="rtl">
+        <AuthGuard>
+            <div className="min-h-screen bg-[#F1F5F9] pb-10" dir="rtl">
             {/* Top Bar */}
             <nav className="fixed top-0 left-0 right-0 h-14 bg-white border-b border-slate-200 z-50 px-3">
                 <div className="max-w-md mx-auto h-full flex items-center justify-between">
@@ -396,7 +454,7 @@ export default function CreateEventPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[60] bg-black/40"
+                        className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
                         onClick={() => {
                             setShowNewParticipant(false);
                             closePickers();
@@ -407,13 +465,13 @@ export default function CreateEventPage() {
                             animate={{ y: 0, opacity: 1 }}
                             exit={{ y: 30, opacity: 0 }}
                             transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-                            className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-4"
+                            className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-4 max-h-[90vh] overflow-y-auto"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-2">
-                                    <Users className="w-4 h-4 text-[#4D96FF]" />
-                                    <span className="text-sm font-black text-slate-900">משתתף חדש</span>
+                                    <UserPlus className="w-5 h-5 text-[#4D96FF]" />
+                                    <span className="text-lg font-black text-slate-900">משתתף חדש</span>
                                 </div>
                                 <button
                                     type="button"
@@ -428,126 +486,122 @@ export default function CreateEventPage() {
                                 </button>
                             </div>
 
-                            <div className="space-y-3">
-                                {/* Name */}
-                                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-3">
-                                    <div className="text-[11px] font-black text-slate-600 uppercase tracking-wider">שם</div>
-                                    <input
-                                        value={newName}
-                                        onChange={(e) => setNewName(e.target.value)}
-                                        placeholder="שם המשתתף"
-                                        className="mt-2 w-full h-11 rounded-2xl border-2 border-slate-200 bg-white px-4 text-sm font-black text-slate-900 focus:outline-none focus:border-[#4D96FF]"
-                                        dir="rtl"
-                                    />
-                                </div>
-
-                                {/* Icon + Color */}
-                                <div className="grid grid-cols-2 gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setShowColorPicker(false);
-                                            setShowIconPicker(true);
-                                        }}
-                                        className="bg-slate-50 rounded-2xl border border-slate-200 p-3 active:scale-95 transition-transform"
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <Smile className="w-4 h-4 text-[#4D96FF]" />
-                                                <span className="text-[11px] font-black text-slate-600 uppercase tracking-wider">אייקון</span>
+                            {/* Participant Card - Like add-participant page */}
+                            <motion.section
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="rounded-3xl border shadow-sm p-4 relative overflow-hidden mb-4"
+                                style={{
+                                    background: newColor,
+                                    borderColor: newColor,
+                                    boxShadow: '0 6px 18px rgba(15, 23, 42, 0.06)',
+                                }}
+                            >
+                                <div className="pattern-overlay" />
+                                <div className="relative">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setShowColorPicker(false);
+                                                    setShowIconPicker(true);
+                                                }}
+                                                className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 bg-white/35 backdrop-blur-md cursor-pointer active:scale-95 transition-transform"
+                                                style={{ border: `1px solid ${hexToRgba(newColor, 0.35)}` }}
+                                            >
+                                                <ParticipantIcon icon={newIcon} className="w-14 h-14 text-slate-900" emojiSize="text-4xl" />
+                                            </button>
+                                            <div className="min-w-0 flex-1">
+                                                <input
+                                                    type="text"
+                                                    value={newName}
+                                                    onChange={(e) => setNewName(e.target.value)}
+                                                    placeholder="הזן שם"
+                                                    dir="rtl"
+                                                    className="w-full text-base font-black text-slate-900 bg-transparent border-none outline-none placeholder:text-slate-400"
+                                                />
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <div className="flex items-center gap-1">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setNewAge(Math.max(1, newAge - 0.5))}
+                                                            className="h-6 w-6 rounded flex items-center justify-center text-slate-700 hover:bg-white/20 active:scale-95 transition-transform"
+                                                            aria-label="הורד גיל"
+                                                        >
+                                                            <ChevronDown className="w-3 h-3" />
+                                                        </button>
+                                                        <span className="text-xs font-bold text-slate-800/75 min-w-[40px] text-center">
+                                                            גיל {newAgeLabel}
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setNewAge(Math.min(100, newAge + 0.5))}
+                                                            className="h-6 w-6 rounded flex items-center justify-center text-slate-700 hover:bg-white/20 active:scale-95 transition-transform"
+                                                            aria-label="העלה גיל"
+                                                        >
+                                                            <ChevronUp className="w-3 h-3" />
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setNewGender('male')}
+                                                            className={`h-7 w-7 rounded-lg flex items-center justify-center text-lg active:scale-95 transition-transform ${
+                                                                newGender === 'male' ? 'bg-blue-500' : 'bg-white/20'
+                                                            }`}
+                                                        >
+                                                            👦
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setNewGender('female')}
+                                                            className={`h-7 w-7 rounded-lg flex items-center justify-center text-lg active:scale-95 transition-transform ${
+                                                                newGender === 'female' ? 'bg-pink-500' : 'bg-white/20'
+                                                            }`}
+                                                        >
+                                                            👧
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <span className="w-7 h-7 inline-flex items-center justify-center">
-                                                <ParticipantIcon icon={newIcon} className="w-7 h-7" emojiSize="text-2xl" />
-                                            </span>
                                         </div>
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setShowIconPicker(false);
-                                            setShowColorPicker(true);
-                                        }}
-                                        className="bg-slate-50 rounded-2xl border border-slate-200 p-3 active:scale-95 transition-transform"
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <Palette className="w-4 h-4 text-[#4D96FF]" />
-                                                <span className="text-[11px] font-black text-slate-600 uppercase tracking-wider">צבע</span>
-                                            </div>
-                                            <span className="w-7 h-7 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: newColor }} />
-                                        </div>
-                                    </button>
-                                </div>
-
-                                {/* Age */}
-                                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-3">
-                                    <div className="flex items-baseline justify-between">
-                                        <span className="text-[11px] font-black text-slate-600 uppercase tracking-wider">גיל</span>
-                                        <span className="text-xl font-black text-slate-900">{newAgeLabel}</span>
-                                    </div>
-                                    <input
-                                        type="range"
-                                        min="1"
-                                        max="100"
-                                        step="0.5"
-                                        value={newAge}
-                                        onChange={(e) => setNewAge(parseFloat(e.target.value))}
-                                        className="mt-3 w-full h-3 rounded-full appearance-none cursor-pointer"
-                                        style={{
-                                            background: `linear-gradient(to left, #4D96FF 0%, #4D96FF ${(newAge / 100) * 100}%, #e2e8f0 ${(newAge / 100) * 100}%, #e2e8f0 100%)`
-                                        }}
-                                    />
-                                    <div className="flex justify-between text-[11px] mt-2 text-slate-400 font-bold">
-                                        <span>1</span>
-                                        <span>100</span>
-                                    </div>
-                                </div>
-
-                                {/* Gender */}
-                                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-3">
-                                    <div className="text-[11px] font-black text-slate-600 uppercase tracking-wider">מין</div>
-                                    <div className="mt-2 grid grid-cols-2 gap-2">
                                         <button
                                             type="button"
-                                            onClick={() => setNewGender('male')}
-                                            className={`h-12 rounded-2xl border-2 font-black text-2xl active:scale-95 transition-transform ${
-                                                newGender === 'male' ? 'border-[#4D96FF] bg-blue-50' : 'border-slate-200 bg-white'
-                                            }`}
+                                            onClick={() => {
+                                                setShowIconPicker(false);
+                                                setShowColorPicker(true);
+                                            }}
+                                            className="w-10 h-10 rounded-full flex items-center justify-center bg-white/40 backdrop-blur-sm border-2 border-white/50 shadow-sm active:scale-95 transition-transform shrink-0"
+                                            style={{ backgroundColor: `${newColor}80` }}
+                                            aria-label="בחר צבע"
                                         >
-                                            👦
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setNewGender('female')}
-                                            className={`h-12 rounded-2xl border-2 font-black text-2xl active:scale-95 transition-transform ${
-                                                newGender === 'female' ? 'border-[#4D96FF] bg-blue-50' : 'border-slate-200 bg-white'
-                                            }`}
-                                        >
-                                            👧
+                                            <Palette className="w-5 h-5 text-white" />
                                         </button>
                                     </div>
                                 </div>
+                            </motion.section>
 
-                                <div className="grid grid-cols-2 gap-3 pt-1">
-                                    <button
-                                        onClick={handleAddNewParticipant}
-                                        className="btn-star h-12 rounded-2xl flex items-center justify-center gap-2"
-                                    >
-                                        הוסף
-                                        <Check className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setShowNewParticipant(false);
-                                            closePickers();
-                                        }}
-                                        className="h-12 rounded-2xl border-2 border-slate-200 bg-white font-black text-slate-700 active:scale-95 transition-transform"
-                                    >
-                                        ביטול
-                                    </button>
-                                </div>
+                            {/* Actions */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    onClick={handleAddNewParticipant}
+                                    disabled={!newName.trim()}
+                                    className="btn-star h-12 rounded-2xl flex items-center justify-center gap-2 disabled:opacity-60 disabled:active:scale-100"
+                                >
+                                    <UserPlus className="w-4 h-4" />
+                                    שמור
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowNewParticipant(false);
+                                        closePickers();
+                                    }}
+                                    className="h-12 rounded-2xl border-2 border-slate-200 bg-white font-black text-slate-700 active:scale-95 transition-transform"
+                                >
+                                    ביטול
+                                </button>
                             </div>
 
                             {/* Icon Picker */}
@@ -576,23 +630,20 @@ export default function CreateEventPage() {
 
                                         <div className="max-h-[55vh] overflow-y-auto">
                                             <div className="grid grid-cols-6 gap-2">
-                                                {EVENT_ICONS.map((iconKey) => {
-                                                    const iconData = PARTICIPANT_ICONS.find(icon => icon.key === iconKey);
-                                                    return iconData ? (
-                                                        <button
-                                                            key={iconKey}
-                                                            type="button"
-                                                            onClick={() => {
-                                                                setEventIcon(iconKey);
-                                                                setShowIconPicker(false);
-                                                            }}
-                                                            className="h-12 rounded-2xl border border-slate-200 bg-white active:scale-95 transition-transform inline-flex items-center justify-center"
-                                                            aria-label={`בחר אייקון ${iconData.label}`}
-                                                        >
-                                                            <iconData.Icon className="w-6 h-6 text-slate-700" />
-                                                        </button>
-                                                    ) : null;
-                                                })}
+                                                {PARTICIPANT_EMOJIS.map((emoji) => (
+                                                    <button
+                                                        key={emoji}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setNewIcon(emoji);
+                                                            setShowIconPicker(false);
+                                                        }}
+                                                        className="h-12 rounded-2xl border border-slate-200 bg-white active:scale-95 transition-transform inline-flex items-center justify-center text-2xl"
+                                                        aria-label={`בחר אייקון ${emoji}`}
+                                                    >
+                                                        {emoji}
+                                                    </button>
+                                                ))}
                                             </div>
                                         </div>
                                     </motion.div>
@@ -708,5 +759,6 @@ export default function CreateEventPage() {
                 )}
             </AnimatePresence>
         </div>
+        </AuthGuard>
     );
 }

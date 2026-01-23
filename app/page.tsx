@@ -3,7 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, Copy, Plus, Rocket, Star, Users, X } from 'lucide-react';
+import { Check, Copy, Plus, Rocket, Star, Users, X, LogOut } from 'lucide-react';
+import { useAuth } from '@/app/contexts/AuthContext';
+import AuthGuard from '@/app/components/AuthGuard';
+import { getUserGroups, createGroup, Group } from '@/app/lib/firestore';
 
 interface RecentGroup {
   id: string;
@@ -14,23 +17,35 @@ interface RecentGroup {
 
 export default function Home() {
   const router = useRouter();
+  const { user, logout } = useAuth();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [groupName, setGroupName] = useState('');
   const [groupCode, setGroupCode] = useState('');
-  const [recentGroups, setRecentGroups] = useState<RecentGroup[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [copiedGroupCode, setCopiedGroupCode] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load recent groups from localStorage
-    const stored = localStorage.getItem('recentGroups');
-    if (stored) {
-      const groups = JSON.parse(stored);
-      setRecentGroups(groups.sort((a: RecentGroup, b: RecentGroup) => b.lastAccessed - a.lastAccessed));
+    if (user) {
+      loadGroups();
     }
-  }, []);
+  }, [user]);
+
+  const loadGroups = async () => {
+    if (!user) return;
+    try {
+      setLoading(true);
+      const userGroups = await getUserGroups(user.uid);
+      setGroups(userGroups);
+    } catch (err: any) {
+      setError('שגיאה בטעינת קבוצות');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const generateGroupCode = (): string => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -41,69 +56,79 @@ export default function Home() {
     return code;
   };
 
-  const handleCreateGroup = () => {
+  const handleCreateGroup = async () => {
     if (!groupName.trim()) {
       setError('נא להזין שם קבוצה');
       return;
     }
 
+    if (!user) {
+      setError('נא להתחבר תחילה');
+      return;
+    }
+
     setLoading(true);
-    const code = generateGroupCode();
-    const newGroup = {
-      id: Date.now().toString(),
-      name: groupName,
-      code: code,
-      participants: [],
-      events: []
-    };
+    setError('');
 
-    // Save to localStorage
-    const groups = JSON.parse(localStorage.getItem('groups') || '[]');
-    groups.push(newGroup);
-    localStorage.setItem('groups', JSON.stringify(groups));
+    try {
+      const code = generateGroupCode();
+      const groupId = await createGroup(user.uid, {
+        name: groupName,
+        code: code,
+        participants: [],
+      });
 
-    // Add to recent groups
-    const recent: RecentGroup = {
-      id: newGroup.id,
-      name: newGroup.name,
-      code: newGroup.code,
-      lastAccessed: Date.now()
-    };
-    const recentList = [recent, ...recentGroups.filter(g => g.id !== newGroup.id)].slice(0, 5);
-    localStorage.setItem('recentGroups', JSON.stringify(recentList));
-
-    setLoading(false);
-    router.push(`/group/${newGroup.id}`);
+      await loadGroups();
+      setLoading(false);
+      closeModals();
+      router.push(`/group/${groupId}`);
+    } catch (err: any) {
+      setError(err.message || 'שגיאה ביצירת קבוצה');
+      setLoading(false);
+    }
   };
 
-  const handleJoinGroup = () => {
+  const handleJoinGroup = async () => {
     if (!groupCode.trim()) {
       setError('נא להזין קוד קבוצה');
       return;
     }
 
-    setLoading(true);
-    const groups = JSON.parse(localStorage.getItem('groups') || '[]');
-    const group = groups.find((g: any) => g.code.toUpperCase() === groupCode.toUpperCase());
-
-    if (!group) {
-      setError('קבוצה לא נמצאה');
-      setLoading(false);
+    if (!user) {
+      setError('נא להתחבר תחילה');
       return;
     }
 
-    // Add to recent groups
-    const recent: RecentGroup = {
-      id: group.id,
-      name: group.name,
-      code: group.code,
-      lastAccessed: Date.now()
-    };
-    const recentList = [recent, ...recentGroups.filter(g => g.id !== group.id)].slice(0, 5);
-    localStorage.setItem('recentGroups', JSON.stringify(recentList));
+    setLoading(true);
+    setError('');
 
-    setLoading(false);
-    router.push(`/group/${group.id}`);
+    try {
+      // Search for group by code
+      const userGroups = await getUserGroups(user.uid);
+      const group = userGroups.find((g) => g.code.toUpperCase() === groupCode.toUpperCase());
+
+      if (!group) {
+        setError('קבוצה לא נמצאה');
+        setLoading(false);
+        return;
+      }
+
+      setLoading(false);
+      closeModals();
+      router.push(`/group/${group.id}`);
+    } catch (err: any) {
+      setError(err.message || 'שגיאה בחיפוש קבוצה');
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push('/login');
+    } catch (err) {
+      console.error('Error logging out:', err);
+    }
   };
 
   const handleRecentGroupClick = (groupId: string) => {
@@ -127,24 +152,37 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F1F5F9] pb-10" dir="rtl">
-      <main className="max-w-md mx-auto px-3 pt-10 sm:pt-16">
-        {/* Hero */}
-        <motion.section
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center"
-        >
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-[2.5rem] bg-white border border-slate-200 shadow-sm mb-4">
-            <Rocket className="w-7 h-7 text-[#4D96FF]" />
+    <AuthGuard>
+      <div className="min-h-screen bg-[#F1F5F9] pb-10" dir="rtl">
+        <main className="max-w-md mx-auto px-3 pt-10 sm:pt-16">
+          {/* Header with logout */}
+          <div className="flex items-center justify-between mb-6">
+            <div></div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-black text-slate-700 active:scale-95 transition-transform"
+            >
+              <LogOut className="w-4 h-4" />
+              התנתק
+            </button>
           </div>
-          <h1 className="text-4xl sm:text-5xl font-black rainbow-text leading-tight">
-            מסע בין כוכבים
-          </h1>
-          <p className="text-sm sm:text-base text-slate-500 mt-3">
-            יוצרים קבוצה, יוצאים להרפתקה, וצוברים כוכבים.
-          </p>
-        </motion.section>
+
+          {/* Hero */}
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center"
+          >
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-[2.5rem] bg-white border border-slate-200 shadow-sm mb-4">
+              <Rocket className="w-7 h-7 text-[#4D96FF]" />
+            </div>
+            <h1 className="text-4xl sm:text-5xl font-black rainbow-text leading-tight">
+              מסע בין כוכבים
+            </h1>
+            <p className="text-sm sm:text-base text-slate-500 mt-3">
+              יוצרים קבוצה, יוצאים להרפתקה, וצוברים כוכבים.
+            </p>
+          </motion.section>
 
         {/* Actions */}
         <motion.section
@@ -176,8 +214,8 @@ export default function Home() {
           </button>
         </motion.section>
 
-        {/* Recent groups */}
-        {recentGroups.length > 0 && (
+        {/* My Groups */}
+        {groups.length > 0 && (
           <motion.section
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -186,7 +224,7 @@ export default function Home() {
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest">
-                קבוצות אחרונות
+                הקבוצות שלי
               </h2>
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                 לחץ כדי להיכנס
@@ -194,7 +232,7 @@ export default function Home() {
             </div>
 
             <div className="space-y-3">
-              {recentGroups.map((group) => (
+              {groups.map((group) => (
                 <div
                   key={group.id}
                   onClick={() => handleRecentGroupClick(group.id)}
@@ -381,5 +419,6 @@ export default function Home() {
         )}
       </AnimatePresence>
     </div>
+    </AuthGuard>
   );
 }

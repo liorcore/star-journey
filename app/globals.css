@@ -1,4 +1,6 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   /* Colors from rules.md */
@@ -27,21 +29,11 @@
   --shadow-star: 0 10px 15px -3px rgba(255, 217, 61, 0.2), 0 4px 6px -4px rgba(255, 217, 61, 0.1);
 }
 
-@theme {
-  --color-brand-blue: var(--brand-blue);
-  --color-star-yellow: var(--star-yellow);
-  --color-bg-main: var(--bg-main);
-  
-  --font-heebo: "Heebo", sans-serif;
-  
-  --radius-2xl: 1rem;
-  --radius-pill: 2.5rem;
-}
-
 body {
   background: var(--bg-main);
   color: var(--text-primary);
-  font-family: var(--font-heebo);
+  font-family: var(--font-heebo), "Heebo", sans-serif;
+  font-weight: 700;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;

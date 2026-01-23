@@ -1,11 +1,15 @@
 'use client';
 
-import { useEffect, useMemo, useState, use } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { BadgeCheck, ChevronRight, ChevronUp, ChevronDown, Crown, Minus, Pencil, Sparkles, Star, Timer, UserPlus, X, Users } from 'lucide-react';
 import { ParticipantIcon, PARTICIPANT_ICONS } from '@/app/lib/participantIcons';
+import { useAuth } from '@/app/contexts/AuthContext';
+import { subscribeToGroup, subscribeToEvent, updateEvent, updateParticipantStars, deleteEvent, addParticipantToEvent, Event as FirestoreEvent, Group as FirestoreGroup, Participant } from '@/app/lib/firestore';
+import { canEditEvent, canManageStars } from '@/app/lib/permissions';
+import AuthGuard from '@/app/components/AuthGuard';
 
 // Event-specific icons (using Lucide icons, not emojis)
 const EVENT_ICONS = [
@@ -29,6 +33,7 @@ interface Participant {
 interface EventParticipant {
     participantId: string;
     stars: number;
+    addedBy?: string;
 }
 
 interface Event {
@@ -45,7 +50,7 @@ interface Group {
     name: string;
     code: string;
     participants: Participant[];
-    events: Event[];
+    events?: Event[]; // Optional - loaded separately
 }
 
 function hexToRgba(hex: string, alpha: number) {
@@ -115,6 +120,7 @@ function richGoalCelebration() {
 export default function EventPage() {
     const params = useParams();
     const router = useRouter();
+    const { user } = useAuth();
     const [groupId, setGroupId] = useState<string>('');
     const [eventId, setEventId] = useState<string>('');
 
@@ -162,41 +168,38 @@ export default function EventPage() {
     } as const;
 
     useEffect(() => {
-        if (!groupId || !eventId) return;
-        const groups = JSON.parse(localStorage.getItem('groups') || '[]');
-        const foundGroup = groups.find((g: Group) => g.id === groupId);
-        if (foundGroup) {
-            // Ensure all participants have completedEvents field
-            foundGroup.participants.forEach((participant: Participant) => {
-                if (!participant.completedEvents) {
-                    participant.completedEvents = [];
-                }
-                // Ensure all achievements have eventCompleted field
-                participant.completedEvents.forEach((achievement: any) => {
-                    if (achievement.eventCompleted === undefined) {
-                        // Check if the corresponding event exists and is completed
-                        const event = foundGroup.events.find((e: Event) => e.id === achievement.eventId);
-                        achievement.eventCompleted = event ? event.endDate < Date.now() : false;
+        if (!groupId || !eventId || !user) return;
+
+        const unsubscribeGroup = subscribeToGroup(user.uid, groupId, (firestoreGroup) => {
+            if (firestoreGroup) {
+                // Ensure all participants have completedEvents field
+                firestoreGroup.participants.forEach((participant: Participant) => {
+                    if (!participant.completedEvents) {
+                        participant.completedEvents = [];
                     }
                 });
-            });
-            // Ensure all events have icon field
-            foundGroup.events.forEach((event: Event) => {
-                if (!event.icon) {
-                    event.icon = 'trophy'; // default icon
+                setGroup(firestoreGroup as Group);
+            } else {
+                router.push('/');
+            }
+        });
+
+        const unsubscribeEvent = subscribeToEvent(user.uid, groupId, eventId, (firestoreEvent) => {
+            if (firestoreEvent) {
+                if (!firestoreEvent.icon) {
+                    firestoreEvent.icon = 'trophy'; // default icon
                 }
-            });
-            setGroup(foundGroup);
-            const foundEvent = foundGroup.events.find((e: Event) => e.id === eventId);
-            if (foundEvent) {
-                setEvent(foundEvent);
+                setEvent(firestoreEvent as Event);
             } else {
                 router.push(`/group/${groupId}`);
             }
-        } else {
-            router.push('/');
-        }
-    }, [groupId, eventId, router]);
+        });
+
+        return () => {
+            unsubscribeGroup();
+            unsubscribeEvent();
+        };
+    }, [groupId, eventId, user, router]);
 
     useEffect(() => {
         if (!event) return;
@@ -234,46 +237,31 @@ export default function EventPage() {
             .sort((a, b) => b.stars - a.stars);
     }, [group, event]);
 
-    const updateEventData = (updatedEvent: Event) => {
-        const groups = JSON.parse(localStorage.getItem('groups') || '[]');
-        const groupIndex = groups.findIndex((g: Group) => g.id === groupId);
-        if (groupIndex === -1) return;
+    // updateEventData is no longer needed - we use updateEvent directly and real-time listeners
 
-        const eventIndex = groups[groupIndex].events.findIndex((e: Event) => e.id === eventId);
-        if (eventIndex === -1) return;
+    const handleAddStar = async (participantId: string) => {
+        if (!event || !user) return;
 
-        groups[groupIndex].events[eventIndex] = updatedEvent;
-
-        // Update participant total stars across all events
-        groups[groupIndex].participants.forEach((participant: Participant) => {
-            let totalStars = 0;
-            groups[groupIndex].events.forEach((evt: Event) => {
-                const ep = evt.participants.find(p => p.participantId === participant.id);
-                if (ep) totalStars += ep.stars;
-            });
-            participant.totalStars = totalStars;
-        });
-
-        localStorage.setItem('groups', JSON.stringify(groups));
-        setGroup(groups[groupIndex]);
-        setEvent(updatedEvent);
-    };
-
-    const handleAddStar = (participantId: string) => {
-        if (!event) return;
+        // Check permissions
+        const canManage = await canManageStars(user.uid, groupId, eventId, participantId);
+        if (!canManage) {
+            alert('אין הרשאה להוסיף כוכבים למשתתף זה');
+            return;
+        }
 
         const currentStars = event.participants.find((ep) => ep.participantId === participantId)?.stars ?? 0;
         const increment = currentStars >= event.starGoal ? 2 : 1; // מעל היעד = 2 נקודות
         const willHitGoal = currentStars < event.starGoal && currentStars + increment >= event.starGoal;
         const isAboveGoal = currentStars >= event.starGoal;
 
-        const updatedParticipants = event.participants.map(ep =>
-            ep.participantId === participantId
-                ? { ...ep, stars: ep.stars + increment }
-                : ep
-        );
-
-        updateEventData({ ...event, participants: updatedParticipants });
+        try {
+            await updateParticipantStars(user.uid, groupId, eventId, participantId, currentStars + increment);
+            // Real-time listener will update automatically
+        } catch (error) {
+            console.error('Error adding star:', error);
+            alert('שגיאה בהוספת כוכב');
+            return;
+        }
 
         // חיווי במרכז למסך (כוכב) - רק לכוכבים רגילים, לא להשלמת יעד
         if (isAboveGoal && !willHitGoal) {
@@ -311,17 +299,9 @@ export default function EventPage() {
                     p.completedEvents.push(achievement);
                 }
 
-                // Update participant in storage
-                const groups = JSON.parse(localStorage.getItem('groups') || '[]');
-                const groupIndex = groups.findIndex((g: Group) => g.id === groupId);
-                if (groupIndex !== -1) {
-                    const participantIndex = groups[groupIndex].participants.findIndex((part: Participant) => part.id === participantId);
-                    if (participantIndex !== -1) {
-                        groups[groupIndex].participants[participantIndex] = p;
-                        localStorage.setItem('groups', JSON.stringify(groups));
-                        setGroup(groups[groupIndex]);
-                    }
-                }
+                // Update participant in group (this will be handled by real-time listener)
+                // Note: completedEvents should be updated in the group document
+                // For now, we'll rely on the real-time listener to update the UI
             }
 
             // הצג חיווי "כל הכבוד!!" למספר שניות
@@ -343,23 +323,32 @@ export default function EventPage() {
         burstConfetti({ big: false });
     };
 
-    const handleRemoveStar = (participantId: string) => {
-        if (!event) return;
+    const handleRemoveStar = async (participantId: string) => {
+        if (!event || !user) return;
 
-        const updatedParticipants = event.participants.map(ep =>
-            ep.participantId === participantId && ep.stars > 0
-                ? { ...ep, stars: ep.stars - 1 }
-                : ep
-        );
+        // Check permissions
+        const canManage = await canManageStars(user.uid, groupId, eventId, participantId);
+        if (!canManage) {
+            alert('אין הרשאה להסיר כוכבים ממשתתף זה');
+            return;
+        }
 
-        updateEventData({ ...event, participants: updatedParticipants });
+        const currentStars = event.participants.find((ep) => ep.participantId === participantId)?.stars ?? 0;
+        if (currentStars <= 0) return;
 
-        setShowSadEmoji(true);
-        setTimeout(() => setShowSadEmoji(false), FEEDBACK_MS.sad);
+        try {
+            await updateParticipantStars(user.uid, groupId, eventId, participantId, currentStars - 1);
+            // Real-time listener will update automatically
+            setShowSadEmoji(true);
+            setTimeout(() => setShowSadEmoji(false), FEEDBACK_MS.sad);
+        } catch (error) {
+            console.error('Error removing star:', error);
+            alert('שגיאה בהסרת כוכב');
+        }
     };
 
-    const handleAddExistingParticipant = (participantId: string) => {
-        if (!event) return;
+    const handleAddExistingParticipant = async (participantId: string) => {
+        if (!event || !user || !group) return;
 
         // Check if participant is already in the event
         const alreadyInEvent = event.participants.some(ep => ep.participantId === participantId);
@@ -368,13 +357,20 @@ export default function EventPage() {
             return;
         }
 
-        const updatedParticipants = [...event.participants, { participantId, stars: 0 }];
-        updateEventData({ ...event, participants: updatedParticipants });
-        setShowExistingParticipants(false);
+        const participant = group.participants.find((p) => p.id === participantId);
+        if (!participant) return;
+
+        try {
+            await addParticipantToEvent(user.uid, groupId, eventId, participant);
+            setShowExistingParticipants(false);
+        } catch (error) {
+            console.error('Error adding participant:', error);
+            alert('שגיאה בהוספת משתתף');
+        }
     };
 
-    const handleAddExistingParticipantInEdit = (participantId: string) => {
-        if (!event) return;
+    const handleAddExistingParticipantInEdit = async (participantId: string) => {
+        if (!event || !user || !group) return;
 
         // Check if participant is already in the event
         const alreadyInEvent = event.participants.some(ep => ep.participantId === participantId);
@@ -383,8 +379,15 @@ export default function EventPage() {
             return;
         }
 
-        const updatedParticipants = [...event.participants, { participantId, stars: 0 }];
-        updateEventData({ ...event, participants: updatedParticipants });
+        const participant = group.participants.find((p) => p.id === participantId);
+        if (!participant) return;
+
+        try {
+            await addParticipantToEvent(user.uid, groupId, eventId, participant);
+        } catch (error) {
+            console.error('Error adding participant:', error);
+            alert('שגיאה בהוספת משתתף');
+        }
     };
 
     const openEditEvent = () => {
@@ -396,8 +399,15 @@ export default function EventPage() {
         setShowEditEvent(true);
     };
 
-    const handleSaveEventEdit = () => {
-        if (!event) return;
+    const handleSaveEventEdit = async () => {
+        if (!event || !user) return;
+
+        // Check permissions
+        const canEdit = await canEditEvent(user.uid, groupId, eventId);
+        if (!canEdit) {
+            alert('אין הרשאה לערוך אירוע זה');
+            return;
+        }
 
         const endDate = new Date(editEventEndDate).getTime();
         if (isNaN(endDate) || endDate <= Date.now()) {
@@ -410,31 +420,38 @@ export default function EventPage() {
             return;
         }
 
-        updateEventData({
-            ...event,
-            name: editEventName.trim(),
-            icon: editEventIcon,
-            endDate,
-            starGoal: editEventStarGoal
-        });
-        setShowEditEvent(false);
+        try {
+            await updateEvent(user.uid, groupId, eventId, {
+                name: editEventName.trim(),
+                icon: editEventIcon,
+                endDate,
+                starGoal: editEventStarGoal,
+            });
+            setShowEditEvent(false);
+        } catch (error) {
+            console.error('Error saving event edit:', error);
+            alert('שגיאה בשמירת שינויים');
+        }
     };
 
     if (!group || !event) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-[#F1F5F9]">
-                <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-                >
-                    <Sparkles className="w-12 h-12 text-[#4D96FF]" />
-                </motion.div>
-            </div>
+            <AuthGuard>
+                <div className="min-h-screen flex items-center justify-center bg-[#F1F5F9]">
+                    <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                    >
+                        <Sparkles className="w-12 h-12 text-[#4D96FF]" />
+                    </motion.div>
+                </div>
+            </AuthGuard>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[#F1F5F9] pb-10" dir="rtl">
+        <AuthGuard>
+            <div className="min-h-screen bg-[#F1F5F9] pb-10" dir="rtl">
             {/* Top Bar */}
             <nav className="fixed top-0 left-0 right-0 h-14 bg-white border-b border-slate-200 z-50 px-3">
                 <div className="max-w-md mx-auto h-full flex items-center justify-between">
@@ -1138,5 +1155,6 @@ export default function EventPage() {
                 )}
             </AnimatePresence>
         </div>
+        </AuthGuard>
     );
 }

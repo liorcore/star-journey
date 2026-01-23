@@ -1,11 +1,14 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronRight, ChevronUp, ChevronDown, Palette, Smile, Sparkles, UserPlus, X } from 'lucide-react';
 import { ParticipantIcon } from '@/app/lib/participantIcons';
 import { PARTICIPANT_EMOJIS } from '@/app/lib/participantEmoji';
+import { useAuth } from '@/app/contexts/AuthContext';
+import { updateGroup, addParticipantToEvent, getUserGroups, Participant } from '@/app/lib/firestore';
+import AuthGuard from '@/app/components/AuthGuard';
 
 const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B739', '#52B788', '#FF8FA3', '#C9ADA7'];
 
@@ -39,6 +42,7 @@ function hexToRgba(hex: string, alpha: number): string {
 export default function AddParticipantPage() {
     const params = useParams();
     const router = useRouter();
+    const { user } = useAuth();
     const [groupId, setGroupId] = useState<string>('');
 
     useEffect(() => {
@@ -71,57 +75,63 @@ export default function AddParticipantPage() {
         setShowColorPicker(false);
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!name.trim()) {
             alert('נא להזין שם');
             return;
         }
 
-        const groups = JSON.parse(localStorage.getItem('groups') || '[]');
-        const groupIndex = groups.findIndex((g: Group) => g.id === groupId);
-
-        if (groupIndex === -1) {
+        if (!user) {
             router.push('/');
             return;
         }
 
-        const newParticipant: Participant = {
-            id: Date.now().toString(),
-            name: name.trim(),
-            icon,
-            age,
-            color,
-            gender,
-            totalStars: 0,
-            eventCount: 0,
-            completedEvents: []
-        };
+        try {
+            // Get current group to add participant
+            const groups = await getUserGroups(user.uid);
+            const currentGroup = groups.find((g) => g.id === groupId);
 
-        groups[groupIndex].participants.push(newParticipant);
-
-        // If we came from an event, add the participant to that event too
-        if (eventId) {
-            const eventIndex = groups[groupIndex].events.findIndex((e: any) => e.id === eventId);
-            if (eventIndex !== -1) {
-                groups[groupIndex].events[eventIndex].participants.push({
-                    participantId: newParticipant.id,
-                    stars: 0
-                });
+            if (!currentGroup) {
+                router.push('/');
+                return;
             }
-        }
 
-        localStorage.setItem('groups', JSON.stringify(groups));
+            const newParticipant: Participant = {
+                id: Date.now().toString(),
+                name: name.trim(),
+                icon,
+                age,
+                color,
+                gender,
+                totalStars: 0,
+                eventCount: 0,
+                completedEvents: [],
+            };
 
-        // Navigate back to event if we came from one, otherwise to group
-        if (eventId) {
-            router.push(`/group/${groupId}/event/${eventId}`);
-        } else {
-            router.push(`/group/${groupId}`);
+            // Add participant to group
+            const updatedParticipants = [...currentGroup.participants, newParticipant];
+            await updateGroup(user.uid, groupId, { participants: updatedParticipants });
+
+            // If we came from an event, add the participant to that event too
+            if (eventId) {
+                await addParticipantToEvent(user.uid, groupId, eventId, newParticipant);
+            }
+
+            // Navigate back to event if we came from one, otherwise to group
+            if (eventId) {
+                router.push(`/group/${groupId}/event/${eventId}`);
+            } else {
+                router.push(`/group/${groupId}`);
+            }
+        } catch (error) {
+            console.error('Error saving participant:', error);
+            alert('שגיאה בשמירת משתתף');
         }
     };
 
     return (
-        <div className="min-h-screen bg-[#F1F5F9] pb-10" dir="rtl">
+        <AuthGuard>
+            <div className="min-h-screen bg-[#F1F5F9] pb-10" dir="rtl">
             {/* Top Bar */}
             <nav className="fixed top-0 left-0 right-0 h-14 bg-white border-b border-slate-200 z-50 px-3">
                 <div className="max-w-md mx-auto h-full flex items-center justify-between">
@@ -369,5 +379,6 @@ export default function AddParticipantPage() {
                 )}
             </AnimatePresence>
         </div>
+        </AuthGuard>
     );
 }

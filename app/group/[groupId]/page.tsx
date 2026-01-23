@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -25,6 +25,11 @@ import {
     X
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { useAuth } from '@/app/contexts/AuthContext';
+import { subscribeToGroup, updateGroup as updateGroupFirestore, deleteEvent, getGroupEvents, Group as FirestoreGroup, Event as FirestoreEvent } from '@/app/lib/firestore';
+import { db } from '@/app/lib/firebase';
+import { collection, onSnapshot } from 'firebase/firestore';
+import AuthGuard from '@/app/components/AuthGuard';
 
 const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B739', '#52B788', '#FF8FA3', '#C9ADA7'];
 import { ParticipantIcon } from '@/app/lib/participantIcons';
@@ -58,7 +63,7 @@ interface Event {
     icon: string;
     endDate: number;
     starGoal: number;
-    participants: { participantId: string; stars: number }[];
+    participants: { participantId: string; stars: number; addedBy?: string }[];
 }
 
 interface Group {
@@ -66,13 +71,14 @@ interface Group {
     name: string;
     code: string;
     participants: Participant[];
-    events: Event[];
+    events?: Event[]; // Optional - loaded separately from subcollection
 }
 
 
 export default function GroupPage() {
     const params = useParams();
     const router = useRouter();
+    const { user } = useAuth();
     const [groupId, setGroupId] = useState<string>('');
 
     useEffect(() => {
@@ -105,44 +111,99 @@ export default function GroupPage() {
     const [showPColorPicker, setShowPColorPicker] = useState(false);
 
     useEffect(() => {
-        if (!groupId) return;
-        const groups = JSON.parse(localStorage.getItem('groups') || '[]');
-        const foundGroup = groups.find((g: Group) => g.id === groupId);
-        if (foundGroup) {
-            // Ensure all participants have completedEvents field
-            foundGroup.participants.forEach((participant: Participant) => {
-                if (!participant.completedEvents) {
-                    participant.completedEvents = [];
-                }
-                // Ensure all achievements have eventCompleted field
-                participant.completedEvents.forEach((achievement: any) => {
-                    if (achievement.eventCompleted === undefined) {
-                        // Check if the corresponding event exists and is completed
-                        const event = foundGroup.events.find((e: Event) => e.id === achievement.eventId);
-                        achievement.eventCompleted = event ? event.endDate < Date.now() : false;
+        if (!groupId || !user) return;
+
+        let events: FirestoreEvent[] = [];
+        let eventsUnsubscribe: (() => void) | null = null;
+
+        // Load events and subscribe to changes
+        const loadEvents = async () => {
+            try {
+                events = await getGroupEvents(user.uid, groupId);
+                // Ensure all events have icon field
+                events.forEach((event: FirestoreEvent) => {
+                    if (!event.icon) {
+                        event.icon = 'trophy'; // default icon
                     }
                 });
-            });
-            // Ensure all events have icon field
-            foundGroup.events.forEach((event: Event) => {
-                if (!event.icon) {
-                    event.icon = 'trophy'; // default icon
-                }
-            });
-            setGroup(foundGroup);
-            setNewGroupName(foundGroup.name);
-        } else {
-            router.push('/');
-        }
-    }, [groupId, router]);
+                // In demo mode (no db) or before Firestore subscription: merge events into group
+                setGroup((prev) => (prev ? { ...prev, events } : prev));
 
-    const updateGroup = (updatedGroup: Group) => {
-        const groups = JSON.parse(localStorage.getItem('groups') || '[]');
-        const index = groups.findIndex((g: Group) => g.id === groupId);
-        if (index !== -1) {
-            groups[index] = updatedGroup;
-            localStorage.setItem('groups', JSON.stringify(groups));
-            setGroup(updatedGroup);
+                // Subscribe to events collection changes (Firebase only; when db is null we use getGroupEvents only)
+                if (db) {
+                    const eventsRef = collection(db, 'users', user.uid, 'groups', groupId, 'events');
+                    eventsUnsubscribe = onSnapshot(eventsRef, (snapshot) => {
+                        const updatedEvents = snapshot.docs.map((doc) => {
+                            const eventData = doc.data();
+                            if (!eventData.icon) {
+                                eventData.icon = 'trophy';
+                            }
+                            return {
+                                id: doc.id,
+                                ...eventData,
+                            } as FirestoreEvent;
+                        });
+
+                        events = updatedEvents;
+
+                        setGroup((prevGroup) => {
+                            if (prevGroup) {
+                                return { ...prevGroup, events: updatedEvents } as Group;
+                            }
+                            return prevGroup;
+                        });
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading events:', error);
+            }
+        };
+
+        loadEvents();
+
+        // Subscribe to group changes
+        const unsubscribe = subscribeToGroup(user.uid, groupId, (firestoreGroup) => {
+            if (firestoreGroup) {
+                // Ensure all participants have completedEvents field
+                firestoreGroup.participants.forEach((participant: Participant) => {
+                    if (!participant.completedEvents) {
+                        participant.completedEvents = [];
+                    }
+                    // Ensure all achievements have eventCompleted field
+                    participant.completedEvents.forEach((achievement: any) => {
+                        if (achievement.eventCompleted === undefined) {
+                            // Check if the corresponding event exists and is completed
+                            const event = events.find((e: FirestoreEvent) => e.id === achievement.eventId);
+                            achievement.eventCompleted = event ? event.endDate < Date.now() : false;
+                        }
+                    });
+                });
+
+                // Update group with current events (from the events listener)
+                setGroup((prevGroup) => {
+                    const currentEvents = prevGroup?.events || events;
+                    return { ...firestoreGroup, events: currentEvents } as Group;
+                });
+                setNewGroupName(firestoreGroup.name);
+            } else {
+                router.push('/');
+            }
+        });
+
+        return () => {
+            unsubscribe();
+            if (eventsUnsubscribe) eventsUnsubscribe();
+        };
+    }, [groupId, user, router]);
+
+    const updateGroup = async (updatedGroup: Group) => {
+        if (!user) return;
+        try {
+            await updateGroupFirestore(user.uid, groupId, updatedGroup);
+            // The real-time listener will update the state automatically
+        } catch (error) {
+            console.error('Error updating group:', error);
+            alert('שגיאה בעדכון קבוצה');
         }
     };
 
@@ -208,10 +269,19 @@ export default function GroupPage() {
         }
     };
 
-    const handleDeleteEvent = (eventId: string) => {
-        if (group && confirm('האם אתה בטוח שברצונך למחוק את האירוע?')) {
-            const updatedEvents = group.events.filter(e => e.id !== eventId);
-            updateGroup({ ...group, events: updatedEvents });
+    const handleDeleteEvent = async (eventId: string) => {
+        if (!group || !user) return;
+        
+        if (!confirm('האם אתה בטוח שברצונך למחוק את האירוע?')) {
+            return;
+        }
+
+        try {
+            await deleteEvent(user.uid, groupId, eventId);
+            // Real-time listener will update automatically
+        } catch (error: any) {
+            console.error('Error deleting event:', error);
+            alert(error.message || 'שגיאה במחיקת אירוע');
         }
     };
 
@@ -232,19 +302,22 @@ export default function GroupPage() {
 
     if (!group) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-[#F1F5F9]">
-                <motion.div 
-                    animate={{ rotate: 360 }}
-                    transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                >
-                    <Sparkles className="w-12 h-12 text-[#4D96FF]" />
-                </motion.div>
-            </div>
+            <AuthGuard>
+                <div className="min-h-screen flex items-center justify-center bg-[#F1F5F9]">
+                    <motion.div 
+                        animate={{ rotate: 360 }}
+                        transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                    >
+                        <Sparkles className="w-12 h-12 text-[#4D96FF]" />
+                    </motion.div>
+                </div>
+            </AuthGuard>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[#F1F5F9] pb-16" dir="rtl">
+        <AuthGuard>
+            <div className="min-h-screen bg-[#F1F5F9] pb-16" dir="rtl">
             {/* Navigation Bar */}
             <nav className="fixed top-0 left-0 right-0 h-14 sm:h-20 bg-white border-b border-slate-200 z-50 px-3 sm:px-6">
                 <div className="max-w-5xl mx-auto h-full flex items-center justify-between">
@@ -354,7 +427,7 @@ export default function GroupPage() {
                                             <div className="flex flex-wrap gap-1 mt-1">
                                                 {participant.completedEvents.slice(0, 6).map((achievement, idx) => {
                                                     // Find the event to get the star goal
-                                                    const event = group?.events.find(e => e.id === achievement.eventId);
+                                                    const event = group?.events?.find(e => e.id === achievement.eventId);
                                                     const starGoal = event?.starGoal || 0;
 
                                                     return (
@@ -442,13 +515,13 @@ export default function GroupPage() {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                        {group.events.length === 0 ? (
+                        {(!group.events || group.events.length === 0) ? (
                             <div className="col-span-full p-5 sm:p-10 bg-white rounded-xl border-2 border-dashed border-slate-200 text-center">
                                 <Sparkles className="w-5 h-5 sm:w-10 sm:h-10 text-slate-300 mx-auto mb-2" />
                                 <p className="text-xs sm:text-lg font-bold text-slate-400">אין הרפתקאות</p>
                             </div>
                         ) : (
-                            group.events.map((event) => (
+                            (group.events || []).map((event) => (
                                 <div
                                     key={event.id}
                                     className="bg-white p-3 sm:p-6 rounded-xl shadow-sm border border-slate-100 relative overflow-hidden cursor-pointer"
@@ -787,5 +860,6 @@ export default function GroupPage() {
                 </AnimatePresence>
             </main>
         </div>
+        </AuthGuard>
     );
 }
