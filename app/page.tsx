@@ -6,7 +6,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Copy, Plus, Rocket, Star, Users, X, LogOut, Trash2, Shield } from 'lucide-react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useAdmin } from '@/app/contexts/AdminContext';
-import { useRouter } from 'next/navigation';
 import AuthGuard from '@/app/components/AuthGuard';
 import { getUserGroups, createGroup, deleteGroup, Group } from '@/app/lib/firestore';
 

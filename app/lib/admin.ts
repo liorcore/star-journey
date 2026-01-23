@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebase';
 
 // Helper to check if Firebase is available
@@ -59,7 +59,7 @@ export async function removeAdmin(userId: string): Promise<void> {
 
   try {
     const adminRef = doc(db!, 'admins', userId);
-    await adminRef.delete();
+    await deleteDoc(adminRef);
   } catch (error) {
     console.error('Error removing admin:', error);
     throw error;
