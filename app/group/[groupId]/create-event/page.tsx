@@ -41,7 +41,7 @@ export default function CreateEventPage() {
             setGroupId(params.groupId as string);
         } else if (params && typeof (params as any).then === 'function') {
             // Handle Promise case (Next.js 15+)
-            (params as Promise<any>).then((resolvedParams: any) => {
+            (params as unknown as Promise<any>).then((resolvedParams: any) => {
                 if (resolvedParams?.groupId) {
                     setGroupId(resolvedParams.groupId as string);
                 }
