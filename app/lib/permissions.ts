@@ -4,13 +4,25 @@ import { Event } from './firestore';
 
 export type UserRole = 'owner' | 'guest' | 'none';
 
+// Helper to check if Firebase is available
+const isFirebaseAvailable = () => {
+  if (!db) {
+    return false;
+  }
+  return true;
+};
+
 export async function getUserRole(
   userId: string,
   groupId: string,
   eventId: string
 ): Promise<UserRole> {
+  if (!isFirebaseAvailable()) {
+    return 'none';
+  }
+  
   try {
-    const eventRef = doc(db, 'users', userId, 'groups', groupId, 'events', eventId);
+    const eventRef = doc(db!, 'users', userId, 'groups', groupId, 'events', eventId);
     const eventDoc = await getDoc(eventRef);
 
     if (!eventDoc.exists()) {
@@ -57,7 +69,11 @@ export async function canEditParticipant(
     }
 
     if (role === 'guest') {
-      const eventRef = doc(db, 'users', userId, 'groups', groupId, 'events', eventId);
+      if (!isFirebaseAvailable()) {
+        return false;
+      }
+      
+      const eventRef = doc(db!, 'users', userId, 'groups', groupId, 'events', eventId);
       const eventDoc = await getDoc(eventRef);
       
       if (!eventDoc.exists()) {
@@ -91,7 +107,11 @@ export async function canManageStars(
     }
 
     if (role === 'guest') {
-      const eventRef = doc(db, 'users', userId, 'groups', groupId, 'events', eventId);
+      if (!isFirebaseAvailable()) {
+        return false;
+      }
+      
+      const eventRef = doc(db!, 'users', userId, 'groups', groupId, 'events', eventId);
       const eventDoc = await getDoc(eventRef);
       
       if (!eventDoc.exists()) {
