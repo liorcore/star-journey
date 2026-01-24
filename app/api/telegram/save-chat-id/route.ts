@@ -3,6 +3,7 @@ import { isAdmin } from '@/app/lib/admin';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/app/lib/firebase';
 import admin from 'firebase-admin';
+import { getAuthenticatedUserId } from '@/app/lib/auth-helper';
 
 // Initialize Admin SDK if not already initialized
 let adminDb: admin.firestore.Firestore | null = null;
@@ -20,17 +21,38 @@ try {
         // If default credentials don't work, try environment variable
         try {
           const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+          console.log('🔍 save-chat-id: Service account env var exists:', !!serviceAccount);
           if (serviceAccount) {
-            const serviceAccountJson = JSON.parse(serviceAccount);
-            admin.initializeApp({
-              credential: admin.credential.cert(serviceAccountJson),
-            });
+            try {
+              const serviceAccountJson = JSON.parse(serviceAccount);
+              console.log('🔍 save-chat-id: JSON parsed successfully');
+              console.log('🔍 save-chat-id: project_id:', serviceAccountJson.project_id);
+              
+              if (!serviceAccountJson.project_id) {
+                console.error('❌ save-chat-id: project_id is missing from service account JSON!');
+                throw new Error('project_id is missing from service account');
+              }
+              
+              admin.initializeApp({
+                credential: admin.credential.cert(serviceAccountJson),
+                projectId: serviceAccountJson.project_id,
+              });
+              console.log('✅ save-chat-id: Admin SDK initialized with service account');
+            } catch (parseError: any) {
+              console.error('❌ save-chat-id: JSON parsing failed:', parseError.message);
+              throw parseError;
+            }
           } else {
             // Last resort: try without credentials (may work in some environments)
+            console.warn('⚠️ save-chat-id: No service account, trying default init...');
             admin.initializeApp();
           }
         } catch (e2) {
-          console.warn('Admin SDK initialization failed, will use client SDK:', e2);
+          console.error('❌ save-chat-id: Admin SDK initialization failed:', e2);
+          console.error('❌ save-chat-id: Error details:', {
+            message: e2 instanceof Error ? e2.message : String(e2),
+            stack: e2 instanceof Error ? e2.stack : undefined,
+          });
         }
       }
     }
@@ -48,7 +70,15 @@ try {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { chatId, userId } = body;
+    const { chatId } = body;
+    
+    // Try to get authenticated user ID from token first
+    let userId: string | null = await getAuthenticatedUserId(request);
+    
+    // Fallback to body if token not available (for backward compatibility)
+    if (!userId) {
+      userId = body.userId;
+    }
 
     if (!chatId || !userId) {
       return NextResponse.json(

@@ -28,13 +28,20 @@ export default function TelegramSettingsComponent() {
     }
 
     try {
+      // Get ID token for authentication
+      const idToken = await user.getIdToken();
+      
       // Use API route instead of direct client-side call (bypasses Security Rules)
       const userId = encodeURIComponent(user.uid);
       const url = `/api/telegram/get-settings?userId=${userId}`;
       
       console.log('Loading Telegram settings for user:', user.uid);
       
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${idToken}`,
+        },
+      });
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -89,11 +96,15 @@ export default function TelegramSettingsComponent() {
 
     setLoading(true);
     try {
+      // Get ID token for authentication
+      const idToken = await user.getIdToken();
+      
       // Use API route instead of direct client-side call (bypasses Security Rules)
       const response = await fetch('/api/telegram/save-chat-id', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
         },
         body: JSON.stringify({
           chatId: chatId.trim(),

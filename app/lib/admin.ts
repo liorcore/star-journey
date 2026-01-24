@@ -34,12 +34,27 @@ async function getAdminDb() {
           const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
           console.log('🔍 getAdminDb(): Service account env var exists:', !!serviceAccount);
           if (serviceAccount) {
-            const serviceAccountJson = JSON.parse(serviceAccount);
-            console.log('🔍 getAdminDb(): Initializing with service account...');
-            admin.initializeApp({
-              credential: admin.credential.cert(serviceAccountJson),
-            });
-            console.log('🔍 getAdminDb(): Service account initialization succeeded');
+            try {
+              const serviceAccountJson = JSON.parse(serviceAccount);
+              console.log('🔍 getAdminDb(): JSON parsed successfully');
+              console.log('🔍 getAdminDb(): project_id:', serviceAccountJson.project_id);
+              
+              if (!serviceAccountJson.project_id) {
+                console.error('❌ getAdminDb(): project_id is missing from service account JSON!');
+                throw new Error('project_id is missing from service account');
+              }
+              
+              console.log('🔍 getAdminDb(): Initializing with service account...');
+              admin.initializeApp({
+                credential: admin.credential.cert(serviceAccountJson),
+                projectId: serviceAccountJson.project_id,
+              });
+              console.log('✅ getAdminDb(): Service account initialization succeeded');
+            } catch (parseError: any) {
+              console.error('❌ getAdminDb(): JSON parsing failed:', parseError.message);
+              console.error('❌ getAdminDb(): First 100 chars:', serviceAccount.substring(0, 100));
+              throw parseError;
+            }
           } else {
             console.log('🔍 getAdminDb(): No service account, trying default init...');
             admin.initializeApp();
@@ -47,6 +62,10 @@ async function getAdminDb() {
           }
         } catch (e2) {
           console.error('❌ getAdminDb(): All initialization methods failed:', e2);
+          console.error('❌ getAdminDb(): Error details:', {
+            message: e2 instanceof Error ? e2.message : String(e2),
+            stack: e2 instanceof Error ? e2.stack : undefined,
+          });
           // Admin SDK not available
           return null;
         }
@@ -82,6 +101,8 @@ export async function isAdmin(userId: string): Promise<boolean> {
   }
 
   try {
+    const isServerSide = typeof window === 'undefined';
+    
     // Try to use Admin SDK first (server-side)
     console.log('🔍 Attempting to get Admin SDK...');
     const adminDb = await getAdminDb();
@@ -95,9 +116,19 @@ export async function isAdmin(userId: string): Promise<boolean> {
       return exists;
     }
 
-    // Fallback to client SDK (client-side or if Admin SDK not available)
-    console.log('🔍 Falling back to client SDK...');
-    const adminRef = doc(db!, 'admins', userId);
+    // On server-side, if Admin SDK is not available, we can't check admin status
+    if (isServerSide) {
+      console.error('❌ Admin SDK not available on server-side, cannot check admin status');
+      return false;
+    }
+
+    // Fallback to client SDK (client-side only)
+    console.log('🔍 Falling back to client SDK (client-side)...');
+    if (!db) {
+      console.error('❌ Client SDK not available');
+      return false;
+    }
+    const adminRef = doc(db, 'admins', userId);
     const adminDoc = await getDoc(adminRef);
     const exists = adminDoc.exists();
     console.log('🔍 Client SDK check result:', exists);

@@ -3,6 +3,7 @@ import { isAdmin } from '@/app/lib/admin';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/app/lib/firebase';
 import admin from 'firebase-admin';
+import { getAuthenticatedUserId } from '@/app/lib/auth-helper';
 
 // Initialize Admin SDK if not already initialized
 let adminDb: admin.firestore.Firestore | null = null;
@@ -17,16 +18,37 @@ try {
       } catch (e) {
         try {
           const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+          console.log('🔍 get-settings: Service account env var exists:', !!serviceAccount);
           if (serviceAccount) {
-            const serviceAccountJson = JSON.parse(serviceAccount);
-            admin.initializeApp({
-              credential: admin.credential.cert(serviceAccountJson),
-            });
+            try {
+              const serviceAccountJson = JSON.parse(serviceAccount);
+              console.log('🔍 get-settings: JSON parsed successfully');
+              console.log('🔍 get-settings: project_id:', serviceAccountJson.project_id);
+              
+              if (!serviceAccountJson.project_id) {
+                console.error('❌ get-settings: project_id is missing from service account JSON!');
+                throw new Error('project_id is missing from service account');
+              }
+              
+              admin.initializeApp({
+                credential: admin.credential.cert(serviceAccountJson),
+                projectId: serviceAccountJson.project_id,
+              });
+              console.log('✅ get-settings: Admin SDK initialized with service account');
+            } catch (parseError: any) {
+              console.error('❌ get-settings: JSON parsing failed:', parseError.message);
+              throw parseError;
+            }
           } else {
+            console.warn('⚠️ get-settings: No service account, trying default init...');
             admin.initializeApp();
           }
         } catch (e2) {
-          console.warn('Admin SDK initialization failed:', e2);
+          console.error('❌ get-settings: Admin SDK initialization failed:', e2);
+          console.error('❌ get-settings: Error details:', {
+            message: e2 instanceof Error ? e2.message : String(e2),
+            stack: e2 instanceof Error ? e2.stack : undefined,
+          });
         }
       }
     }
@@ -42,18 +64,20 @@ try {
  */
 export async function GET(request: NextRequest) {
   try {
-    // Handle both URL and request.url for Next.js compatibility
-    let userId: string | null = null;
+    // Try to get authenticated user ID from token first
+    let userId: string | null = await getAuthenticatedUserId(request);
     
-    try {
-      const url = new URL(request.url);
-      userId = url.searchParams.get('userId');
-    } catch (e) {
-      // Fallback: try to get from headers or body
-      const urlString = request.url || '';
-      if (urlString.includes('userId=')) {
-        const match = urlString.match(/userId=([^&]+)/);
-        userId = match ? decodeURIComponent(match[1]) : null;
+    // Fallback to query param if token not available (for backward compatibility)
+    if (!userId) {
+      try {
+        const url = new URL(request.url);
+        userId = url.searchParams.get('userId');
+      } catch (e) {
+        const urlString = request.url || '';
+        if (urlString.includes('userId=')) {
+          const match = urlString.match(/userId=([^&]+)/);
+          userId = match ? decodeURIComponent(match[1]) : null;
+        }
       }
     }
 
