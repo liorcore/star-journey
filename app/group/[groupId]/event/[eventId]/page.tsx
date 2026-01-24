@@ -550,7 +550,7 @@ export default function EventPage() {
                                             </div>
                                             <div className="min-w-0">
                                                 <div className="flex items-center gap-2">
-                                                    <h3 className="text-base font-black text-slate-900 truncate">{participant.name}</h3>
+                                                    <h3 className="text-lg sm:text-xl font-black text-slate-900 truncate">{participant.name}</h3>
                                                     {isDone && <BadgeCheck className="w-4 h-4 text-green-600" />}
                                                 </div>
                                                 <p className="text-xs font-bold text-slate-800/75 mt-0.5">
@@ -586,9 +586,9 @@ export default function EventPage() {
                                         <div className="relative flex items-center justify-between gap-3 px-2 py-2">
                                             <button
                                                 onClick={() => handleAddStar(participantId)}
-                                                className="w-12 h-12 rounded-3xl backdrop-blur-sm bg-white/20 active:scale-95 transition-transform flex items-center justify-center gap-2"
+                                                className="w-14 h-14 sm:w-16 sm:h-16 rounded-3xl backdrop-blur-sm bg-white/20 active:scale-95 transition-transform flex items-center justify-center gap-2"
                                             >
-                                                <Star className="w-5 h-5" fill="currentColor" style={{ color: '#FFD93D' }} />
+                                                <Star className="w-6 h-6 sm:w-7 sm:h-7" fill="currentColor" style={{ color: '#FFD93D' }} />
                                             </button>
                                             <div className="text-center">
                                                 <div className="text-4xl font-black text-slate-900 leading-none">
@@ -599,7 +599,7 @@ export default function EventPage() {
                                             <button
                                                 onClick={() => handleRemoveStar(participantId)}
                                                 disabled={stars === 0}
-                                                className="w-12 h-12 rounded-3xl backdrop-blur-sm bg-white/20 active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
+                                                className="w-14 h-14 sm:w-16 sm:h-16 rounded-3xl backdrop-blur-sm bg-white/20 active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
                                             >
                                                 <span className="text-2xl">😢</span>
                                             </button>

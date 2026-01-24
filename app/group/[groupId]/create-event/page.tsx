@@ -55,7 +55,7 @@ export default function CreateEventPage() {
     const [group, setGroup] = useState<Group | null>(null);
     const [eventName, setEventName] = useState('');
     const [endDate, setEndDate] = useState('');
-    const [starGoal, setStarGoal] = useState(100);
+    const [starGoal, setStarGoal] = useState(20);
     const [eventIcon, setEventIcon] = useState('trophy');
     const [selectedParticipants, setSelectedParticipants] = useState<Set<string>>(new Set());
     const [showNewParticipant, setShowNewParticipant] = useState(false);
@@ -274,10 +274,10 @@ export default function CreateEventPage() {
                                     <button
                                         type="button"
                                         onClick={() => setStarGoal(Math.max(1, starGoal - 1))}
-                                        className="h-6 w-6 rounded flex items-center justify-center text-slate-700 hover:bg-slate-100 active:scale-95 transition-transform"
+                                        className="h-8 w-8 rounded flex items-center justify-center text-slate-700 hover:bg-slate-100 active:scale-95 transition-transform"
                                         aria-label="הורד יעד"
                                     >
-                                        <ChevronDown className="w-3 h-3" />
+                                        <ChevronDown className="w-4 h-4" />
                                     </button>
                                     <input
                                         type="number"
@@ -290,10 +290,10 @@ export default function CreateEventPage() {
                                     <button
                                         type="button"
                                         onClick={() => setStarGoal(Math.min(100, starGoal + 1))}
-                                        className="h-6 w-6 rounded flex items-center justify-center text-slate-700 hover:bg-slate-100 active:scale-95 transition-transform"
+                                        className="h-8 w-8 rounded flex items-center justify-center text-slate-700 hover:bg-slate-100 active:scale-95 transition-transform"
                                         aria-label="העלה יעד"
                                     >
-                                        <ChevronUp className="w-3 h-3" />
+                                        <ChevronUp className="w-4 h-4" />
                                     </button>
                                 </div>
                                 <Star className="w-4 h-4" fill="currentColor" style={{ color: '#FFD93D' }} />

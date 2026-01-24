@@ -22,7 +22,8 @@ import {
     UserPlus,
     Palette,
     Smile,
-    X
+    X,
+    Trophy
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuth } from '@/app/contexts/AuthContext';
@@ -86,6 +87,8 @@ export default function GroupPage() {
     const [pGender, setPGender] = useState<'male' | 'female'>('male');
     const [showPIconPicker, setShowPIconPicker] = useState(false);
     const [showPColorPicker, setShowPColorPicker] = useState(false);
+    const [swipeTranslateX, setSwipeTranslateX] = useState<Record<string, number>>({});
+    const [swipeStartX, setSwipeStartX] = useState<Record<string, number>>({});
 
     useEffect(() => {
         if (!groupId || !user) return;
@@ -231,6 +234,27 @@ export default function GroupPage() {
         setShowDeleteParticipantDialog(true);
     };
 
+    const handleSwipeStart = (e: React.TouchEvent, participantId: string) => {
+        setSwipeStartX({ ...swipeStartX, [participantId]: e.touches[0].clientX });
+    };
+
+    const handleSwipeMove = (e: React.TouchEvent, participantId: string) => {
+        if (swipeStartX[participantId] === undefined) return;
+        const deltaX = swipeStartX[participantId] - e.touches[0].clientX;
+        const newTranslateX = Math.max(-80, Math.min(0, -deltaX));
+        setSwipeTranslateX({ ...swipeTranslateX, [participantId]: newTranslateX });
+    };
+
+    const handleSwipeEnd = (participantId: string) => {
+        const currentTranslate = swipeTranslateX[participantId] || 0;
+        if (currentTranslate < -40) {
+            setSwipeTranslateX({ ...swipeTranslateX, [participantId]: -80 });
+        } else {
+            setSwipeTranslateX({ ...swipeTranslateX, [participantId]: 0 });
+        }
+        setSwipeStartX({ ...swipeStartX, [participantId]: undefined });
+    };
+
     const confirmDeleteParticipant = async () => {
         if (!user || !group || !participantToDelete) return;
 
@@ -325,10 +349,8 @@ export default function GroupPage() {
                         <Home size={18} className="sm:w-6 sm:h-6" />
                     </motion.button>
                     
-                    <div className="flex-1 text-center px-4">
-                        <div className="text-[10px] sm:text-xs font-black text-slate-500 uppercase tracking-widest">
-                            קבוצה
-                        </div>
+                    <div className="flex-1 text-center px-4 flex items-center justify-center">
+                        <Users className="w-5 h-5 sm:w-6 sm:h-6 text-slate-500" />
                     </div>
                     
                     <motion.button
@@ -384,7 +406,7 @@ export default function GroupPage() {
                 {/* Participants Section - Mobile First */}
                 <section className="mb-6 sm:mb-10">
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-base sm:text-2xl font-black text-slate-900 flex items-center gap-2">
+                        <h2 className="text-xl sm:text-3xl font-black text-slate-900 flex items-center gap-2">
                             <Users className="text-[#4D96FF] w-4 h-4 sm:w-6 sm:h-6" />
                             הצוות
                         </h2>
@@ -403,20 +425,32 @@ export default function GroupPage() {
                             .map((participant, index) => (
                                 <div
                                     key={participant.id}
-                                    className="bg-white p-2.5 sm:p-4 rounded-xl shadow-sm border border-slate-100 flex items-center gap-2 sm:gap-3"
+                                    className="relative overflow-hidden"
+                                    onTouchStart={(e) => handleSwipeStart(e, participant.id)}
+                                    onTouchMove={(e) => handleSwipeMove(e, participant.id)}
+                                    onTouchEnd={() => handleSwipeEnd(participant.id)}
                                 >
+                                    <div
+                                        className="p-2.5 sm:p-4 rounded-xl shadow-sm border-2 flex items-center gap-2 sm:gap-3 transition-transform"
+                                        style={{ 
+                                            transform: `translateX(${swipeTranslateX[participant.id] || 0}px)`,
+                                            backgroundColor: hexToRgba(participant.color, 0.1),
+                                            borderColor: participant.color
+                                        }}
+                                    >
                                     <div 
-                                        className="w-9 h-9 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-lg sm:text-2xl relative overflow-hidden shrink-0"
+                                        className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg flex items-center justify-center text-lg sm:text-2xl relative overflow-hidden shrink-0"
                                         style={{ backgroundColor: `${participant.color}22`, border: `1px solid ${participant.color}` }}
                                     >
                                         <div className="pattern-overlay" />
-                                        <ParticipantIcon icon={participant.icon} className="text-slate-900" emojiSize="text-base" />
+                                        <ParticipantIcon icon={participant.icon} className="text-slate-900" emojiSize="text-lg sm:text-xl" />
                                     </div>
                                     
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between gap-1">
-                                            <h3 className="font-black text-slate-900 truncate text-xs sm:text-base">{participant.name}</h3>
-                                            <span className="font-black text-xs sm:text-base text-[#FFD93D] flex items-center gap-0.5 shrink-0">
+                                            <h3 className="font-black text-slate-900 truncate text-sm sm:text-lg">{participant.name}</h3>
+                                            <span className="font-black text-xs sm:text-base text-[#FFD93D] flex items-center gap-1 shrink-0">
+                                                <Trophy className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" />
                                                 {participant.totalStars}
                                             </span>
                                         </div>
@@ -453,7 +487,7 @@ export default function GroupPage() {
                                                             <div className="font-bold">{achievement.eventName}</div>
                                                             <div className="flex items-center gap-1">
                                                                 <Star className="w-3 h-3" fill="currentColor" style={{ color: '#FFD93D' }} />
-                                                                <span>{achievement.stars}/{starGoal}</span>
+                                                                <span>{achievement.stars}/{starGoal} כוכבים | יעד: {starGoal}</span>
                                                             </div>
                                                             <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
                                                         </div>
@@ -493,16 +527,15 @@ export default function GroupPage() {
                                         >
                                             <Pencil className="w-4 h-4" />
                                         </motion.button>
-                                        <motion.button
-                                            whileTap={{ scale: 0.9 }}
-                                            onClick={() => handleDeleteParticipant(participant)}
-                                            className="h-8 w-8 sm:h-9 sm:w-9 inline-flex items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100"
-                                            title="מחק משתתף"
-                                            aria-label={`מחק ${participant.name}`}
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </motion.button>
                                     </div>
+                                    </div>
+                                    <button
+                                        onClick={() => handleDeleteParticipant(participant)}
+                                        className="absolute right-0 top-0 bottom-0 w-20 bg-red-500 text-white flex items-center justify-center rounded-xl"
+                                        style={{ transform: `translateX(${80 + (swipeTranslateX[participant.id] || 0)}px)` }}
+                                    >
+                                        <Trash2 className="w-5 h-5" />
+                                    </button>
                                 </div>
                             ))}
                     </div>
@@ -511,7 +544,7 @@ export default function GroupPage() {
                 {/* Events Section */}
                 <section className="mb-6">
                     <div className="flex items-center justify-between mb-4 gap-2">
-                        <h2 className="text-base sm:text-2xl font-black text-slate-900 flex items-center gap-2">
+                        <h2 className="text-xl sm:text-3xl font-black text-slate-900 flex items-center gap-2">
                             <Calendar className="text-[#4D96FF] w-4 h-4 sm:w-6 sm:h-6" />
                             הרפתקאות
                         </h2>

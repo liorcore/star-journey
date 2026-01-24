@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, Copy, Plus, Rocket, Star, Users, X, LogOut, Trash2, Shield } from 'lucide-react';
+import { Check, Copy, Plus, Rocket, Star, Users, X, LogOut, Trash2, Shield, Verified } from 'lucide-react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useAdmin } from '@/app/contexts/AdminContext';
 import AuthGuard from '@/app/components/AuthGuard';
@@ -269,10 +269,10 @@ export default function Home() {
                     <motion.button
                       whileTap={{ scale: 0.9 }}
                       onClick={(e) => handleDeleteGroup(e, group)}
-                      className="h-8 w-8 rounded-xl bg-white border border-slate-200 text-red-600 hover:bg-slate-50 inline-flex items-center justify-center active:scale-95 transition-transform"
+                      className="h-6 w-6 rounded-xl bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 inline-flex items-center justify-center active:scale-95 transition-transform"
                       title="מחק קבוצה"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3 h-3" />
                     </motion.button>
                   </div>
                 </div>
@@ -326,6 +326,17 @@ export default function Home() {
             </button>
           )}
         </motion.section>
+
+        {/* Deployment Badge */}
+        <div className="mt-8 flex justify-center">
+          <div className="relative group">
+            <Verified className="w-4 h-4 text-slate-400" />
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+              {process.env.NEXT_PUBLIC_VERCEL_URL || process.env.VERCEL_URL || 'Development'}
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+            </div>
+          </div>
+        </div>
       </main>
 
       {/* Create Group Sheet */}
