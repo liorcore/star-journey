@@ -36,14 +36,33 @@ export default function TelegramSettingsComponent() {
       return;
     }
 
+    if (!user) {
+      alert('עליך להתחבר כדי לשמור Chat ID');
+      return;
+    }
+
     setLoading(true);
     try {
-      await saveTelegramSettings({ 
-        chatId: chatId.trim(),
-        connected: true,
+      // Use API route instead of direct client-side call (bypasses Security Rules)
+      const response = await fetch('/api/telegram/save-chat-id', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chatId: chatId.trim(),
+          userId: user.uid,
+        }),
       });
-      await loadSettings();
-      alert('Chat ID נשמר בהצלחה');
+
+      const result = await response.json();
+      
+      if (result.success) {
+        await loadSettings();
+        alert('Chat ID נשמר בהצלחה');
+      } else {
+        alert(result.message || 'שגיאה בשמירת Chat ID');
+      }
     } catch (error) {
       console.error('Error saving chat ID:', error);
       alert('שגיאה בשמירת Chat ID');
