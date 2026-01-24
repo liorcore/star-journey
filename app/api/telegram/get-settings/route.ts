@@ -73,14 +73,19 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if user is admin (server-side check)
+    console.log('🔍 Checking admin status for userId:', userId);
     const userIsAdmin = await isAdmin(userId);
+    console.log('🔍 Admin check result:', userIsAdmin);
     
     if (!userIsAdmin) {
+      console.warn('❌ User is not admin:', userId);
       return NextResponse.json(
         { success: false, message: 'רק אדמינים יכולים לראות הגדרות טלגרם' },
         { status: 403 }
       );
     }
+    
+    console.log('✅ User is admin, proceeding...');
 
     // Get settings using Admin SDK (bypasses Security Rules)
     let settingsData: any = {};
