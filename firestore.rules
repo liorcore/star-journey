@@ -10,9 +10,12 @@ service cloud.firestore {
     // Admins collection
     // Allow users to read their own admin document (to check if they are admin)
     // This is safe because users can only see if their own document exists
+    // IMPORTANT: Must allow read without isAdmin() check to avoid circular dependency
     match /admins/{adminId} {
-      allow read: if request.auth != null && 
-                  (request.auth.uid == adminId || isAdmin());
+      // Allow read if user is reading their own document (needed for isAdmin() to work)
+      allow read: if request.auth != null && request.auth.uid == adminId;
+      // Also allow admins to read other admin documents
+      allow read: if isAdmin();
       allow write: if false; // Only server-side or through admin functions
     }
     
