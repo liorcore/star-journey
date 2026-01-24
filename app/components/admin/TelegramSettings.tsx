@@ -15,36 +15,52 @@ export default function TelegramSettingsComponent() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    loadSettings();
-  }, []);
+    if (user) {
+      loadSettings();
+    }
+  }, [user]);
 
   const loadSettings = async () => {
+    if (!user || !user.uid) {
+      console.warn('User not available for loading settings - user:', user);
+      // Don't try to load if user is not available
+      return;
+    }
+
     try {
       // Use API route instead of direct client-side call (bypasses Security Rules)
-      if (user) {
-        const response = await fetch(`/api/telegram/get-settings?userId=${user.uid}`);
-        const result = await response.json();
-        
-        if (result.success && result.settings) {
-          setSettings(result.settings);
-          setChatId(result.settings.chatId || '');
-        } else {
-          // Fallback to direct call if API fails
+      const userId = encodeURIComponent(user.uid);
+      const url = `/api/telegram/get-settings?userId=${userId}`;
+      
+      console.log('Loading Telegram settings for user:', user.uid);
+      
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API error:', response.status, errorText);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success && result.settings) {
+        setSettings(result.settings);
+        setChatId(result.settings.chatId || '');
+      } else {
+        console.warn('API returned unsuccessful result:', result);
+        // Fallback to direct call if API fails
+        try {
           const currentSettings = await getTelegramSettings();
           if (currentSettings) {
             setSettings(currentSettings);
             setChatId(currentSettings.chatId || '');
           }
-        }
-      } else {
-        // Fallback to direct call if not logged in
-        const currentSettings = await getTelegramSettings();
-        if (currentSettings) {
-          setSettings(currentSettings);
-          setChatId(currentSettings.chatId || '');
+        } catch (e) {
+          console.error('Fallback also failed:', e);
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading settings:', error);
       // Fallback to direct call on error
       try {
@@ -55,6 +71,7 @@ export default function TelegramSettingsComponent() {
         }
       } catch (e) {
         // Ignore fallback errors
+        console.error('Fallback also failed:', e);
       }
     }
   };

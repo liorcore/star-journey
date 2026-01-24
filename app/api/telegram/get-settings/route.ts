@@ -42,12 +42,25 @@ try {
  */
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
+    // Handle both URL and request.url for Next.js compatibility
+    let userId: string | null = null;
+    
+    try {
+      const url = new URL(request.url);
+      userId = url.searchParams.get('userId');
+    } catch (e) {
+      // Fallback: try to get from headers or body
+      const urlString = request.url || '';
+      if (urlString.includes('userId=')) {
+        const match = urlString.match(/userId=([^&]+)/);
+        userId = match ? decodeURIComponent(match[1]) : null;
+      }
+    }
 
-    if (!userId) {
+    if (!userId || userId.trim() === '') {
+      console.error('Missing userId in request:', { url: request.url });
       return NextResponse.json(
-        { success: false, message: 'Missing userId' },
+        { success: false, message: 'Missing userId - please ensure you are logged in' },
         { status: 400 }
       );
     }
