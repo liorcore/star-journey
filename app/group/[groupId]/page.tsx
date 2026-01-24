@@ -459,49 +459,45 @@ export default function GroupPage() {
                                             <span>גיל {participant.age.toFixed(1)}</span>
                                             <span>{participant.gender === 'male' ? '👦' : '👧'}</span>
                                         </div>
-                                        {/* Completed Events Tags */}
-                                        {participant.completedEvents && participant.completedEvents.length > 0 && (
-                                            <div className="flex flex-wrap gap-1 mt-1">
-                                                {participant.completedEvents.slice(0, 6).map((achievement, idx) => {
-                                                    // Find the event to get the star goal
-                                                    const event = group?.events?.find(e => e.id === achievement.eventId);
-                                                    const starGoal = event?.starGoal || 0;
+                                        {/* Completed Events Tags - Only show completed events */}
+                                        {(() => {
+                                            const completedEvents = participant.completedEvents?.filter(ae => ae.eventCompleted) || [];
+                                            if (completedEvents.length === 0) return null;
+                                            
+                                            return (
+                                                <div className="max-h-20 sm:max-h-24 overflow-y-auto mt-1">
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {completedEvents.map((achievement, idx) => {
+                                                            // Find the event to get the star goal and icon
+                                                            const event = group?.events?.find(e => e.id === achievement.eventId);
+                                                            const starGoal = event?.starGoal || 0;
+                                                            const eventIcon = event?.icon || achievement.icon || 'trophy';
 
-                                                    return (
-                                                        <div
-                                                            key={`${achievement.eventId}-${idx}`}
-                                                            className="relative group"
-                                                            title={`${achievement.eventName}: ${achievement.stars}/${starGoal} ⭐ ${achievement.eventCompleted ? '(הושלם)' : '(פעיל)'}`}
-                                                        >
-                                                        <div className={`w-4 h-4 sm:w-5 sm:h-5 rounded flex items-center justify-center text-[8px] sm:text-[10px] ${
-                                                            achievement.eventCompleted
-                                                                ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 border-2 border-yellow-500 shadow-sm'
-                                                                : 'bg-slate-200 border border-slate-300'
-                                                        }`}>
-                                                            <ParticipantIcon icon={achievement.icon} className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                            {achievement.eventCompleted && (
-                                                                <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-white"></div>
-                                                            )}
-                                                        </div>
-                                                        {/* Tooltip */}
-                                                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
-                                                            <div className="font-bold">{achievement.eventName}</div>
-                                                            <div className="flex items-center gap-1">
-                                                                <Star className="w-3 h-3" fill="currentColor" style={{ color: '#FFD93D' }} />
-                                                                <span>{achievement.stars}/{starGoal} כוכבים | יעד: {starGoal}</span>
-                                                            </div>
-                                                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
-                                                        </div>
+                                                            return (
+                                                                <div
+                                                                    key={`${achievement.eventId}-${idx}`}
+                                                                    className="relative group"
+                                                                >
+                                                                    <div className="w-4 h-4 sm:w-5 sm:h-5 rounded flex items-center justify-center text-[8px] sm:text-[10px] bg-gradient-to-br from-yellow-400 to-yellow-600 border-2 border-yellow-500 shadow-sm">
+                                                                        <ParticipantIcon icon={eventIcon} className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-white"></div>
+                                                                    </div>
+                                                                    {/* Tooltip */}
+                                                                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+                                                                        <div className="font-bold">{achievement.eventName}</div>
+                                                                        <div className="flex items-center gap-1">
+                                                                            <Star className="w-3 h-3" fill="currentColor" style={{ color: '#FFD93D' }} />
+                                                                            <span>{achievement.stars}/{starGoal} כוכבים | יעד: {starGoal}</span>
+                                                                        </div>
+                                                                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
-                                                    );
-                                                })}
-                                                {participant.completedEvents.length > 6 && (
-                                                    <div className="w-4 h-4 sm:w-5 sm:h-5 rounded bg-slate-300 flex items-center justify-center text-[8px] sm:text-[10px] font-bold">
-                                                        +{participant.completedEvents.length - 6}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
+                                                </div>
+                                            );
+                                        })()}
                                         <div className="w-full h-1 sm:h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
                                             <div 
                                                 className="h-full rounded-full transition-all"

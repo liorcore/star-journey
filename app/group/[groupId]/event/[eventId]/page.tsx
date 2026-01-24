@@ -550,8 +550,8 @@ export default function EventPage() {
                                             </div>
                                             <div className="min-w-0">
                                                 <div className="flex items-center gap-2">
-                                                    <h3 className="text-lg sm:text-xl font-black text-slate-900 truncate">{participant.name}</h3>
-                                                    {isDone && <BadgeCheck className="w-4 h-4 text-green-600" />}
+                                                    <h3 className="text-xl sm:text-2xl font-black text-slate-900 truncate">{participant.name}</h3>
+                                                    {isDone && <BadgeCheck className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />}
                                                 </div>
                                                 <p className="text-xs font-bold text-slate-800/75 mt-0.5">
                                                     גיל {participant.age} {participant.gender === 'male' ? '👦' : '👧'}
@@ -599,9 +599,9 @@ export default function EventPage() {
                                             <button
                                                 onClick={() => handleRemoveStar(participantId)}
                                                 disabled={stars === 0}
-                                                className="w-14 h-14 sm:w-16 sm:h-16 rounded-3xl backdrop-blur-sm bg-white/20 active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
+                                                className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl backdrop-blur-sm bg-white/20 active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
                                             >
-                                                <span className="text-2xl">😢</span>
+                                                <span className="text-3xl sm:text-4xl">😢</span>
                                             </button>
                                         </div>
                                     </div>
