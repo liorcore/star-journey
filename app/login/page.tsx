@@ -38,7 +38,15 @@ export default function LoginPage() {
       await signIn(email, password);
       router.push('/');
     } catch (err: any) {
-      setError(getErrorMessage(err.code));
+      // Log error for debugging
+      console.error('Login error:', err);
+      console.error('Error code:', err?.code);
+      console.error('Error message:', err?.message);
+      console.error('Full error object:', JSON.stringify(err, null, 2));
+      
+      // Try to get error code from different possible locations
+      const errorCode = err?.code || err?.error?.code || err?.errorCode || null;
+      setError(getErrorMessage(errorCode));
     } finally {
       setLoading(false);
     }
@@ -73,7 +81,11 @@ export default function LoginPage() {
       await signUp(sanitizedEmail, password);
       router.push('/');
     } catch (err: any) {
-      setError(getErrorMessage(err.code));
+      // Log error for debugging
+      console.error('Signup error:', err);
+      console.error('Error code:', err?.code);
+      const errorCode = err?.code || err?.error?.code || err?.errorCode || null;
+      setError(getErrorMessage(errorCode));
     } finally {
       setLoading(false);
     }
@@ -91,7 +103,11 @@ export default function LoginPage() {
       if (err.message && typeof err.message === 'string' && err.message.includes('קיים כבר חשבון')) {
         setError(err.message);
       } else {
-        setError(getErrorMessage(err.code));
+        // Log error for debugging
+        console.error('Google sign in error:', err);
+        console.error('Error code:', err?.code);
+        const errorCode = err?.code || err?.error?.code || err?.errorCode || null;
+        setError(getErrorMessage(errorCode));
       }
     } finally {
       setLoading(false);
@@ -111,7 +127,11 @@ export default function LoginPage() {
         setError('');
       }, 3000);
     } catch (err: any) {
-      setError(getErrorMessage(err.code));
+      // Log error for debugging
+      console.error('Reset password error:', err);
+      console.error('Error code:', err?.code);
+      const errorCode = err?.code || err?.error?.code || err?.errorCode || null;
+      setError(getErrorMessage(errorCode));
     } finally {
       setLoading(false);
     }
@@ -122,7 +142,10 @@ export default function LoginPage() {
       return 'שגיאה בהתחברות. נסה שוב';
     }
     
-    switch (code) {
+    // Normalize error code (remove spaces, convert to lowercase for comparison)
+    const normalizedCode = code.toLowerCase().trim();
+    
+    switch (normalizedCode) {
       case 'auth/user-not-found':
         return 'משתמש לא נמצא';
       case 'auth/wrong-password':
@@ -138,10 +161,14 @@ export default function LoginPage() {
       case 'auth/account-exists-with-different-credential':
         return 'קיים כבר חשבון עם האימייל הזה. אנא התחבר קודם עם אימייל וסיסמה, ואז תוכל לקשר את חשבון Google.';
       case 'auth/invalid-credential':
-        return 'שגיאה בהתחברות. נסה שוב';
       case 'auth/invalid-login-credentials':
-        return 'שגיאה בהתחברות. נסה שוב';
+      case 'invalid-credential':
+      case 'invalid-login-credentials':
+        // For invalid credentials, provide a more helpful message
+        return 'אימייל או סיסמה שגויים. אנא בדוק את הפרטים ונסה שוב';
       default:
+        // Log unknown error codes for debugging
+        console.warn('Unknown error code:', code);
         return 'שגיאה בהתחברות. נסה שוב';
     }
   };
