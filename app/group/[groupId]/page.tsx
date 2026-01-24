@@ -88,7 +88,7 @@ export default function GroupPage() {
     const [showPIconPicker, setShowPIconPicker] = useState(false);
     const [showPColorPicker, setShowPColorPicker] = useState(false);
     const [swipeTranslateX, setSwipeTranslateX] = useState<Record<string, number>>({});
-    const [swipeStartX, setSwipeStartX] = useState<Record<string, number>>({});
+    const [swipeStartX, setSwipeStartX] = useState<Record<string, number | undefined>>({});
 
     useEffect(() => {
         if (!groupId || !user) return;
@@ -239,8 +239,9 @@ export default function GroupPage() {
     };
 
     const handleSwipeMove = (e: React.TouchEvent, participantId: string) => {
-        if (swipeStartX[participantId] === undefined) return;
-        const deltaX = swipeStartX[participantId] - e.touches[0].clientX;
+        const startX = swipeStartX[participantId];
+        if (startX === undefined) return;
+        const deltaX = startX - e.touches[0].clientX;
         const newTranslateX = Math.max(-80, Math.min(0, -deltaX));
         setSwipeTranslateX({ ...swipeTranslateX, [participantId]: newTranslateX });
     };
