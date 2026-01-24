@@ -28,13 +28,14 @@ service cloud.firestore {
       // Admins can read all user documents
       allow read: if isAdmin();
 
-      // Groups - only owner can modify
+      // Groups - only owner can modify, admins can read all
       match /groups/{groupId} {
-        // Allow read if user is the owner (check both resource and userId context)
+        // Allow read if user is the owner or admin (check both resource and userId context)
         allow read: if request.auth != null && 
           (request.auth.uid == userId || 
            request.auth.uid == resource.data.ownerId ||
-           !resource.exists);
+           !resource.exists ||
+           isAdmin());
         allow create: if request.auth != null && 
           request.auth.uid == userId && 
           request.auth.uid == request.resource.data.ownerId;
@@ -45,14 +46,15 @@ service cloud.firestore {
           request.auth.uid == userId && 
           request.auth.uid == resource.data.ownerId;
 
-        // Events - owner can do everything, guests have limited access
+        // Events - owner can do everything, guests have limited access, admins can read all
         match /events/{eventId} {
-          // Read: owner or guest (simplified check - detailed checks in app code)
+          // Read: owner or guest or admin (simplified check - detailed checks in app code)
           allow read: if request.auth != null &&
             (request.auth.uid == userId ||
              request.auth.uid == resource.data.ownerId ||
              resource.data.get('guests', []) != null ||
-             !resource.exists);
+             !resource.exists ||
+             isAdmin());
 
           // Create: only owner (check both userId context and ownerId in data)
           allow create: if request.auth != null &&
@@ -72,14 +74,6 @@ service cloud.firestore {
         }
       }
       
-      // Admins can read all groups and events
-      match /groups/{groupId} {
-        allow read: if isAdmin();
-        
-        match /events/{eventId} {
-          allow read: if isAdmin();
-        }
-      }
     }
   }
 }
