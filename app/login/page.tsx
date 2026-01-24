@@ -117,7 +117,11 @@ export default function LoginPage() {
     }
   };
 
-  const getErrorMessage = (code: string): string => {
+  const getErrorMessage = (code: string | undefined | null): string => {
+    if (!code) {
+      return 'שגיאה בהתחברות. נסה שוב';
+    }
+    
     switch (code) {
       case 'auth/user-not-found':
         return 'משתמש לא נמצא';
@@ -133,6 +137,10 @@ export default function LoginPage() {
         return 'יותר מדי ניסיונות. נסה שוב מאוחר יותר';
       case 'auth/account-exists-with-different-credential':
         return 'קיים כבר חשבון עם האימייל הזה. אנא התחבר קודם עם אימייל וסיסמה, ואז תוכל לקשר את חשבון Google.';
+      case 'auth/invalid-credential':
+        return 'שגיאה בהתחברות. נסה שוב';
+      case 'auth/invalid-login-credentials':
+        return 'שגיאה בהתחברות. נסה שוב';
       default:
         return 'שגיאה בהתחברות. נסה שוב';
     }
@@ -191,6 +199,9 @@ export default function LoginPage() {
                     <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
                       type="email"
+                      id="login-email"
+                      name="email"
+                      autoComplete="email"
                       value={email}
                       onChange={(e) => {
                         setEmail(e.target.value);
@@ -217,6 +228,9 @@ export default function LoginPage() {
                         setError('');
                       }}
                       showValidation={false}
+                      autocompleteType="current-password"
+                      name="password"
+                      id="login-password"
                     />
                   </div>
                 </div>
@@ -306,6 +320,9 @@ export default function LoginPage() {
                     <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
                       type="email"
+                      id="signup-email"
+                      name="email"
+                      autoComplete="email"
                       value={email}
                       onChange={(e) => {
                         setEmail(e.target.value);
@@ -330,6 +347,9 @@ export default function LoginPage() {
                       setError('');
                     }}
                     showValidation={false}
+                    autocompleteType="new-password"
+                    name="password"
+                    id="signup-password"
                   />
                 </div>
 
@@ -341,6 +361,9 @@ export default function LoginPage() {
                     <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
                       type={showConfirmPassword ? 'text' : 'password'}
+                      id="signup-confirm-password"
+                      name="confirmPassword"
+                      autoComplete="new-password"
                       value={confirmPassword}
                       onChange={(e) => {
                         setConfirmPassword(e.target.value);
@@ -491,6 +514,9 @@ export default function LoginPage() {
                     <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
                       type="email"
+                      id="forgot-email"
+                      name="email"
+                      autoComplete="email"
                       value={email}
                       onChange={(e) => {
                         setEmail(e.target.value);

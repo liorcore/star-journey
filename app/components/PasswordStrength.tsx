@@ -7,12 +7,18 @@ interface PasswordStrengthProps {
   password: string;
   onPasswordChange: (password: string) => void;
   showValidation?: boolean;
+  autocompleteType?: 'current-password' | 'new-password';
+  name?: string;
+  id?: string;
 }
 
 export default function PasswordStrength({
   password,
   onPasswordChange,
   showValidation = true,
+  autocompleteType = 'current-password',
+  name = 'password',
+  id,
 }: PasswordStrengthProps) {
   const [showPassword, setShowPassword] = useState(false);
 
@@ -36,6 +42,9 @@ export default function PasswordStrength({
       <div className="relative">
         <input
           type={showPassword ? 'text' : 'password'}
+          id={id}
+          name={name}
+          autoComplete={autocompleteType}
           value={password}
           onChange={(e) => onPasswordChange(e.target.value)}
           placeholder="סיסמה"
