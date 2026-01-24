@@ -20,13 +20,42 @@ export default function TelegramSettingsComponent() {
 
   const loadSettings = async () => {
     try {
-      const currentSettings = await getTelegramSettings();
-      if (currentSettings) {
-        setSettings(currentSettings);
-        setChatId(currentSettings.chatId || '');
+      // Use API route instead of direct client-side call (bypasses Security Rules)
+      if (user) {
+        const response = await fetch(`/api/telegram/get-settings?userId=${user.uid}`);
+        const result = await response.json();
+        
+        if (result.success && result.settings) {
+          setSettings(result.settings);
+          setChatId(result.settings.chatId || '');
+        } else {
+          // Fallback to direct call if API fails
+          const currentSettings = await getTelegramSettings();
+          if (currentSettings) {
+            setSettings(currentSettings);
+            setChatId(currentSettings.chatId || '');
+          }
+        }
+      } else {
+        // Fallback to direct call if not logged in
+        const currentSettings = await getTelegramSettings();
+        if (currentSettings) {
+          setSettings(currentSettings);
+          setChatId(currentSettings.chatId || '');
+        }
       }
     } catch (error) {
       console.error('Error loading settings:', error);
+      // Fallback to direct call on error
+      try {
+        const currentSettings = await getTelegramSettings();
+        if (currentSettings) {
+          setSettings(currentSettings);
+          setChatId(currentSettings.chatId || '');
+        }
+      } catch (e) {
+        // Ignore fallback errors
+      }
     }
   };
 
