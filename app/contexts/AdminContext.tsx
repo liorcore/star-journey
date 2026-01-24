@@ -25,7 +25,9 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
 
     const checkAdminStatus = async () => {
       try {
+        console.log('Checking admin status for user:', user.uid);
         const admin = await isAdmin(user.uid);
+        console.log('Admin status result:', admin);
         setAdminStatus(admin);
       } catch (error) {
         console.error('Error checking admin status:', error);
