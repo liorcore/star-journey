@@ -24,10 +24,11 @@ export default function AdminPage() {
   const [statsPeriod, setStatsPeriod] = useState<'day' | 'hour' | 'month'>('day');
 
   useEffect(() => {
-    if (!adminLoading && !userIsAdmin) {
+    // Redirect non-admin users immediately
+    if (!adminLoading && (!user || !userIsAdmin)) {
       router.push('/');
     }
-  }, [adminLoading, userIsAdmin, router]);
+  }, [adminLoading, user, userIsAdmin, router]);
 
   useEffect(() => {
     if (userIsAdmin) {
@@ -45,12 +46,20 @@ export default function AdminPage() {
         getUsageStats(statsPeriod),
       ]);
 
+      console.log('Admin data loaded:', {
+        users: usersData.length,
+        groups: groupsData.length,
+        events: eventsData.length,
+        stats: statsData.length,
+      });
+
       setUsers(usersData);
       setGroupsCount(groupsData.length);
       setEventsCount(eventsData.length);
       setUsageStats(statsData);
     } catch (error) {
       console.error('Error loading admin data:', error);
+      // Show error to user (optional - you can add error state if needed)
     } finally {
       setLoading(false);
     }
@@ -68,7 +77,8 @@ export default function AdminPage() {
     );
   }
 
-  if (!userIsAdmin) {
+  // Double check: if user is not admin or not logged in, don't render anything
+  if (!user || !userIsAdmin) {
     return null;
   }
 
