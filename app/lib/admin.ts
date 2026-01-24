@@ -24,10 +24,30 @@ async function getAdminDb() {
       console.log('🔍 getAdminDb(): No apps initialized, initializing...');
       try {
         console.log('🔍 getAdminDb(): Trying applicationDefault()...');
-        admin.initializeApp({
-          credential: admin.credential.applicationDefault(),
-        });
-        console.log('🔍 getAdminDb(): applicationDefault() succeeded');
+        // Try to get project ID from service account first
+        const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+        let projectId: string | undefined;
+        if (serviceAccount) {
+          try {
+            const serviceAccountJson = JSON.parse(serviceAccount);
+            projectId = serviceAccountJson.project_id;
+          } catch (e) {
+            // Ignore parsing errors
+          }
+        }
+        
+        if (projectId) {
+          admin.initializeApp({
+            credential: admin.credential.applicationDefault(),
+            projectId: projectId,
+          });
+          console.log('🔍 getAdminDb(): applicationDefault() succeeded with projectId:', projectId);
+        } else {
+          admin.initializeApp({
+            credential: admin.credential.applicationDefault(),
+          });
+          console.log('🔍 getAdminDb(): applicationDefault() succeeded (no explicit projectId)');
+        }
       } catch (e) {
         console.warn('🔍 getAdminDb(): applicationDefault() failed:', e);
         try {
@@ -56,9 +76,9 @@ async function getAdminDb() {
               throw parseError;
             }
           } else {
-            console.log('🔍 getAdminDb(): No service account, trying default init...');
-            admin.initializeApp();
-            console.log('🔍 getAdminDb(): Default init succeeded');
+            console.error('❌ getAdminDb(): No service account available!');
+            // Don't initialize without project ID - it will fail
+            throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable is required');
           }
         } catch (e2) {
           console.error('❌ getAdminDb(): All initialization methods failed:', e2);
@@ -72,10 +92,66 @@ async function getAdminDb() {
       }
     } else {
       console.log('🔍 getAdminDb(): Admin app already initialized');
+      // Check if the app has project ID
+      const app = admin.apps[0];
+      const currentProjectId = app?.options?.projectId;
+      console.log('🔍 getAdminDb(): Current app projectId:', currentProjectId);
+      
+      if (!currentProjectId) {
+        console.warn('⚠️ getAdminDb(): App initialized but no projectId!');
+        // Try to get project ID from service account
+        const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+        if (serviceAccount) {
+          try {
+            const serviceAccountJson = JSON.parse(serviceAccount);
+            if (serviceAccountJson.project_id) {
+              console.warn('⚠️ getAdminDb(): Reinitializing app with project ID...');
+              // Delete existing app and reinitialize
+              try {
+                admin.app().delete();
+              } catch (deleteError) {
+                // Ignore if delete fails
+              }
+              admin.initializeApp({
+                credential: admin.credential.cert(serviceAccountJson),
+                projectId: serviceAccountJson.project_id,
+              });
+              console.log('✅ getAdminDb(): Reinitialized with project ID:', serviceAccountJson.project_id);
+            }
+          } catch (e) {
+            console.error('❌ getAdminDb(): Failed to reinitialize:', e);
+          }
+        }
+      }
+    }
+    
+    // Get Firestore instance
+    // Firestore should automatically use the project ID from the app
+    // But if project ID is missing, we need to set it explicitly
+    const app = admin.apps[0];
+    const projectId = app?.options?.projectId;
+    
+    if (!projectId) {
+      console.error('❌ getAdminDb(): No project ID found in app options!');
+      // Try to get from service account
+      const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+      if (serviceAccount) {
+        try {
+          const serviceAccountJson = JSON.parse(serviceAccount);
+          if (serviceAccountJson.project_id) {
+            console.error('❌ getAdminDb(): App initialized without project ID, but service account has it!');
+            console.error('❌ getAdminDb(): This means app was initialized elsewhere without project ID');
+            return null;
+          }
+        } catch (e) {
+          // Ignore
+        }
+      }
+      return null;
     }
     
     const firestore = admin.firestore();
-    console.log('🔍 getAdminDb(): Returning Firestore instance');
+    console.log('🔍 getAdminDb(): Returning Firestore instance with projectId:', projectId);
     return firestore;
   } catch (error) {
     console.error('❌ getAdminDb(): Error:', error);

@@ -14,9 +14,30 @@ try {
     if (!admin.apps.length) {
       // Try to initialize with default credentials (works on Vercel/Cloud Run)
       try {
-        admin.initializeApp({
-          credential: admin.credential.applicationDefault(),
-        });
+        // Try to get project ID from service account first
+        const serviceAccountForProjectId = process.env.FIREBASE_SERVICE_ACCOUNT;
+        let projectId: string | undefined;
+        if (serviceAccountForProjectId) {
+          try {
+            const serviceAccountJson = JSON.parse(serviceAccountForProjectId);
+            projectId = serviceAccountJson.project_id;
+          } catch (e) {
+            // Ignore parsing errors
+          }
+        }
+        
+        if (projectId) {
+          admin.initializeApp({
+            credential: admin.credential.applicationDefault(),
+            projectId: projectId,
+          });
+          console.log('✅ save-chat-id: Admin SDK initialized with applicationDefault and projectId:', projectId);
+        } else {
+          admin.initializeApp({
+            credential: admin.credential.applicationDefault(),
+          });
+          console.log('✅ save-chat-id: Admin SDK initialized with applicationDefault (no explicit projectId)');
+        }
       } catch (e) {
         // If default credentials don't work, try environment variable
         try {
@@ -43,9 +64,9 @@ try {
               throw parseError;
             }
           } else {
-            // Last resort: try without credentials (may work in some environments)
-            console.warn('⚠️ save-chat-id: No service account, trying default init...');
-            admin.initializeApp();
+            console.error('❌ save-chat-id: No service account available!');
+            // Don't initialize without project ID - it will fail
+            throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable is required');
           }
         } catch (e2) {
           console.error('❌ save-chat-id: Admin SDK initialization failed:', e2);

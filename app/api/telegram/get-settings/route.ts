@@ -12,9 +12,30 @@ try {
   if (typeof window === 'undefined') {
     if (!admin.apps.length) {
       try {
-        admin.initializeApp({
-          credential: admin.credential.applicationDefault(),
-        });
+        // Try to get project ID from service account first
+        const serviceAccountForProjectId = process.env.FIREBASE_SERVICE_ACCOUNT;
+        let projectId: string | undefined;
+        if (serviceAccountForProjectId) {
+          try {
+            const serviceAccountJson = JSON.parse(serviceAccountForProjectId);
+            projectId = serviceAccountJson.project_id;
+          } catch (e) {
+            // Ignore parsing errors
+          }
+        }
+        
+        if (projectId) {
+          admin.initializeApp({
+            credential: admin.credential.applicationDefault(),
+            projectId: projectId,
+          });
+          console.log('✅ get-settings: Admin SDK initialized with applicationDefault and projectId:', projectId);
+        } else {
+          admin.initializeApp({
+            credential: admin.credential.applicationDefault(),
+          });
+          console.log('✅ get-settings: Admin SDK initialized with applicationDefault (no explicit projectId)');
+        }
       } catch (e) {
         try {
           const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
@@ -40,8 +61,9 @@ try {
               throw parseError;
             }
           } else {
-            console.warn('⚠️ get-settings: No service account, trying default init...');
-            admin.initializeApp();
+            console.error('❌ get-settings: No service account available!');
+            // Don't initialize without project ID - it will fail
+            throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable is required');
           }
         } catch (e2) {
           console.error('❌ get-settings: Admin SDK initialization failed:', e2);
