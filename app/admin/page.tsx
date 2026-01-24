@@ -39,6 +39,8 @@ export default function AdminPage() {
   const loadData = async () => {
     setLoading(true);
     try {
+      console.log('Loading admin data...');
+      
       const [usersData, groupsData, eventsData, statsData] = await Promise.all([
         getAllUsers(),
         getAllGroups(),
@@ -51,6 +53,9 @@ export default function AdminPage() {
         groups: groupsData.length,
         events: eventsData.length,
         stats: statsData.length,
+        usersData: usersData,
+        groupsData: groupsData.slice(0, 3), // Show first 3 groups
+        eventsData: eventsData.slice(0, 3), // Show first 3 events
       });
 
       setUsers(usersData);
@@ -59,6 +64,10 @@ export default function AdminPage() {
       setUsageStats(statsData);
     } catch (error) {
       console.error('Error loading admin data:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       // Show error to user (optional - you can add error state if needed)
     } finally {
       setLoading(false);

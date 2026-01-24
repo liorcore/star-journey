@@ -14,7 +14,8 @@ import {
   fetchSignInMethodsForEmail,
   linkWithPopup,
 } from 'firebase/auth';
-import { auth } from '@/app/lib/firebase';
+import { auth, db } from '@/app/lib/firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 interface AuthContextType {
   user: User | null;
@@ -57,9 +58,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       setLoading(false);
+      
+      // Update lastActive timestamp when user signs in
+      if (user && db) {
+        try {
+          const userRef = doc(db, 'users', user.uid);
+          await setDoc(userRef, {
+            email: user.email,
+            displayName: user.displayName || null,
+            lastActive: serverTimestamp(),
+          }, { merge: true }); // Use merge to avoid overwriting existing data
+        } catch (error) {
+          // Silently fail - don't block user sign in
+          console.error('Error updating user document:', error);
+        }
+      }
     });
 
     return () => unsubscribe();
@@ -85,6 +101,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { user: mockUser as User } as UserCredential;
     }
     const result = await createUserWithEmailAndPassword(auth, email, password);
+    
+    // Create user document in Firestore
+    if (db && result.user) {
+      try {
+        const userRef = doc(db, 'users', result.user.uid);
+        await setDoc(userRef, {
+          email: result.user.email,
+          displayName: result.user.displayName || null,
+          createdAt: serverTimestamp(),
+          lastActive: serverTimestamp(),
+        }, { merge: true }); // Use merge to avoid overwriting existing data
+      } catch (error) {
+        // Silently fail - don't block user registration
+        console.error('Error creating user document:', error);
+      }
+    }
     
     // Send Telegram notification for new user
     try {
@@ -127,6 +159,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         new Date(result.user.metadata.creationTime).getTime() > Date.now() - 5000; // Within last 5 seconds
       
       if (isNewUser) {
+        // Create user document in Firestore
+        if (db && result.user) {
+          try {
+            const userRef = doc(db, 'users', result.user.uid);
+            await setDoc(userRef, {
+              email: result.user.email,
+              displayName: result.user.displayName || null,
+              createdAt: serverTimestamp(),
+              lastActive: serverTimestamp(),
+            }, { merge: true }); // Use merge to avoid overwriting existing data
+          } catch (error) {
+            // Silently fail - don't block user registration
+            console.error('Error creating user document:', error);
+          }
+        }
+        
         // Send Telegram notification for new user
         try {
           await fetch('/api/admin/notify-user-signup', {

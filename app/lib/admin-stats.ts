@@ -1,4 +1,4 @@
-import { collection, getDocs, query, orderBy, Timestamp, collectionGroup } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, Timestamp } from 'firebase/firestore';
 import { db } from './firebase';
 import { Group, Event } from './firestore';
 
@@ -62,90 +62,27 @@ export async function getAllUsers(): Promise<UserStats[]> {
       console.warn('Error getting users from users collection:', error);
     }
     
-    // Get all groups using collection group query to find users who have groups
-    // This finds users even if they don't have a document in users collection
-    try {
-      const groupsQuery = collectionGroup(db!, 'groups');
-      const groupsSnapshot = await getDocs(groupsQuery);
-      
-      for (const groupDoc of groupsSnapshot.docs) {
-        // Extract userId from the document path: users/{userId}/groups/{groupId}
-        const pathParts = groupDoc.ref.path.split('/');
-        const userId = pathParts[1]; // users/{userId}/groups/...
+    // Get groups and events for each user
+    // Note: We can only get data for users who have a document in users collection
+    // or users we know about from Authentication (which requires Admin SDK)
+    for (const [userId, user] of usersMap.entries()) {
+      try {
+        // Get user's groups
+        const groupsRef = collection(db!, 'users', userId, 'groups');
+        const groupsSnapshot = await getDocs(groupsRef);
+        user.groupsCount = groupsSnapshot.size;
         
-        if (!usersMap.has(userId)) {
-          // Create user entry if it doesn't exist
-          usersMap.set(userId, {
-            userId,
-            email: null,
-            displayName: null,
-            createdAt: null,
-            groupsCount: 0,
-            eventsCount: 0,
-            lastActive: null,
-          });
+        // Count events across all groups
+        let eventsCount = 0;
+        for (const groupDoc of groupsSnapshot.docs) {
+          const eventsRef = collection(db!, 'users', userId, 'groups', groupDoc.id, 'events');
+          const eventsSnapshot = await getDocs(eventsRef);
+          eventsCount += eventsSnapshot.size;
         }
-        
-        const user = usersMap.get(userId)!;
-        user.groupsCount++;
-      }
-    } catch (error) {
-      console.warn('Error getting groups via collection group:', error);
-      // Fallback: try to get groups from users collection
-      for (const [userId, user] of usersMap.entries()) {
-        try {
-          const groupsRef = collection(db!, 'users', userId, 'groups');
-          const groupsSnapshot = await getDocs(groupsRef);
-          user.groupsCount = groupsSnapshot.size;
-        } catch (e) {
-          // Ignore errors for individual users
-        }
-      }
-    }
-    
-    // Count events for each user
-    try {
-      const eventsQuery = collectionGroup(db!, 'events');
-      const eventsSnapshot = await getDocs(eventsQuery);
-      
-      for (const eventDoc of eventsSnapshot.docs) {
-        // Extract userId from the document path: users/{userId}/groups/{groupId}/events/{eventId}
-        const pathParts = eventDoc.ref.path.split('/');
-        const userId = pathParts[1]; // users/{userId}/groups/.../events/...
-        
-        if (!usersMap.has(userId)) {
-          usersMap.set(userId, {
-            userId,
-            email: null,
-            displayName: null,
-            createdAt: null,
-            groupsCount: 0,
-            eventsCount: 0,
-            lastActive: null,
-          });
-        }
-        
-        const user = usersMap.get(userId)!;
-        user.eventsCount++;
-      }
-    } catch (error) {
-      console.warn('Error getting events via collection group:', error);
-      // Fallback: count events from groups
-      for (const [userId, user] of usersMap.entries()) {
-        try {
-          const groupsRef = collection(db!, 'users', userId, 'groups');
-          const groupsSnapshot = await getDocs(groupsRef);
-          
-          let eventsCount = 0;
-          for (const groupDoc of groupsSnapshot.docs) {
-            const eventsRef = collection(db!, 'users', userId, 'groups', groupDoc.id, 'events');
-            const eventsSnapshot = await getDocs(eventsRef);
-            eventsCount += eventsSnapshot.size;
-          }
-          user.eventsCount = eventsCount;
-        } catch (e) {
-          // Ignore errors for individual users
-        }
+        user.eventsCount = eventsCount;
+      } catch (e) {
+        // Ignore errors for individual users
+        console.warn(`Error getting data for user ${userId}:`, e);
       }
     }
     
@@ -158,7 +95,7 @@ export async function getAllUsers(): Promise<UserStats[]> {
 
 /**
  * Get all groups across all users
- * Uses collection group query to find all groups regardless of user document existence
+ * Note: This requires finding users who have groups, even if they don't have a document in users collection
  */
 export async function getAllGroups(): Promise<Group[]> {
   if (!isFirebaseAvailable()) {
@@ -167,29 +104,21 @@ export async function getAllGroups(): Promise<Group[]> {
 
   try {
     const allGroups: Group[] = [];
+    const userIdsSet = new Set<string>();
     
-    // Use collection group query to get all groups from all users
-    // This works even if there's no document in users collection
-    const groupsQuery = collectionGroup(db!, 'groups');
-    const groupsSnapshot = await getDocs(groupsQuery);
-    
-    for (const groupDoc of groupsSnapshot.docs) {
-      allGroups.push({
-        id: groupDoc.id,
-        ...groupDoc.data(),
-      } as Group);
+    // First, get all users from users collection
+    try {
+      const usersSnapshot = await getDocs(collection(db!, 'users'));
+      for (const userDoc of usersSnapshot.docs) {
+        userIdsSet.add(userDoc.id);
+      }
+    } catch (error) {
+      console.warn('Error getting users from users collection:', error);
     }
     
-    return allGroups;
-  } catch (error) {
-    console.error('Error getting all groups:', error);
-    // If collection group query fails (e.g., no index), fall back to old method
-    try {
-      const allGroups: Group[] = [];
-      const usersSnapshot = await getDocs(collection(db!, 'users'));
-      
-      for (const userDoc of usersSnapshot.docs) {
-        const userId = userDoc.id;
+    // Try to get groups from known users
+    for (const userId of userIdsSet) {
+      try {
         const groupsRef = collection(db!, 'users', userId, 'groups');
         const groupsSnapshot = await getDocs(groupsRef);
         
@@ -199,19 +128,26 @@ export async function getAllGroups(): Promise<Group[]> {
             ...groupDoc.data(),
           } as Group);
         }
+      } catch (error) {
+        // Ignore errors for individual users
+        console.warn(`Error getting groups for user ${userId}:`, error);
       }
-      
-      return allGroups;
-    } catch (fallbackError) {
-      console.error('Error in fallback method:', fallbackError);
-      throw error;
     }
+    
+    // Also try to get groups from users who might not have a document in users collection
+    // by checking Authentication users (this requires Admin SDK, so we'll skip for now)
+    // For now, we rely on users having at least accessed the app once
+    
+    return allGroups;
+  } catch (error) {
+    console.error('Error getting all groups:', error);
+    return [];
   }
 }
 
 /**
  * Get all events across all users and groups
- * Uses collection group query to find all events regardless of user document existence
+ * Note: This requires finding users who have groups, even if they don't have a document in users collection
  */
 export async function getAllEvents(): Promise<Event[]> {
   if (!isFirebaseAvailable()) {
@@ -220,29 +156,21 @@ export async function getAllEvents(): Promise<Event[]> {
 
   try {
     const allEvents: Event[] = [];
+    const userIdsSet = new Set<string>();
     
-    // Use collection group query to get all events from all groups
-    // This works even if there's no document in users collection
-    const eventsQuery = collectionGroup(db!, 'events');
-    const eventsSnapshot = await getDocs(eventsQuery);
-    
-    for (const eventDoc of eventsSnapshot.docs) {
-      allEvents.push({
-        id: eventDoc.id,
-        ...eventDoc.data(),
-      } as Event);
+    // First, get all users from users collection
+    try {
+      const usersSnapshot = await getDocs(collection(db!, 'users'));
+      for (const userDoc of usersSnapshot.docs) {
+        userIdsSet.add(userDoc.id);
+      }
+    } catch (error) {
+      console.warn('Error getting users from users collection:', error);
     }
     
-    return allEvents;
-  } catch (error) {
-    console.error('Error getting all events:', error);
-    // If collection group query fails (e.g., no index), fall back to old method
-    try {
-      const allEvents: Event[] = [];
-      const usersSnapshot = await getDocs(collection(db!, 'users'));
-      
-      for (const userDoc of usersSnapshot.docs) {
-        const userId = userDoc.id;
+    // Get events from known users
+    for (const userId of userIdsSet) {
+      try {
         const groupsRef = collection(db!, 'users', userId, 'groups');
         const groupsSnapshot = await getDocs(groupsRef);
         
@@ -257,13 +185,16 @@ export async function getAllEvents(): Promise<Event[]> {
             } as Event);
           }
         }
+      } catch (error) {
+        // Ignore errors for individual users
+        console.warn(`Error getting events for user ${userId}:`, error);
       }
-      
-      return allEvents;
-    } catch (fallbackError) {
-      console.error('Error in fallback method:', fallbackError);
-      throw error;
     }
+    
+    return allEvents;
+  } catch (error) {
+    console.error('Error getting all events:', error);
+    return [];
   }
 }
 
