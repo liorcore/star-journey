@@ -11,66 +11,40 @@ let adminDb: admin.firestore.Firestore | null = null;
 try {
   if (typeof window === 'undefined') {
     if (!admin.apps.length) {
-      try {
-        // Try to get project ID from service account first
-        const serviceAccountForProjectId = process.env.FIREBASE_SERVICE_ACCOUNT;
-        let projectId: string | undefined;
-        if (serviceAccountForProjectId) {
-          try {
-            const serviceAccountJson = JSON.parse(serviceAccountForProjectId);
-            projectId = serviceAccountJson.project_id;
-          } catch (e) {
-            // Ignore parsing errors
-          }
-        }
-        
-        if (projectId) {
-          admin.initializeApp({
-            credential: admin.credential.applicationDefault(),
-            projectId: projectId,
-          });
-          console.log('✅ get-settings: Admin SDK initialized with applicationDefault and projectId:', projectId);
-        } else {
-          admin.initializeApp({
-            credential: admin.credential.applicationDefault(),
-          });
-          console.log('✅ get-settings: Admin SDK initialized with applicationDefault (no explicit projectId)');
-        }
-      } catch (e) {
+      // Try service account JSON first (most reliable for Vercel)
+      const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+      console.log('🔍 get-settings: Service account env var exists:', !!serviceAccount);
+      
+      if (serviceAccount) {
         try {
-          const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
-          console.log('🔍 get-settings: Service account env var exists:', !!serviceAccount);
-          if (serviceAccount) {
-            try {
-              const serviceAccountJson = JSON.parse(serviceAccount);
-              console.log('🔍 get-settings: JSON parsed successfully');
-              console.log('🔍 get-settings: project_id:', serviceAccountJson.project_id);
-              
-              if (!serviceAccountJson.project_id) {
-                console.error('❌ get-settings: project_id is missing from service account JSON!');
-                throw new Error('project_id is missing from service account');
-              }
-              
-              admin.initializeApp({
-                credential: admin.credential.cert(serviceAccountJson),
-                projectId: serviceAccountJson.project_id,
-              });
-              console.log('✅ get-settings: Admin SDK initialized with service account');
-            } catch (parseError: any) {
-              console.error('❌ get-settings: JSON parsing failed:', parseError.message);
-              throw parseError;
-            }
-          } else {
-            console.error('❌ get-settings: No service account available!');
-            // Don't initialize without project ID - it will fail
-            throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable is required');
+          const serviceAccountJson = JSON.parse(serviceAccount);
+          console.log('🔍 get-settings: JSON parsed successfully');
+          console.log('🔍 get-settings: project_id:', serviceAccountJson.project_id);
+          
+          if (!serviceAccountJson.project_id) {
+            console.error('❌ get-settings: project_id is missing from service account JSON!');
+            throw new Error('project_id is missing from service account');
           }
-        } catch (e2) {
-          console.error('❌ get-settings: Admin SDK initialization failed:', e2);
-          console.error('❌ get-settings: Error details:', {
-            message: e2 instanceof Error ? e2.message : String(e2),
-            stack: e2 instanceof Error ? e2.stack : undefined,
+          
+          admin.initializeApp({
+            credential: admin.credential.cert(serviceAccountJson),
+            projectId: serviceAccountJson.project_id,
           });
+          console.log('✅ get-settings: Admin SDK initialized with service account');
+        } catch (parseError: any) {
+          console.error('❌ get-settings: JSON parsing failed:', parseError.message);
+          throw parseError;
+        }
+      } else {
+        // Fallback to applicationDefault (for local development)
+        console.log('🔍 get-settings: No service account, trying applicationDefault()...');
+        try {
+          admin.initializeApp({
+            credential: admin.credential.applicationDefault(),
+          });
+          console.log('✅ get-settings: Admin SDK initialized with applicationDefault');
+        } catch (e) {
+          console.error('❌ get-settings: Admin SDK initialization failed:', e);
         }
       }
     }

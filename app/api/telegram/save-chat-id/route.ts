@@ -12,68 +12,40 @@ try {
   if (typeof window === 'undefined') {
     // Server-side only
     if (!admin.apps.length) {
-      // Try to initialize with default credentials (works on Vercel/Cloud Run)
-      try {
-        // Try to get project ID from service account first
-        const serviceAccountForProjectId = process.env.FIREBASE_SERVICE_ACCOUNT;
-        let projectId: string | undefined;
-        if (serviceAccountForProjectId) {
-          try {
-            const serviceAccountJson = JSON.parse(serviceAccountForProjectId);
-            projectId = serviceAccountJson.project_id;
-          } catch (e) {
-            // Ignore parsing errors
-          }
-        }
-        
-        if (projectId) {
-          admin.initializeApp({
-            credential: admin.credential.applicationDefault(),
-            projectId: projectId,
-          });
-          console.log('✅ save-chat-id: Admin SDK initialized with applicationDefault and projectId:', projectId);
-        } else {
-          admin.initializeApp({
-            credential: admin.credential.applicationDefault(),
-          });
-          console.log('✅ save-chat-id: Admin SDK initialized with applicationDefault (no explicit projectId)');
-        }
-      } catch (e) {
-        // If default credentials don't work, try environment variable
+      // Try service account JSON first (most reliable for Vercel)
+      const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+      console.log('🔍 save-chat-id: Service account env var exists:', !!serviceAccount);
+      
+      if (serviceAccount) {
         try {
-          const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
-          console.log('🔍 save-chat-id: Service account env var exists:', !!serviceAccount);
-          if (serviceAccount) {
-            try {
-              const serviceAccountJson = JSON.parse(serviceAccount);
-              console.log('🔍 save-chat-id: JSON parsed successfully');
-              console.log('🔍 save-chat-id: project_id:', serviceAccountJson.project_id);
-              
-              if (!serviceAccountJson.project_id) {
-                console.error('❌ save-chat-id: project_id is missing from service account JSON!');
-                throw new Error('project_id is missing from service account');
-              }
-              
-              admin.initializeApp({
-                credential: admin.credential.cert(serviceAccountJson),
-                projectId: serviceAccountJson.project_id,
-              });
-              console.log('✅ save-chat-id: Admin SDK initialized with service account');
-            } catch (parseError: any) {
-              console.error('❌ save-chat-id: JSON parsing failed:', parseError.message);
-              throw parseError;
-            }
-          } else {
-            console.error('❌ save-chat-id: No service account available!');
-            // Don't initialize without project ID - it will fail
-            throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable is required');
+          const serviceAccountJson = JSON.parse(serviceAccount);
+          console.log('🔍 save-chat-id: JSON parsed successfully');
+          console.log('🔍 save-chat-id: project_id:', serviceAccountJson.project_id);
+          
+          if (!serviceAccountJson.project_id) {
+            console.error('❌ save-chat-id: project_id is missing from service account JSON!');
+            throw new Error('project_id is missing from service account');
           }
-        } catch (e2) {
-          console.error('❌ save-chat-id: Admin SDK initialization failed:', e2);
-          console.error('❌ save-chat-id: Error details:', {
-            message: e2 instanceof Error ? e2.message : String(e2),
-            stack: e2 instanceof Error ? e2.stack : undefined,
+          
+          admin.initializeApp({
+            credential: admin.credential.cert(serviceAccountJson),
+            projectId: serviceAccountJson.project_id,
           });
+          console.log('✅ save-chat-id: Admin SDK initialized with service account');
+        } catch (parseError: any) {
+          console.error('❌ save-chat-id: JSON parsing failed:', parseError.message);
+          throw parseError;
+        }
+      } else {
+        // Fallback to applicationDefault (for local development)
+        console.log('🔍 save-chat-id: No service account, trying applicationDefault()...');
+        try {
+          admin.initializeApp({
+            credential: admin.credential.applicationDefault(),
+          });
+          console.log('✅ save-chat-id: Admin SDK initialized with applicationDefault');
+        } catch (e) {
+          console.error('❌ save-chat-id: Admin SDK initialization failed:', e);
         }
       }
     }

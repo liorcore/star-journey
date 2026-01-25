@@ -22,71 +22,70 @@ async function getAdminDb() {
     
     if (!admin.apps.length) {
       console.log('🔍 getAdminDb(): No apps initialized, initializing...');
-      try {
-        console.log('🔍 getAdminDb(): Trying applicationDefault()...');
-        // Try to get project ID from service account first
-        const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
-        let projectId: string | undefined;
-        if (serviceAccount) {
-          try {
-            const serviceAccountJson = JSON.parse(serviceAccount);
-            projectId = serviceAccountJson.project_id;
-          } catch (e) {
-            // Ignore parsing errors
-          }
-        }
-        
-        if (projectId) {
-          admin.initializeApp({
-            credential: admin.credential.applicationDefault(),
-            projectId: projectId,
-          });
-          console.log('🔍 getAdminDb(): applicationDefault() succeeded with projectId:', projectId);
-        } else {
-          admin.initializeApp({
-            credential: admin.credential.applicationDefault(),
-          });
-          console.log('🔍 getAdminDb(): applicationDefault() succeeded (no explicit projectId)');
-        }
-      } catch (e) {
-        console.warn('🔍 getAdminDb(): applicationDefault() failed:', e);
+      
+      // Try service account JSON first (most reliable for Vercel)
+      const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+      console.log('🔍 getAdminDb(): Service account env var exists:', !!serviceAccount);
+      
+      if (serviceAccount) {
         try {
-          const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
-          console.log('🔍 getAdminDb(): Service account env var exists:', !!serviceAccount);
-          if (serviceAccount) {
+          const serviceAccountJson = JSON.parse(serviceAccount);
+          console.log('🔍 getAdminDb(): JSON parsed successfully');
+          console.log('🔍 getAdminDb(): project_id:', serviceAccountJson.project_id);
+          
+          if (!serviceAccountJson.project_id) {
+            console.error('❌ getAdminDb(): project_id is missing from service account JSON!');
+            throw new Error('project_id is missing from service account');
+          }
+          
+          console.log('🔍 getAdminDb(): Initializing with service account...');
+          admin.initializeApp({
+            credential: admin.credential.cert(serviceAccountJson),
+            projectId: serviceAccountJson.project_id,
+          });
+          console.log('✅ getAdminDb(): Service account initialization succeeded');
+        } catch (parseError: any) {
+          console.error('❌ getAdminDb(): JSON parsing failed:', parseError.message);
+          console.error('❌ getAdminDb(): First 100 chars:', serviceAccount.substring(0, 100));
+          
+          // If service account fails, try applicationDefault as fallback
+          console.log('🔍 getAdminDb(): Trying applicationDefault() as fallback...');
+          try {
+            let projectId: string | undefined;
             try {
               const serviceAccountJson = JSON.parse(serviceAccount);
-              console.log('🔍 getAdminDb(): JSON parsed successfully');
-              console.log('🔍 getAdminDb(): project_id:', serviceAccountJson.project_id);
-              
-              if (!serviceAccountJson.project_id) {
-                console.error('❌ getAdminDb(): project_id is missing from service account JSON!');
-                throw new Error('project_id is missing from service account');
-              }
-              
-              console.log('🔍 getAdminDb(): Initializing with service account...');
-              admin.initializeApp({
-                credential: admin.credential.cert(serviceAccountJson),
-                projectId: serviceAccountJson.project_id,
-              });
-              console.log('✅ getAdminDb(): Service account initialization succeeded');
-            } catch (parseError: any) {
-              console.error('❌ getAdminDb(): JSON parsing failed:', parseError.message);
-              console.error('❌ getAdminDb(): First 100 chars:', serviceAccount.substring(0, 100));
-              throw parseError;
+              projectId = serviceAccountJson.project_id;
+            } catch (e) {
+              // Ignore parsing errors
             }
-          } else {
-            console.error('❌ getAdminDb(): No service account available!');
-            // Don't initialize without project ID - it will fail
-            throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable is required');
+            
+            if (projectId) {
+              admin.initializeApp({
+                credential: admin.credential.applicationDefault(),
+                projectId: projectId,
+              });
+              console.log('🔍 getAdminDb(): applicationDefault() succeeded with projectId:', projectId);
+            } else {
+              admin.initializeApp({
+                credential: admin.credential.applicationDefault(),
+              });
+              console.log('🔍 getAdminDb(): applicationDefault() succeeded (no explicit projectId)');
+            }
+          } catch (e2) {
+            console.error('❌ getAdminDb(): All initialization methods failed:', e2);
+            return null;
           }
-        } catch (e2) {
-          console.error('❌ getAdminDb(): All initialization methods failed:', e2);
-          console.error('❌ getAdminDb(): Error details:', {
-            message: e2 instanceof Error ? e2.message : String(e2),
-            stack: e2 instanceof Error ? e2.stack : undefined,
+        }
+      } else {
+        // No service account, try applicationDefault
+        console.log('🔍 getAdminDb(): No service account, trying applicationDefault()...');
+        try {
+          admin.initializeApp({
+            credential: admin.credential.applicationDefault(),
           });
-          // Admin SDK not available
+          console.log('🔍 getAdminDb(): applicationDefault() succeeded');
+        } catch (e) {
+          console.error('❌ getAdminDb(): applicationDefault() failed:', e);
           return null;
         }
       }

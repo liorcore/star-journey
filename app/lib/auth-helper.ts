@@ -33,59 +33,63 @@ async function verifyToken(token: string): Promise<string | null> {
   try {
     // Initialize Admin SDK if needed
     if (!admin.apps.length) {
-      try {
-        // Try to get project ID from service account first
-        const serviceAccountForProjectId = process.env.FIREBASE_SERVICE_ACCOUNT;
-        let projectId: string | undefined;
-        if (serviceAccountForProjectId) {
-          try {
-            const serviceAccountJson = JSON.parse(serviceAccountForProjectId);
-            projectId = serviceAccountJson.project_id;
-          } catch (e) {
-            // Ignore parsing errors
-          }
-        }
-        
-        if (projectId) {
-          admin.initializeApp({
-            credential: admin.credential.applicationDefault(),
-            projectId: projectId,
-          });
-          console.log('✅ auth-helper: Admin SDK initialized with applicationDefault and projectId:', projectId);
-        } else {
-          admin.initializeApp({
-            credential: admin.credential.applicationDefault(),
-          });
-          console.log('✅ auth-helper: Admin SDK initialized with applicationDefault (no explicit projectId)');
-        }
-      } catch (e) {
+      // Try service account JSON first (most reliable for Vercel)
+      const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+      
+      if (serviceAccount) {
         try {
-          const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
-          if (serviceAccount) {
+          const serviceAccountJson = JSON.parse(serviceAccount);
+          
+          if (!serviceAccountJson.project_id) {
+            console.error('❌ auth-helper: project_id is missing from service account JSON!');
+            throw new Error('project_id is missing from service account');
+          }
+          
+          admin.initializeApp({
+            credential: admin.credential.cert(serviceAccountJson),
+            projectId: serviceAccountJson.project_id,
+          });
+          console.log('✅ auth-helper: Admin SDK initialized with service account');
+        } catch (parseError: any) {
+          console.error('❌ auth-helper: JSON parsing failed:', parseError.message);
+          
+          // Fallback to applicationDefault
+          try {
+            let projectId: string | undefined;
             try {
               const serviceAccountJson = JSON.parse(serviceAccount);
-              
-              if (!serviceAccountJson.project_id) {
-                console.error('❌ auth-helper: project_id is missing from service account JSON!');
-                throw new Error('project_id is missing from service account');
-              }
-              
-              admin.initializeApp({
-                credential: admin.credential.cert(serviceAccountJson),
-                projectId: serviceAccountJson.project_id,
-              });
-              console.log('✅ auth-helper: Admin SDK initialized with service account');
-            } catch (parseError: any) {
-              console.error('❌ auth-helper: JSON parsing failed:', parseError.message);
-              throw parseError;
+              projectId = serviceAccountJson.project_id;
+            } catch (e) {
+              // Ignore parsing errors
             }
-          } else {
-            console.error('❌ auth-helper: No service account available!');
-            // Don't initialize without project ID - it will fail
-            throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable is required');
+            
+            if (projectId) {
+              admin.initializeApp({
+                credential: admin.credential.applicationDefault(),
+                projectId: projectId,
+              });
+              console.log('✅ auth-helper: Admin SDK initialized with applicationDefault and projectId:', projectId);
+            } else {
+              admin.initializeApp({
+                credential: admin.credential.applicationDefault(),
+              });
+              console.log('✅ auth-helper: Admin SDK initialized with applicationDefault');
+            }
+          } catch (e2) {
+            console.error('❌ auth-helper: Admin SDK initialization failed:', e2);
+            return null;
           }
-        } catch (e2) {
-          console.error('❌ auth-helper: Admin SDK initialization failed:', e2);
+        }
+      } else {
+        // Fallback to applicationDefault (for local development)
+        console.log('🔍 auth-helper: No service account, trying applicationDefault()...');
+        try {
+          admin.initializeApp({
+            credential: admin.credential.applicationDefault(),
+          });
+          console.log('✅ auth-helper: Admin SDK initialized with applicationDefault');
+        } catch (e) {
+          console.error('❌ auth-helper: Admin SDK initialization failed:', e);
           return null;
         }
       }
