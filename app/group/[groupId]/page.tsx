@@ -528,15 +528,12 @@ export default function GroupPage() {
                                                         name: event.name,
                                                         stars: eventParticipant?.stars || 0,
                                                         icon: event.icon || 'trophy',
-                                                        endDate: event.endDate,
-                                                        updatedAt: event.updatedAt
+                                                        endDate: event.endDate
                                                     };
                                                 })
                                                 .sort((a, b) => {
-                                                    // Sort by updatedAt (most recent first), then by endDate
-                                                    const aTime = a.updatedAt || a.endDate || 0;
-                                                    const bTime = b.updatedAt || b.endDate || 0;
-                                                    return bTime - aTime;
+                                                    // Sort by endDate (most recent first)
+                                                    return (b.endDate || 0) - (a.endDate || 0);
                                                 });
                                             
                                             // Get the current/most recent event icon
