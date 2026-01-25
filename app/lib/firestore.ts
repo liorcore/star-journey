@@ -60,6 +60,8 @@ export interface Event {
   ownerId: string;
   guests?: Array<{ userId: string; addedAt: Timestamp }>;
   participants: EventParticipant[];
+  poolStars?: number;
+  poolStarGoal?: number;
 }
 
 export interface Group {
@@ -353,6 +355,8 @@ export async function createEvent(
       ownerId: userId,
       guests: [],
       participants: [],
+      poolStars: 0,
+      poolStarGoal: eventData.poolStarGoal || eventData.starGoal,
       createdAt: serverTimestamp(),
     };
     const docRef = await addDoc(eventsRef, newEvent);
@@ -400,6 +404,7 @@ export async function updateEvent(
 
     if (eventData.name) validateString(eventData.name, 100, 'שם אירוע');
     if (eventData.starGoal !== undefined) validateNumber(eventData.starGoal, 0, 1000, 'יעד כוכבים');
+    if (eventData.poolStarGoal !== undefined) validateNumber(eventData.poolStarGoal, 0, 1000, 'יעד כוכבים קבוצתי');
     if (eventData.endDate !== undefined) {
       validateNumber(eventData.endDate, Date.now(), Date.now() + 365 * 24 * 60 * 60 * 1000, 'תאריך סיום');
     }
@@ -576,6 +581,49 @@ export async function updateParticipantStars(
     });
   } catch (error) {
     // Error updating participant stars
+    throw error;
+  }
+}
+
+// Update event pool stars
+export async function updateEventPoolStars(
+  userId: string,
+  groupId: string,
+  eventId: string,
+  poolStars: number
+): Promise<void> {
+  if (!isFirebaseAvailable()) {
+    throw new Error('Firebase לא מוגדר');
+  }
+  
+  try {
+    validateNumber(poolStars, 0, 1000, 'כוכבי POOL');
+
+    const eventRef = doc(db!, 'users', userId, 'groups', groupId, 'events', eventId);
+    
+    await runTransaction(db!, async (transaction) => {
+      const eventDoc = await transaction.get(eventRef);
+      if (!eventDoc.exists()) {
+        throw new Error('אירוע לא נמצא');
+      }
+
+      const event = eventDoc.data() as Event;
+      
+      // Check permissions: owner or guest can manage pool stars
+      const isOwner = event.ownerId === userId;
+      const isGuest = event.guests?.some((g) => g.userId === userId) || false;
+      
+      if (!isOwner && !isGuest) {
+        throw new Error('אין הרשאה לנהל כוכבי POOL');
+      }
+
+      transaction.update(eventRef, {
+        poolStars,
+        updatedAt: serverTimestamp(),
+      });
+    });
+  } catch (error) {
+    // Error updating pool stars
     throw error;
   }
 }

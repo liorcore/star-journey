@@ -4,10 +4,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import { BadgeCheck, ChevronRight, ChevronUp, ChevronDown, Crown, Minus, Pencil, Sparkles, Star, Timer, UserPlus, X, Users } from 'lucide-react';
+import { BadgeCheck, ChevronRight, ChevronUp, ChevronDown, Crown, Minus, Pencil, Sparkles, Star, Timer, UserPlus, X, Users, Droplet, Container, Trophy } from 'lucide-react';
 import { ParticipantIcon, PARTICIPANT_ICONS } from '@/app/lib/participantIcons';
 import { useAuth } from '@/app/contexts/AuthContext';
-import { subscribeToGroup, subscribeToEvent, updateEvent, updateParticipantStars, deleteEvent, addParticipantToEvent, Event as FirestoreEvent, Group as FirestoreGroup, Participant } from '@/app/lib/firestore';
+import { subscribeToGroup, subscribeToEvent, updateEvent, updateParticipantStars, updateEventPoolStars, deleteEvent, addParticipantToEvent, Event as FirestoreEvent, Group as FirestoreGroup, Participant } from '@/app/lib/firestore';
 import { canEditEvent, canManageStars } from '@/app/lib/permissions';
 import AuthGuard from '@/app/components/AuthGuard';
 
@@ -125,8 +125,14 @@ export default function EventPage() {
     const [editEventName, setEditEventName] = useState('');
     const [editEventEndDate, setEditEventEndDate] = useState('');
     const [editEventStarGoal, setEditEventStarGoal] = useState(0);
+    const [editPoolStarGoal, setEditPoolStarGoal] = useState(0);
     const [editEventIcon, setEditEventIcon] = useState('trophy');
     const [showEventIconPicker, setShowEventIconPicker] = useState(false);
+    
+    // Pool stars state
+    const [showPoolCelebration, setShowPoolCelebration] = useState(false);
+    const [showPoolBonusStar, setShowPoolBonusStar] = useState(false);
+    const [poolStarFlash, setPoolStarFlash] = useState<{ text?: string; variant?: 'normal' | 'bonus' } | null>(null);
 
     const FEEDBACK_MS = {
         starFlashNormal: 900,
@@ -292,6 +298,87 @@ export default function EventPage() {
         burstConfetti({ big: false });
     };
 
+    const handleAddPoolStar = async () => {
+        if (!event || !user) return;
+
+        // Check permissions: owner or guest
+        const isOwner = event.ownerId === user.uid;
+        const isGuest = event.guests?.some((g) => g.userId === user.uid) || false;
+        
+        if (!isOwner && !isGuest) {
+            alert('אין הרשאה להוסיף כוכבים ל-POOL');
+            return;
+        }
+
+        const currentPoolStars = event.poolStars || 0;
+        const poolStarGoal = event.poolStarGoal || event.starGoal;
+        const increment = currentPoolStars >= poolStarGoal ? 2 : 1; // מעל היעד = 2 נקודות
+        const willHitGoal = currentPoolStars < poolStarGoal && currentPoolStars + increment >= poolStarGoal;
+        const isAboveGoal = currentPoolStars >= poolStarGoal;
+
+        try {
+            await updateEventPoolStars(user.uid, groupId, eventId, currentPoolStars + increment);
+            // Real-time listener will update automatically
+        } catch (error) {
+            alert('שגיאה בהוספת כוכב ל-POOL');
+            return;
+        }
+
+        // חיווי במרכז למסך (כוכב) - רק לכוכבים רגילים, לא להשלמת יעד
+        if (isAboveGoal && !willHitGoal) {
+            setPoolStarFlash({ variant: 'normal' });
+            setTimeout(() => setPoolStarFlash(null), FEEDBACK_MS.starFlashNormal);
+            burstConfetti({ big: false });
+        }
+
+        if (willHitGoal) {
+            // הצג חיווי "כל הכבוד!!" למספר שניות
+            setShowPoolCelebration(true);
+            setTimeout(() => setShowPoolCelebration(false), 5000);
+            richGoalCelebration();
+            return;
+        }
+
+        if (isAboveGoal) {
+            // מעל היעד: קונפטי + חיווי כוכב גדול עם 2
+            setShowPoolBonusStar(true);
+            setTimeout(() => setShowPoolBonusStar(false), 2000);
+            burstConfetti({ big: true });
+            return;
+        }
+
+        // תוספת רגילה: קונפטי + כוכב במרכז
+        burstConfetti({ big: false });
+    };
+
+    const handleRemovePoolStar = async () => {
+        if (!event || !user) return;
+
+        // Check permissions: owner or guest
+        const isOwner = event.ownerId === user.uid;
+        const isGuest = event.guests?.some((g) => g.userId === user.uid) || false;
+        
+        if (!isOwner && !isGuest) {
+            alert('אין הרשאה להסיר כוכבים מה-POOL');
+            return;
+        }
+
+        const currentPoolStars = event.poolStars || 0;
+        
+        if (currentPoolStars === 0) {
+            return;
+        }
+
+        try {
+            await updateEventPoolStars(user.uid, groupId, eventId, currentPoolStars - 1);
+            // Real-time listener will update automatically
+            setShowSadEmoji(true);
+            setTimeout(() => setShowSadEmoji(false), FEEDBACK_MS.sad);
+        } catch (error) {
+            alert('שגיאה בהסרת כוכב מה-POOL');
+        }
+    };
+
     const handleRemoveStar = async (participantId: string) => {
         if (!event || !user) return;
 
@@ -365,6 +452,7 @@ export default function EventPage() {
         setEditEventIcon(event.icon);
         setEditEventEndDate(new Date(event.endDate).toISOString().slice(0, 16));
         setEditEventStarGoal(event.starGoal);
+        setEditPoolStarGoal(event.poolStarGoal || event.starGoal);
         setShowEditEvent(true);
     };
 
@@ -389,12 +477,18 @@ export default function EventPage() {
             return;
         }
 
+        if (editPoolStarGoal < 1) {
+            alert('יעד הכוכבים הקבוצתי חייב להיות לפחות 1');
+            return;
+        }
+
         try {
             await updateEvent(user.uid, groupId, eventId, {
                 name: editEventName.trim(),
                 icon: editEventIcon,
                 endDate,
                 starGoal: editEventStarGoal,
+                poolStarGoal: editPoolStarGoal,
             });
             setShowEditEvent(false);
         } catch (error) {
@@ -506,6 +600,147 @@ export default function EventPage() {
                         </div>
                     </div>
                 </motion.section>
+
+                {/* Pool Stars Card */}
+                {event && (
+                    <motion.section
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.02 }}
+                        className="mb-6"
+                    >
+                        {(() => {
+                            const poolStars = event.poolStars || 0;
+                            const poolStarGoal = event.poolStarGoal || event.starGoal;
+                            const poolProgress = Math.min((poolStars / poolStarGoal) * 100, 100);
+                            const isPoolDone = poolStars >= poolStarGoal;
+                            
+                            // Get all participants in the event
+                            const poolParticipants = event.participants
+                                .map(ep => {
+                                    const participant = group?.participants.find(p => p.id === ep.participantId);
+                                    return participant;
+                                })
+                                .filter(p => p !== undefined) as Participant[];
+
+                            return (
+                                <div
+                                    className="rounded-3xl border shadow-sm p-4 relative overflow-hidden"
+                                    style={{
+                                        background: isPoolDone
+                                            ? 'linear-gradient(135deg, #FF0080 0%, #FF8C00 16%, #FFD93D 32%, #00FF00 50%, #00CED1 66%, #4D96FF 82%, #BB8FCE 100%)'
+                                            : '#4D96FF',
+                                        borderColor: isPoolDone ? '#4D96FF' : '#4D96FF',
+                                        boxShadow: isPoolDone
+                                            ? '0 14px 40px rgba(77,150,255,0.20), 0 0 0 2px rgba(255,217,61,0.30)'
+                                            : '0 6px 18px rgba(15, 23, 42, 0.06)',
+                                    }}
+                                >
+                                    <div className="pattern-overlay" />
+                                    {isPoolDone && (
+                                        <div className="absolute top-0 left-3 bg-yellow-400/95 backdrop-blur-md rounded-lg px-1.5 py-0.5 text-[9px] font-black text-slate-900 border border-yellow-500 shadow-sm flex items-center gap-1">
+                                            <BadgeCheck className="w-3 h-3" fill="currentColor" />
+                                            הושלם!
+                                        </div>
+                                    )}
+                                    <div className="relative">
+                                        {/* Participants Icons */}
+                                        {poolParticipants.length > 0 && (
+                                            <div className="flex items-center justify-center gap-2 mb-3 flex-wrap">
+                                                {poolParticipants.map((participant) => (
+                                                    <div
+                                                        key={participant.id}
+                                                        className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center bg-white/35 backdrop-blur-md shrink-0"
+                                                        style={{ border: `1px solid ${hexToRgba(participant.color, 0.35)}` }}
+                                                    >
+                                                        <ParticipantIcon icon={participant.icon} className="w-6 h-6 sm:w-8 sm:h-8 text-slate-900" emojiSize="text-lg sm:text-xl" />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        
+                                        {/* Pool Stars Counter */}
+                                        <div className="text-center mb-4">
+                                            <div className="text-5xl sm:text-6xl font-black text-white leading-none">
+                                                {poolStars}
+                                            </div>
+                                            <div className="text-sm sm:text-base font-black text-white/90 uppercase tracking-widest mt-1">כוכבים משותפים</div>
+                                        </div>
+
+                                        {/* Vertical Progress Bar */}
+                                        <div className="flex items-center justify-center mb-4">
+                                            <div className="relative w-20 h-32 sm:w-24 sm:h-40">
+                                                {/* Progress fill - fills from bottom */}
+                                                <div 
+                                                    className="absolute bottom-0 right-0 transition-all duration-500 ease-out rounded-b-2xl"
+                                                    style={{
+                                                        left: '3px',
+                                                        right: '3px',
+                                                        height: `${poolProgress}%`,
+                                                        background: poolProgress >= 100 
+                                                            ? 'linear-gradient(to top, #854d0e 0%, #a16207 20%, #ca8a04 50%, #eab308 80%, #fde047 100%)'
+                                                            : `linear-gradient(to top, #854d0e 0%, #a16207 ${50 - (poolProgress / 100) * 20}%, #ca8a04 ${50 + (poolProgress / 100) * 30}%, #eab308 100%)`,
+                                                        boxShadow: poolProgress >= 100 
+                                                            ? `0 0 50px rgba(234, 179, 8, 0.9), 0 0 30px rgba(234, 179, 8, 0.7), 0 0 15px rgba(253, 224, 71, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.3)`
+                                                            : `0 0 ${20 + (poolProgress / 100) * 40}px rgba(234, 179, 8, ${0.5 + (poolProgress / 100) * 0.4}), 0 0 ${10 + (poolProgress / 100) * 20}px rgba(250, 204, 21, ${0.3 + (poolProgress / 100) * 0.3}), inset 0 0 10px rgba(255, 255, 255, 0.2)`,
+                                                        borderRadius: '0 0 0.75rem 0.75rem',
+                                                    }}
+                                                >
+                                                    {/* Shine effect when full */}
+                                                    {poolProgress >= 100 && (
+                                                        <div className="absolute top-0 left-0 right-0 h-4 bg-white/50 animate-pulse rounded-t-full"></div>
+                                                    )}
+                                                </div>
+                                                
+                                                {/* Background container - brought forward */}
+                                                <div 
+                                                    className="absolute inset-0 border-[6px] border-white/80 rounded-2xl z-10"
+                                                    style={{
+                                                        borderRadius: '1rem',
+                                                        pointerEvents: 'none',
+                                                    }}
+                                                ></div>
+                                            </div>
+                                        </div>
+
+                                        {/* Progress Text */}
+                                        <div className="text-center mb-4">
+                                            <div className="text-xs font-black text-white/90 uppercase tracking-wider">
+                                                {poolStars} / {poolStarGoal} ({poolProgress.toFixed(0)}%)
+                                            </div>
+                                        </div>
+
+                                        {/* Actions */}
+                                        <div className="mt-4 relative">
+                                            <div className="absolute inset-0 backdrop-blur-sm bg-black/10 rounded-3xl"></div>
+                                            <div className="relative flex items-center justify-between gap-3 px-2 py-2">
+                                                <button
+                                                    onClick={handleAddPoolStar}
+                                                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl backdrop-blur-sm bg-white/20 active:scale-95 transition-transform flex items-center justify-center gap-2"
+                                                >
+                                                    <Star className="w-8 h-8 sm:w-9 sm:h-9" fill="currentColor" style={{ color: '#FFD93D' }} />
+                                                </button>
+                                                <div className="text-center">
+                                                    <div className="text-5xl sm:text-6xl font-black text-white leading-none">
+                                                        {poolStars}
+                                                    </div>
+                                                    <div className="text-sm sm:text-base font-black text-white/90 uppercase tracking-widest">כוכבים</div>
+                                                </div>
+                                                <button
+                                                    onClick={handleRemovePoolStar}
+                                                    disabled={poolStars === 0}
+                                                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl backdrop-blur-sm bg-white/20 active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
+                                                >
+                                                    <span className="text-4xl sm:text-5xl">😢</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })()}
+                    </motion.section>
+                )}
 
                 {/* Participants */}
                 <motion.section
@@ -729,6 +964,90 @@ export default function EventPage() {
                                 <Star className="w-4 h-4" fill="currentColor" style={{ color: '#FFD93D' }} />
                             </span>
                         </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Pool Celebration overlay */}
+            <AnimatePresence>
+                {showPoolCelebration && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[85] backdrop-blur-sm bg-black/10 flex items-center justify-center pointer-events-none"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.5, opacity: 0, rotate: -10 }}
+                            animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                            exit={{ scale: 0.8, opacity: 0, rotate: 10 }}
+                            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                            className="text-center"
+                        >
+                            <div className="text-6xl mb-4 animate-bounce">🎉</div>
+                            <div className="text-4xl font-black rainbow-text mb-4 animate-pulse">כל הכבוד!!</div>
+                            <div className="text-8xl animate-bounce">😄</div>
+                            <div className="mt-4 text-lg font-black text-white drop-shadow-lg">
+                                ה-POOL הגיע ליעד!
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Pool Bonus star overlay */}
+            <AnimatePresence>
+                {showPoolBonusStar && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[83] backdrop-blur-sm bg-black/10 flex items-center justify-center pointer-events-none"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.5, opacity: 0, rotate: -15 }}
+                            animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                            exit={{ scale: 1.3, opacity: 0, rotate: 15 }}
+                            transition={{ type: 'spring', stiffness: 250, damping: 18 }}
+                            className="text-center"
+                        >
+                            <div className="flex items-center justify-center gap-6">
+                                <Star className="w-32 h-32 drop-shadow-2xl" fill="currentColor" style={{ color: '#FFD93D' }} />
+                                <div className="text-8xl font-black text-white drop-shadow-2xl">2</div>
+                            </div>
+                            <div className="mt-4 text-2xl font-black text-white drop-shadow-lg">כוכב בונוס!</div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Pool Star flash overlay */}
+            <AnimatePresence>
+                {poolStarFlash && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[82] backdrop-blur-sm bg-black/10 flex items-center justify-center pointer-events-none"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.4, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 1.4, opacity: 0 }}
+                            transition={{ type: 'spring', stiffness: 280, damping: 20 }}
+                            className="text-center"
+                        >
+                            <Star 
+                                className={`drop-shadow-2xl ${poolStarFlash.variant === 'bonus' ? 'w-40 h-40' : 'w-32 h-32'}`}
+                                fill="currentColor" 
+                                style={{ color: '#FFD93D' }} 
+                            />
+                            {poolStarFlash.text && (
+                                <div className="mt-4 text-4xl font-black text-white drop-shadow-2xl">
+                                    {poolStarFlash.text}
+                                </div>
+                            )}
+                        </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -973,6 +1292,39 @@ export default function EventPage() {
                                             </button>
                                         </div>
                                         <Star className="w-4 h-4" fill="currentColor" style={{ color: '#FFD93D' }} />
+                                        <BadgeCheck className="w-4 h-4 text-[#4D96FF]" />
+                                    </div>
+
+                                    {/* Pool Star Goal */}
+                                    <div className="mt-4 flex items-center justify-center gap-2 bg-white/70 backdrop-blur-md rounded-lg px-3 py-2 border border-white/50">
+                                        <span className="text-sm font-black text-slate-900">יעד POOL:</span>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setEditPoolStarGoal(Math.max(1, editPoolStarGoal - 1))}
+                                                className="h-6 w-6 rounded flex items-center justify-center text-slate-700 hover:bg-slate-100 active:scale-95 transition-transform"
+                                                aria-label="הורד יעד POOL"
+                                            >
+                                                <ChevronDown className="w-3 h-3" />
+                                            </button>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                max="100"
+                                                value={editPoolStarGoal}
+                                                onChange={(e) => setEditPoolStarGoal(Math.max(1, Math.min(100, parseInt(e.target.value) || 1)))}
+                                                className="w-12 text-sm font-black text-slate-900 text-center bg-transparent border-none outline-none"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setEditPoolStarGoal(Math.min(100, editPoolStarGoal + 1))}
+                                                className="h-6 w-6 rounded flex items-center justify-center text-slate-700 hover:bg-slate-100 active:scale-95 transition-transform"
+                                                aria-label="העלה יעד POOL"
+                                            >
+                                                <ChevronUp className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                        <Users className="w-4 h-4 text-[#4D96FF]" />
                                         <BadgeCheck className="w-4 h-4 text-[#4D96FF]" />
                                     </div>
 
