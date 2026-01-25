@@ -478,13 +478,12 @@ export default function GroupPage() {
                                     onTouchEnd={() => handleSwipeEnd(participant.id)}
                                 >
                                     <div
-                                        className="p-2.5 sm:p-4 rounded-xl shadow-sm border-2 flex flex-col gap-2 sm:gap-3 transition-transform relative cursor-pointer"
+                                        className="p-2.5 sm:p-4 rounded-xl shadow-sm border-2 flex flex-col gap-2 sm:gap-3 transition-transform relative"
                                         style={{ 
                                             transform: `translateX(${swipeTranslateX[participant.id] || 0}px)`,
                                             backgroundColor: hexToRgba(participant.color, 0.1),
                                             borderColor: participant.color
                                         }}
-                                        onClick={() => openEditParticipant(participant)}
                                     >
                                     <div className="flex items-start gap-2 sm:gap-3 w-full">
                                     <div 
@@ -585,13 +584,13 @@ export default function GroupPage() {
                                             return sum;
                                         }, 0);
                                         
-                                        if (totalStarsFromEvents === 0 && completedEventsList.length === 0) return null;
-                                        
+                                        // Always show the bottom strip with edit button, even if no events
                                         return (
                                             <div className="w-full mt-2 pt-2 border-t border-slate-200">
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                    {/* Current Event Badge */}
-                                                    {totalStarsFromEvents > 0 && (
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        {/* Current Event Badge */}
+                                                        {totalStarsFromEvents > 0 && (
                                                         <div className="relative group inline-block">
                                                             <div 
                                                                 className="w-6 h-6 sm:w-7 sm:h-7 rounded flex items-center justify-center text-[10px] sm:text-xs shadow-sm"
@@ -641,6 +640,17 @@ export default function GroupPage() {
                                                             </div>
                                                         );
                                                     })}
+                                                    </div>
+                                                    {/* Edit Button - separate div on the right */}
+                                                    <div>
+                                                        <button
+                                                            onClick={() => openEditParticipant(participant)}
+                                                            className="shrink-0 p-1.5 sm:p-2 text-slate-500 hover:text-slate-700 active:scale-95 transition-colors"
+                                                            aria-label="ערוך משתתף"
+                                                        >
+                                                            <Pencil className="w-4 h-4 sm:w-5 sm:h-5" />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         );
