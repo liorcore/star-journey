@@ -80,6 +80,7 @@ export default function TelegramSettingsComponent() {
         if (currentSettings) {
           setSettings(currentSettings);
           setChatId(currentSettings.chatId || '');
+          setTempChatId(currentSettings.chatId || '');
         }
       } catch (e) {
         // Ignore fallback errors
@@ -276,23 +277,52 @@ export default function TelegramSettingsComponent() {
           <div className="text-xs font-black text-slate-600 uppercase tracking-widest mb-2">
             Chat ID (אופציונלי - ניתן להזין ידנית)
           </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={chatId}
-              onChange={(e) => setChatId(e.target.value)}
-              placeholder="הזן Chat ID..."
-              className="flex-1 h-10 rounded-xl border-2 border-slate-200 bg-white px-4 text-sm font-mono text-slate-900 focus:outline-none focus:border-[#4D96FF]"
-              dir="ltr"
-            />
-            <button
-              onClick={handleSaveChatId}
-              disabled={loading}
-              className="h-10 px-4 rounded-xl bg-[#4D96FF] text-white font-black text-sm active:scale-95 transition-transform disabled:opacity-60"
-            >
-              {loading ? 'שומר...' : 'שמור'}
-            </button>
-          </div>
+          {isEditingChatId ? (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={chatId}
+                onChange={(e) => setChatId(e.target.value)}
+                placeholder="הזן Chat ID..."
+                className="flex-1 h-10 rounded-xl border-2 border-slate-200 bg-white px-4 text-sm font-mono text-slate-900 focus:outline-none focus:border-[#4D96FF]"
+                dir="ltr"
+              />
+              <button
+                onClick={handleSaveChatId}
+                disabled={loading}
+                className="h-10 px-4 rounded-xl bg-[#4D96FF] text-white font-black text-sm active:scale-95 transition-transform disabled:opacity-60"
+              >
+                {loading ? 'שומר...' : 'שמור'}
+              </button>
+              <button
+                onClick={handleCancelEdit}
+                disabled={loading}
+                className="h-10 px-4 rounded-xl bg-slate-200 text-slate-700 font-black text-sm active:scale-95 transition-transform disabled:opacity-60"
+              >
+                ביטול
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <input
+                type="password"
+                value={tempChatId || ''}
+                readOnly
+                placeholder="אין Chat ID מוגדר"
+                className="flex-1 h-10 rounded-xl border-2 border-slate-200 bg-white px-4 text-sm font-mono text-slate-900"
+                dir="ltr"
+              />
+              {tempChatId && (
+                <button
+                  onClick={handleEditChatId}
+                  className="h-10 px-4 rounded-xl bg-slate-200 text-slate-700 font-black text-sm inline-flex items-center gap-2 active:scale-95 transition-transform"
+                >
+                  <Edit2 className="w-4 h-4" />
+                  ערוך
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Test Connection */}

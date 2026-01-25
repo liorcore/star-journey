@@ -229,8 +229,12 @@ export async function testTelegramConnection(): Promise<{ success: boolean; mess
       });
     }
 
+    // If no Chat ID, return success but with a message
     if (!settings || !settings.chatId) {
-      return { success: false, message: 'Chat ID לא מוגדר - יש לקשר את הבוט' };
+      return { 
+        success: true, 
+        message: `הטוקן תקין! הבוט: @${botInfo.result.username}. Chat ID לא מוגדר - יש לקשר את הבוט כדי לקבל התראות.` 
+      };
     }
 
     // Test by sending a message
@@ -239,7 +243,7 @@ export async function testTelegramConnection(): Promise<{ success: boolean; mess
     if (testMessage) {
       return { success: true, message: 'החיבור תקין! הודעה נשלחה בהצלחה.' };
     } else {
-      return { success: false, message: 'שליחת הודעה נכשלה' };
+      return { success: false, message: 'שליחת הודעה נכשלה - ודא שה-Chat ID נכון' };
     }
   } catch (error: any) {
     console.error('Error testing Telegram connection:', error);
