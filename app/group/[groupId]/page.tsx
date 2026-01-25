@@ -656,7 +656,7 @@ export default function GroupPage() {
                                         );
                                     })()}
                                     </div>
-                                    {swipeTranslateX[participant.id] && swipeTranslateX[participant.id] < -40 && (
+                                    {swipeTranslateX[participant.id] !== undefined && swipeTranslateX[participant.id] < -40 && (
                                         <button
                                             onClick={() => handleDeleteParticipant(participant)}
                                             className="absolute right-0 top-0 bottom-0 w-20 bg-red-500 text-white flex items-center justify-center rounded-xl"
