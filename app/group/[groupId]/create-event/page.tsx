@@ -56,6 +56,7 @@ export default function CreateEventPage() {
     const [eventName, setEventName] = useState('');
     const [endDate, setEndDate] = useState('');
     const [starGoal, setStarGoal] = useState(20);
+    const [poolStarGoal, setPoolStarGoal] = useState(20);
     const [eventIcon, setEventIcon] = useState('trophy');
     const [selectedParticipants, setSelectedParticipants] = useState<Set<string>>(new Set());
     const [showNewParticipant, setShowNewParticipant] = useState(false);
@@ -179,6 +180,7 @@ export default function CreateEventPage() {
                 icon: eventIcon,
                 endDate: endDateTimestamp,
                 starGoal,
+                poolStarGoal,
             });
 
             // Add participants to event
@@ -297,6 +299,39 @@ export default function CreateEventPage() {
                                     </button>
                                 </div>
                                 <Star className="w-4 h-4" fill="currentColor" style={{ color: '#FFD93D' }} />
+                                <BadgeCheck className="w-4 h-4 text-[#4D96FF]" />
+                            </div>
+
+                            {/* Pool Star Goal */}
+                            <div className="mt-4 flex items-center justify-center gap-2 bg-white/70 backdrop-blur-md rounded-lg px-3 py-2 border border-white/50">
+                                <span className="text-sm font-black text-slate-900">יעד POOL:</span>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setPoolStarGoal(Math.max(1, poolStarGoal - 1))}
+                                        className="h-8 w-8 rounded flex items-center justify-center text-slate-700 hover:bg-slate-100 active:scale-95 transition-transform"
+                                        aria-label="הורד יעד POOL"
+                                    >
+                                        <ChevronDown className="w-4 h-4" />
+                                    </button>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max="100"
+                                        value={poolStarGoal}
+                                        onChange={(e) => setPoolStarGoal(Math.max(1, Math.min(100, parseInt(e.target.value) || 1)))}
+                                        className="w-12 text-sm font-black text-slate-900 text-center bg-transparent border-none outline-none"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setPoolStarGoal(Math.min(100, poolStarGoal + 1))}
+                                        className="h-8 w-8 rounded flex items-center justify-center text-slate-700 hover:bg-slate-100 active:scale-95 transition-transform"
+                                        aria-label="העלה יעד POOL"
+                                    >
+                                        <ChevronUp className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                <Users className="w-4 h-4 text-[#4D96FF]" />
                                 <BadgeCheck className="w-4 h-4 text-[#4D96FF]" />
                             </div>
 
