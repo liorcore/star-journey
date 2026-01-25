@@ -476,7 +476,7 @@ export default function EventPage() {
                             <span className="px-3 py-1 rounded-full bg-[#4D96FF]/10 text-[#4D96FF] text-xs font-black uppercase tracking-wider border border-[#4D96FF]/20">
                                 אירוע
                             </span>
-                            <h1 className="text-2xl font-black rainbow-text text-center break-words">{event.name}</h1>
+                            <h1 className="text-3xl sm:text-4xl font-black rainbow-text text-center break-words">{event.name}</h1>
                         </div>
 
                         <div className="mt-4 flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-50 to-blue-50 rounded-xl px-4 py-3 border-2 border-yellow-200/50 shadow-sm">
@@ -543,17 +543,17 @@ export default function EventPage() {
                                     <div className="flex items-center justify-between gap-3">
                                         <div className="flex items-center gap-3 min-w-0">
                                             <div
-                                                className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 bg-white/35 backdrop-blur-md"
+                                                className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center shrink-0 bg-white/35 backdrop-blur-md"
                                                 style={{ border: `1px solid ${hexToRgba(participant.color, 0.35)}` }}
                                             >
-                                                <ParticipantIcon icon={participant.icon} className="w-14 h-14 text-slate-900" emojiSize="text-4xl" />
+                                                <ParticipantIcon icon={participant.icon} className="w-16 h-16 sm:w-20 sm:h-20 text-slate-900" emojiSize="text-5xl sm:text-6xl" />
                                             </div>
                                             <div className="min-w-0">
                                                 <div className="flex items-center gap-2">
-                                                    <h3 className="text-xl sm:text-2xl font-black text-slate-900 truncate">{participant.name}</h3>
-                                                    {isDone && <BadgeCheck className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />}
+                                                    <h3 className="text-3xl sm:text-4xl font-black text-slate-900 truncate">{participant.name}</h3>
+                                                    {isDone && <BadgeCheck className="w-6 h-6 sm:w-7 sm:h-7 text-green-600" />}
                                                 </div>
-                                                <p className="text-xs font-bold text-slate-800/75 mt-0.5">
+                                                <p className="text-sm sm:text-base font-bold text-slate-800/75 mt-0.5">
                                                     גיל {participant.age} {participant.gender === 'male' ? '👦' : '👧'}
                                                 </p>
                                             </div>
@@ -586,22 +586,22 @@ export default function EventPage() {
                                         <div className="relative flex items-center justify-between gap-3 px-2 py-2">
                                             <button
                                                 onClick={() => handleAddStar(participantId)}
-                                                className="w-14 h-14 sm:w-16 sm:h-16 rounded-3xl backdrop-blur-sm bg-white/20 active:scale-95 transition-transform flex items-center justify-center gap-2"
+                                                className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl backdrop-blur-sm bg-white/20 active:scale-95 transition-transform flex items-center justify-center gap-2"
                                             >
-                                                <Star className="w-6 h-6 sm:w-7 sm:h-7" fill="currentColor" style={{ color: '#FFD93D' }} />
+                                                <Star className="w-8 h-8 sm:w-9 sm:h-9" fill="currentColor" style={{ color: '#FFD93D' }} />
                                             </button>
                                             <div className="text-center">
-                                                <div className="text-4xl font-black text-slate-900 leading-none">
+                                                <div className="text-5xl sm:text-6xl font-black text-slate-900 leading-none">
                                                     {stars}
                                                 </div>
-                                                <div className="text-xs font-black text-slate-800/70 uppercase tracking-widest">כוכבים</div>
+                                                <div className="text-sm sm:text-base font-black text-slate-800/70 uppercase tracking-widest">כוכבים</div>
                                             </div>
                                             <button
                                                 onClick={() => handleRemoveStar(participantId)}
                                                 disabled={stars === 0}
-                                                className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl backdrop-blur-sm bg-white/20 active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
+                                                className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl backdrop-blur-sm bg-white/20 active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
                                             >
-                                                <span className="text-3xl sm:text-4xl">😢</span>
+                                                <span className="text-4xl sm:text-5xl">😢</span>
                                             </button>
                                         </div>
                                     </div>

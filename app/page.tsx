@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, Copy, Plus, Rocket, Star, Users, X, LogOut, Trash2, Shield, Verified } from 'lucide-react';
+import { Check, Copy, Plus, Rocket, Star, Users, X, LogOut, Trash2, Shield, Verified, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useAdmin } from '@/app/contexts/AdminContext';
 import AuthGuard from '@/app/components/AuthGuard';
@@ -235,7 +235,7 @@ export default function Home() {
               {groups.map((group) => (
                 <div
                   key={group.id}
-                  className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4"
+                  className="bg-white rounded-2xl border-2 border-blue-500 shadow-sm p-4"
                 >
                   <div 
                     onClick={() => handleRecentGroupClick(group.id)}
@@ -244,28 +244,38 @@ export default function Home() {
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <div className="text-lg font-black text-slate-900 truncate">{group.name}</div>
-                        <div className="mt-1 inline-flex items-center gap-2">
-                          <button
-                            onClick={(e) => handleCopyGroupCode(e, group.code)}
-                            className="px-3 py-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-mono font-black text-slate-700 tracking-wider active:scale-95 transition-transform inline-flex items-center gap-2 hover:bg-slate-200"
-                            title="לחץ להעתקה"
-                          >
-                            {group.code}
-                            {copiedGroupCode === group.code && (
-                              <Check className="w-3 h-3 text-green-500" />
-                            )}
-                          </button>
-                          {copiedGroupCode === group.code && (
-                            <span className="text-xs font-black text-green-500">הועתק</span>
-                          )}
-                        </div>
                       </div>
                       <div className="shrink-0 w-12 h-12 rounded-2xl bg-yellow-50 border border-yellow-100 flex items-center justify-center">
                         <Star className="w-6 h-6" fill="currentColor" style={{ color: '#FFD93D' }} />
                       </div>
                     </div>
                   </div>
-                  <div className="mt-3 pt-3 border-t border-slate-100 flex justify-end">
+                  <div className="mt-3 pt-3 border-t border-slate-100 flex justify-end items-center gap-2">
+                    {/* Sync Button */}
+                    <div className="relative group">
+                      <motion.button
+                        whileTap={{ scale: 0.9 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard.writeText(group.code);
+                          setCopiedGroupCode(group.code);
+                          setTimeout(() => setCopiedGroupCode(null), 2000);
+                        }}
+                        className="h-6 w-6 rounded-xl bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 inline-flex items-center justify-center active:scale-95 transition-transform"
+                        title="העתק קוד קבוצה"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                      </motion.button>
+                      {/* Tooltip */}
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+                        {group.code}
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+                      </div>
+                      {/* Copy Success Indicator */}
+                      {copiedGroupCode === group.code && (
+                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-white"></div>
+                      )}
+                    </div>
                     <motion.button
                       whileTap={{ scale: 0.9 }}
                       onClick={(e) => handleDeleteGroup(e, group)}

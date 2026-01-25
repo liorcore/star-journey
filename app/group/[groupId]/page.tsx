@@ -306,6 +306,22 @@ export default function GroupPage() {
         }
     };
 
+    const formatDate = (timestamp: number | { toMillis: () => number } | any) => {
+        let date: Date;
+        if (timestamp && typeof timestamp === 'object' && 'toMillis' in timestamp) {
+            // Firestore Timestamp
+            date = new Date(timestamp.toMillis());
+        } else if (typeof timestamp === 'number') {
+            date = new Date(timestamp);
+        } else {
+            return 'לא זמין';
+        }
+        const day = date.getDate();
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    };
+
     const getTimeRemaining = (endDate: number) => {
         const now = Date.now();
         const diff = endDate - now;
@@ -422,7 +438,17 @@ export default function GroupPage() {
 
                     <div className="grid grid-cols-1 gap-2 sm:gap-3">
                         {[...group.participants]
-                            .sort((a, b) => b.totalStars - a.totalStars)
+                            .sort((a, b) => {
+                                const aTotal = (group?.events || []).reduce((sum, event) => {
+                                    const ep = event.participants.find(ep => ep.participantId === a.id);
+                                    return sum + (ep?.stars || 0);
+                                }, 0);
+                                const bTotal = (group?.events || []).reduce((sum, event) => {
+                                    const ep = event.participants.find(ep => ep.participantId === b.id);
+                                    return sum + (ep?.stars || 0);
+                                }, 0);
+                                return bTotal - aTotal;
+                            })
                             .map((participant, index) => (
                                 <div
                                     key={participant.id}
@@ -440,54 +466,124 @@ export default function GroupPage() {
                                         }}
                                     >
                                     <div 
-                                        className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg flex items-center justify-center text-lg sm:text-2xl relative overflow-hidden shrink-0"
+                                        className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg flex items-center justify-center text-xl sm:text-3xl relative overflow-hidden shrink-0"
                                         style={{ backgroundColor: `${participant.color}22`, border: `1px solid ${participant.color}` }}
                                     >
                                         <div className="pattern-overlay" />
-                                        <ParticipantIcon icon={participant.icon} className="text-slate-900" emojiSize="text-lg sm:text-xl" />
+                                        <ParticipantIcon icon={participant.icon} className="text-slate-900" emojiSize="text-3xl sm:text-4xl" />
                                     </div>
                                     
                                     <div className="flex-1 min-w-0">
-                                        <div className="flex items-center justify-between gap-1">
-                                            <h3 className="font-black text-slate-900 truncate text-sm sm:text-lg">{participant.name}</h3>
-                                            <span className="font-black text-xs sm:text-base text-[#FFD93D] flex items-center gap-1 shrink-0">
-                                                <Trophy className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" />
-                                                {participant.totalStars}
-                                            </span>
+                                        <div>
+                                            <h3 className="font-black text-slate-900 truncate text-lg sm:text-2xl leading-loose">{participant.name}</h3>
+                                            {/* Age and Gender */}
+                                            <div className="flex items-center gap-1 text-[10px] sm:text-xs text-slate-600 mt-0.5">
+                                                <span>גיל {participant.age.toFixed(1)}</span>
+                                                <span>{participant.gender === 'male' ? '👦' : '👧'}</span>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-1 text-[10px] sm:text-xs text-slate-600 mt-0.5">
-                                            <span>גיל {participant.age.toFixed(1)}</span>
-                                            <span>{participant.gender === 'male' ? '👦' : '👧'}</span>
+                                        <div className="mt-0.5">
+                                            {/* Total Stars Badge */}
+                                            {(() => {
+                                                // Calculate total stars from all events in the group
+                                                const totalStarsFromEvents = (group?.events || []).reduce((sum, event) => {
+                                                    const eventParticipant = event.participants.find(ep => ep.participantId === participant.id);
+                                                    return sum + (eventParticipant?.stars || 0);
+                                                }, 0);
+                                                const totalGoal = (group?.events || []).reduce((sum, event) => {
+                                                    const eventParticipant = event.participants.find(ep => ep.participantId === participant.id);
+                                                    if (eventParticipant) {
+                                                        return sum + event.starGoal;
+                                                    }
+                                                    return sum;
+                                                }, 0);
+                                                
+                                                // Get events where participant has stars
+                                                const participantEvents = (group?.events || [])
+                                                    .filter(event => {
+                                                        const eventParticipant = event.participants.find(ep => ep.participantId === participant.id);
+                                                        return eventParticipant && eventParticipant.stars > 0;
+                                                    })
+                                                    .map(event => {
+                                                        const eventParticipant = event.participants.find(ep => ep.participantId === participant.id);
+                                                        return {
+                                                            name: event.name,
+                                                            stars: eventParticipant?.stars || 0
+                                                        };
+                                                    });
+                                                
+                                                if (totalStarsFromEvents === 0) return null;
+                                                
+                                                return (
+                                                    <div className="relative group inline-block">
+                                                        <div 
+                                                            className="w-5 h-5 sm:w-6 sm:h-6 rounded flex items-center justify-center text-[10px] sm:text-xs shadow-sm"
+                                                        >
+                                                            <Trophy className="w-3 h-3 sm:w-4 sm:h-4 text-slate-600" fill="none" />
+                                                        </div>
+                                                        {/* Tooltip */}
+                                                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1.5 bg-slate-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none shadow-lg max-w-xs">
+                                                            <div className="flex items-center gap-1 mb-1">
+                                                                <Star className="w-3 h-3" fill="currentColor" style={{ color: '#FFD93D' }} />
+                                                                <span>{totalStarsFromEvents}/{totalGoal}</span>
+                                                            </div>
+                                                            {participantEvents.length > 0 && (
+                                                                <div className="border-t border-slate-700 pt-1 mt-1">
+                                                                    {participantEvents.map((event, idx) => (
+                                                                        <div key={idx} className="text-[10px] text-slate-300 truncate">
+                                                                            {event.name}: {event.stars} ⭐
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
-                                        {/* Completed Events Tags - Only show completed events */}
+                                        {/* Completed Events Tags - Calculate from actual events */}
                                         {(() => {
-                                            const completedEvents = participant.completedEvents?.filter(ae => ae.eventCompleted) || [];
-                                            if (completedEvents.length === 0) return null;
+                                            // Calculate completed events from actual events in the group
+                                            const completedEventsList = (group?.events || [])
+                                                .filter(event => {
+                                                    const eventParticipant = event.participants.find(ep => ep.participantId === participant.id);
+                                                    if (!eventParticipant) return false;
+                                                    // Event is completed if participant reached the goal
+                                                    return eventParticipant.stars >= event.starGoal;
+                                                })
+                                                .map(event => {
+                                                    const eventParticipant = event.participants.find(ep => ep.participantId === participant.id);
+                                                    return {
+                                                        eventId: event.id,
+                                                        eventName: event.name,
+                                                        stars: eventParticipant?.stars || 0,
+                                                        starGoal: event.starGoal,
+                                                        icon: event.icon || 'trophy'
+                                                    };
+                                                });
+
+                                            if (completedEventsList.length === 0) return null;
                                             
                                             return (
-                                                <div className="max-h-20 sm:max-h-24 overflow-y-auto mt-1">
+                                                <div className="max-h-24 sm:max-h-32 overflow-y-auto mt-1 pr-1">
                                                     <div className="flex flex-wrap gap-1">
-                                                        {completedEvents.map((achievement, idx) => {
-                                                            // Find the event to get the star goal and icon
-                                                            const event = group?.events?.find(e => e.id === achievement.eventId);
-                                                            const starGoal = event?.starGoal || 0;
-                                                            const eventIcon = event?.icon || achievement.icon || 'trophy';
-
+                                                        {completedEventsList.map((achievement, idx) => {
                                                             return (
                                                                 <div
                                                                     key={`${achievement.eventId}-${idx}`}
                                                                     className="relative group"
                                                                 >
-                                                                    <div className="w-4 h-4 sm:w-5 sm:h-5 rounded flex items-center justify-center text-[8px] sm:text-[10px] bg-gradient-to-br from-yellow-400 to-yellow-600 border-2 border-yellow-500 shadow-sm">
-                                                                        <ParticipantIcon icon={eventIcon} className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded flex items-center justify-center text-[10px] sm:text-xs bg-gradient-to-br from-yellow-400 to-yellow-600 border-2 border-yellow-500 shadow-sm">
+                                                                        <ParticipantIcon icon={achievement.icon} className="w-3 h-3 sm:w-4 sm:h-4" />
                                                                         <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-white"></div>
                                                                     </div>
                                                                     {/* Tooltip */}
-                                                                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
-                                                                        <div className="font-bold">{achievement.eventName}</div>
+                                                                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1.5 bg-slate-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20 pointer-events-none shadow-lg">
+                                                                        <div className="font-bold mb-1">{achievement.eventName}</div>
                                                                         <div className="flex items-center gap-1">
                                                                             <Star className="w-3 h-3" fill="currentColor" style={{ color: '#FFD93D' }} />
-                                                                            <span>{achievement.stars}/{starGoal} כוכבים | יעד: {starGoal}</span>
+                                                                            <span>{achievement.stars}/{achievement.starGoal} כוכבים | יעד: {achievement.starGoal}</span>
                                                                         </div>
                                                                         <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
                                                                     </div>
@@ -499,13 +595,21 @@ export default function GroupPage() {
                                             );
                                         })()}
                                         <div className="w-full h-1 sm:h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
-                                            <div 
-                                                className="h-full rounded-full transition-all"
-                                                style={{ 
-                                                    width: `${Math.min(100, (participant.totalStars / 50) * 100)}%`,
-                                                    backgroundColor: participant.color 
-                                                }}
-                                            />
+                                            {(() => {
+                                                const totalStarsFromEvents = (group?.events || []).reduce((sum, event) => {
+                                                    const eventParticipant = event.participants.find(ep => ep.participantId === participant.id);
+                                                    return sum + (eventParticipant?.stars || 0);
+                                                }, 0);
+                                                return (
+                                                    <div 
+                                                        className="h-full rounded-full transition-all"
+                                                        style={{ 
+                                                            width: `${Math.min(100, (totalStarsFromEvents / 50) * 100)}%`,
+                                                            backgroundColor: participant.color 
+                                                        }}
+                                                    />
+                                                );
+                                            })()}
                                         </div>
                                     </div>
 
@@ -565,7 +669,7 @@ export default function GroupPage() {
                             (group.events || []).map((event) => (
                                 <div
                                     key={event.id}
-                                    className="bg-white p-3 sm:p-6 rounded-xl shadow-sm border border-slate-100 relative overflow-hidden cursor-pointer"
+                                    className="bg-white p-3 sm:p-6 rounded-xl shadow-sm border-2 border-blue-500 relative overflow-hidden cursor-pointer"
                                     onClick={() => router.push(`/group/${groupId}/event/${event.id}`)}
                                 >
                                     <div className="pattern-overlay" />
@@ -585,9 +689,21 @@ export default function GroupPage() {
                                         <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                     </button>
 
-                                    <h3 className="text-sm sm:text-xl font-black text-slate-900 mb-2 sm:mb-4 pr-6">{event.name}</h3>
+                                    <h3 className="text-sm sm:text-xl font-black text-blue-600 mb-2 sm:mb-4 pr-6">{event.name}</h3>
                                     
                                     <div className="space-y-1.5 sm:space-y-3 mb-3 sm:mb-5">
+                                        {/* Start Date */}
+                                        {(event as any).createdAt && (
+                                            <div className="flex items-center gap-1.5 sm:gap-2 text-slate-500 font-bold text-[10px] sm:text-sm">
+                                                <div className="p-1 bg-blue-50 text-blue-600 rounded"><Calendar className="w-3 h-3 sm:w-4 sm:h-4" /></div>
+                                                <span>התחלה: {formatDate((event as any).createdAt)}</span>
+                                            </div>
+                                        )}
+                                        {/* End Date */}
+                                        <div className="flex items-center gap-1.5 sm:gap-2 text-slate-500 font-bold text-[10px] sm:text-sm">
+                                            <div className="p-1 bg-red-50 text-red-600 rounded"><Calendar className="w-3 h-3 sm:w-4 sm:h-4" /></div>
+                                            <span>סיום: {formatDate(event.endDate)}</span>
+                                        </div>
                                         <div className="flex items-center gap-1.5 sm:gap-2 text-slate-500 font-bold text-[10px] sm:text-sm">
                                             <div className="p-1 bg-slate-100 rounded"><Clock className="w-3 h-3 sm:w-4 sm:h-4" /></div>
                                             <span>{getTimeRemaining(event.endDate)}</span>
@@ -604,18 +720,18 @@ export default function GroupPage() {
                                             return p ? (
                                                 <div
                                                     key={p.id}
-                                                    className="inline-flex flex-col items-center gap-0.5 bg-slate-100 rounded-lg px-2 py-1.5 text-center min-w-[70px]"
+                                                    className="inline-flex flex-col items-center gap-0.5 bg-slate-100 rounded-lg px-2.5 py-1.5 text-center min-w-[75px] sm:min-w-[90px]"
                                                 >
                                                     <div className="relative w-full">
-                                                        <ParticipantIcon icon={p.icon} className="absolute top-1/2 -translate-y-1/2 right-1 w-1 h-1" emojiSize="text-xs" />
-                                                        <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 truncate block">{p.name}</span>
+                                                        <ParticipantIcon icon={p.icon} className="absolute top-1/2 -translate-y-1/2 right-1 w-1.5 h-1.5" emojiSize="text-xs" />
+                                                        <span className="text-[10px] sm:text-xs font-bold text-slate-500 truncate block">{p.name}</span>
                                                     </div>
                                                     <div
-                                                        className="inline-flex items-center gap-0.5 font-black text-[10px]"
+                                                        className="inline-flex items-center gap-0.5 font-black text-[10px] sm:text-xs"
                                                         style={{ color: p.color }}
                                                     >
                                                         <span>{ep.stars}</span>
-                                                        <Star className="w-1.5 h-1.5" fill="currentColor" />
+                                                        <Star className="w-1.5 h-1.5 sm:w-2 sm:h-2" fill="currentColor" />
                                                     </div>
                                                 </div>
                                             ) : null;
