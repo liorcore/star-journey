@@ -329,10 +329,10 @@ export default function Home() {
           {isAdmin && (
             <button
               onClick={() => router.push('/admin')}
-              className="h-12 rounded-[2.5rem] w-full border-2 border-slate-300 bg-slate-50 font-black text-slate-700 active:scale-95 transition-transform flex items-center justify-center gap-2"
+              className="h-12 rounded-[2.5rem] w-full border-2 border-green-500/50 bg-green-500/50 font-black text-green-700 active:scale-95 transition-transform flex items-center justify-center gap-2"
             >
-              <Shield className="w-4 h-4 text-slate-600" />
-              דשבורד אדמין
+              <Shield className="w-4 h-4 text-green-700" />
+              אדמין
             </button>
           )}
         </motion.section>
