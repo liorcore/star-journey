@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings, Check, X, ExternalLink, Copy, Send } from 'lucide-react';
+import { Settings, Check, X, ExternalLink, Copy, Send, ChevronDown, ChevronUp, Edit2 } from 'lucide-react';
 import { getTelegramSettings, saveTelegramSettings, testTelegramConnection, TelegramSettings } from '@/app/lib/telegram';
 import { useAuth } from '@/app/contexts/AuthContext';
 
@@ -13,6 +13,9 @@ export default function TelegramSettingsComponent() {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isEditingChatId, setIsEditingChatId] = useState(false);
+  const [tempChatId, setTempChatId] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -54,6 +57,7 @@ export default function TelegramSettingsComponent() {
       if (result.success && result.settings) {
         setSettings(result.settings);
         setChatId(result.settings.chatId || '');
+        setTempChatId(result.settings.chatId || '');
       } else {
         console.warn('API returned unsuccessful result:', result);
         // Fallback to direct call if API fails
@@ -62,6 +66,7 @@ export default function TelegramSettingsComponent() {
           if (currentSettings) {
             setSettings(currentSettings);
             setChatId(currentSettings.chatId || '');
+            setTempChatId(currentSettings.chatId || '');
           }
         } catch (e) {
           console.error('Fallback also failed:', e);
@@ -116,6 +121,8 @@ export default function TelegramSettingsComponent() {
       
       if (result.success) {
         await loadSettings();
+        setIsEditingChatId(false);
+        setTempChatId(chatId);
         alert('Chat ID נשמר בהצלחה');
       } else {
         alert(result.message || 'שגיאה בשמירת Chat ID');
@@ -126,6 +133,16 @@ export default function TelegramSettingsComponent() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEditChatId = () => {
+    setIsEditingChatId(true);
+    setChatId(tempChatId);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingChatId(false);
+    setChatId(tempChatId);
   };
 
   const handleTest = async () => {
@@ -172,17 +189,28 @@ export default function TelegramSettingsComponent() {
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center">
-          <Settings className="w-5 h-5 text-[#4D96FF]" />
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between gap-3 mb-0"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center">
+            <Settings className="w-5 h-5 text-[#4D96FF]" />
+          </div>
+          <div className="text-right">
+            <h3 className="text-lg font-black text-slate-900">הגדרות התראות טלגרם</h3>
+            <p className="text-xs text-slate-500">הגדר בוט טלגרם לקבלת התראות</p>
+          </div>
         </div>
-        <div>
-          <h3 className="text-lg font-black text-slate-900">הגדרות התראות טלגרם</h3>
-          <p className="text-xs text-slate-500">הגדר בוט טלגרם לקבלת התראות</p>
-        </div>
-      </div>
+        {isOpen ? (
+          <ChevronUp className="w-5 h-5 text-slate-400" />
+        ) : (
+          <ChevronDown className="w-5 h-5 text-slate-400" />
+        )}
+      </button>
 
-      <div className="space-y-4">
+      {isOpen && (
+      <div className="space-y-4 mt-6">
         {/* Bot Token Info */}
         <div className="bg-blue-50 rounded-2xl border border-blue-200 p-4">
           <div className="text-xs font-black text-blue-600 uppercase tracking-widest mb-2">
@@ -190,9 +218,6 @@ export default function TelegramSettingsComponent() {
           </div>
           <div className="text-sm text-blue-900">
             הטוקן מוגדר במשתנה סביבה <code className="bg-blue-100 px-2 py-1 rounded text-xs">TELEGRAM_BOT_TOKEN</code>
-          </div>
-          <div className="mt-2 text-xs text-slate-600">
-            הטוקן נשמר בצורה מאובטחת במשתני סביבה ולא נחשף למשתמש
           </div>
         </div>
 
@@ -301,6 +326,7 @@ export default function TelegramSettingsComponent() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
