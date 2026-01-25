@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import { BadgeCheck, ChevronRight, ChevronUp, ChevronDown, Crown, Minus, Pencil, Sparkles, Star, Timer, UserPlus, X, Users, Droplet, Container, Trophy } from 'lucide-react';
+import { BadgeCheck, ChevronRight, ChevronUp, ChevronDown, Crown, Minus, Pencil, Sparkles, Star, Timer, UserPlus, X, Users, UsersRound, User, Droplet, Container, Trophy, Power } from 'lucide-react';
 import { ParticipantIcon, PARTICIPANT_ICONS } from '@/app/lib/participantIcons';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { subscribeToGroup, subscribeToEvent, updateEvent, updateParticipantStars, updateEventPoolStars, deleteEvent, addParticipantToEvent, Event as FirestoreEvent, Group as FirestoreGroup, Participant } from '@/app/lib/firestore';
@@ -128,6 +128,10 @@ export default function EventPage() {
     const [editPoolStarGoal, setEditPoolStarGoal] = useState(0);
     const [editEventIcon, setEditEventIcon] = useState('trophy');
     const [showEventIconPicker, setShowEventIconPicker] = useState(false);
+    
+    // Toggle states for goal cards
+    const [isPersonalGoalActive, setIsPersonalGoalActive] = useState(true);
+    const [isGroupGoalActive, setIsGroupGoalActive] = useState(true);
     
     // Pool stars state
     const [showPoolCelebration, setShowPoolCelebration] = useState(false);
@@ -573,10 +577,44 @@ export default function EventPage() {
                             <h1 className="text-3xl sm:text-4xl font-black rainbow-text text-center break-words">{event.name}</h1>
                         </div>
 
-                        <div className="mt-4 flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-50 to-blue-50 rounded-xl px-4 py-3 border-2 border-yellow-200/50 shadow-sm">
-                            <span className="text-base font-black text-slate-900">יעד: {event.starGoal}</span>
-                            <Star className="w-5 h-5" fill="currentColor" style={{ color: '#FFD93D' }} />
-                            <BadgeCheck className="w-5 h-5 text-[#4D96FF]" />
+                        <div className="mt-4 relative flex items-center justify-between gap-2 bg-gradient-to-r from-yellow-50 to-blue-50 rounded-xl px-4 py-3 border-2 border-yellow-200/50 shadow-sm">
+                            <User className="w-5 h-5 text-[#4D96FF]" />
+                            <div className="flex items-center gap-2 absolute left-1/2 transform -translate-x-1/2">
+                                <span className="text-base font-black text-slate-900">{event.starGoal}</span>
+                                <Star className="w-5 h-5" fill="currentColor" style={{ color: '#FFD93D' }} />
+                                <BadgeCheck className="w-5 h-5 text-[#4D96FF]" />
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setIsPersonalGoalActive(!isPersonalGoalActive)}
+                                className={`w-5 h-5 flex items-center justify-center transition-colors ${
+                                    isPersonalGoalActive ? 'text-green-400 drop-shadow-[0_0_4px_rgba(74,222,128,0.8)]' : 'text-slate-400'
+                                }`}
+                                title={isPersonalGoalActive ? 'הסתר כרטיסים אישיים' : 'הצג כרטיסים אישיים'}
+                                aria-label={isPersonalGoalActive ? 'הסתר כרטיסים אישיים' : 'הצג כרטיסים אישיים'}
+                            >
+                                <Power className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="mt-4 relative flex items-center justify-between gap-2 bg-gradient-to-r from-yellow-50 to-blue-50 rounded-xl px-4 py-3 border-2 border-yellow-200/50 shadow-sm">
+                            <UsersRound className="w-5 h-5 text-[#4D96FF]" />
+                            <div className="flex items-center gap-2 absolute left-1/2 transform -translate-x-1/2">
+                                <span className="text-base font-black text-slate-900">{event.poolStarGoal || event.starGoal}</span>
+                                <Star className="w-5 h-5" fill="currentColor" style={{ color: '#FFD93D' }} />
+                                <BadgeCheck className="w-5 h-5 text-[#4D96FF]" />
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setIsGroupGoalActive(!isGroupGoalActive)}
+                                className={`w-5 h-5 flex items-center justify-center transition-colors ${
+                                    isGroupGoalActive ? 'text-green-400 drop-shadow-[0_0_4px_rgba(74,222,128,0.8)]' : 'text-slate-400'
+                                }`}
+                                title={isGroupGoalActive ? 'הסתר כרטיס קבוצתי' : 'הצג כרטיס קבוצתי'}
+                                aria-label={isGroupGoalActive ? 'הסתר כרטיס קבוצתי' : 'הצג כרטיס קבוצתי'}
+                            >
+                                <Power className="w-5 h-5" />
+                            </button>
                         </div>
 
                         <div className="mt-4 flex items-center justify-center gap-2 text-slate-500">
@@ -602,13 +640,15 @@ export default function EventPage() {
                 </motion.section>
 
                 {/* Pool Stars Card */}
-                {event && (
-                    <motion.section
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.02 }}
-                        className="mb-6"
-                    >
+                <AnimatePresence>
+                    {event && isGroupGoalActive && (
+                        <motion.section
+                            initial={{ opacity: 0, y: 12 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -12 }}
+                            transition={{ delay: 0.02 }}
+                            className="mb-6"
+                        >
                         {(() => {
                             const poolStars = event.poolStars || 0;
                             const poolStarGoal = event.poolStarGoal || event.starGoal;
@@ -739,16 +779,20 @@ export default function EventPage() {
                                 </div>
                             );
                         })()}
-                    </motion.section>
-                )}
+                        </motion.section>
+                    )}
+                </AnimatePresence>
 
                 {/* Participants */}
-                <motion.section
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.05 }}
-                    className="space-y-3"
-                >
+                <AnimatePresence>
+                    {isPersonalGoalActive && (
+                        <motion.section
+                            initial={{ opacity: 0, y: 12 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -12 }}
+                            transition={{ delay: 0.05 }}
+                            className="space-y-3"
+                        >
                     {sortedParticipants.map(({ participant, participantId, stars }, index) => {
                         const isDone = stars >= event.starGoal;
                         const progress = Math.min((stars / event.starGoal) * 100, 100);
@@ -844,7 +888,9 @@ export default function EventPage() {
                             </div>
                         );
                     })}
-                </motion.section>
+                    </motion.section>
+                    )}
+                </AnimatePresence>
             </main>
 
             {/* Congrats overlay */}
@@ -1246,7 +1292,7 @@ export default function EventPage() {
                                     <button
                                         type="button"
                                         onClick={() => setShowEventIconPicker(true)}
-                                        className="absolute top-2 right-2 p-1 hover:bg-slate-100 rounded-lg transition-colors"
+                                        className="absolute top-2 right-2 p-1 bg-slate-50 hover:bg-slate-100 hover:border-2 hover:border-[#4D96FF] rounded-lg transition-all"
                                         aria-label="בחר אייקון"
                                     >
                                         <ParticipantIcon icon={editEventIcon} className="w-6 h-6 text-slate-600" emojiSize="text-lg" />
@@ -1264,7 +1310,7 @@ export default function EventPage() {
 
                                     {/* Star Goal */}
                                     <div className="mt-4 flex items-center justify-center gap-2 bg-white/70 backdrop-blur-md rounded-lg px-3 py-2 border border-white/50">
-                                        <span className="text-sm font-black text-slate-900">יעד:</span>
+                                        <span className="text-sm font-black text-slate-900 w-20 text-right">יעד</span>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -1291,13 +1337,14 @@ export default function EventPage() {
                                                 <ChevronUp className="w-3 h-3" />
                                             </button>
                                         </div>
+                                        <User className="w-4 h-4 text-[#4D96FF]" />
                                         <Star className="w-4 h-4" fill="currentColor" style={{ color: '#FFD93D' }} />
                                         <BadgeCheck className="w-4 h-4 text-[#4D96FF]" />
                                     </div>
 
                                     {/* Pool Star Goal */}
                                     <div className="mt-4 flex items-center justify-center gap-2 bg-white/70 backdrop-blur-md rounded-lg px-3 py-2 border border-white/50">
-                                        <span className="text-sm font-black text-slate-900">יעד POOL:</span>
+                                        <span className="text-sm font-black text-slate-900 w-20 text-right">יעד קבוצתי</span>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -1325,6 +1372,7 @@ export default function EventPage() {
                                             </button>
                                         </div>
                                         <Users className="w-4 h-4 text-[#4D96FF]" />
+                                        <Star className="w-4 h-4" fill="currentColor" style={{ color: '#FFD93D' }} />
                                         <BadgeCheck className="w-4 h-4 text-[#4D96FF]" />
                                     </div>
 

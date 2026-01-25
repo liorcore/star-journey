@@ -452,19 +452,20 @@ export default function GroupPage() {
                             .map((participant, index) => (
                                 <div
                                     key={participant.id}
-                                    className="relative overflow-hidden"
+                                    className="relative overflow-visible"
                                     onTouchStart={(e) => handleSwipeStart(e, participant.id)}
                                     onTouchMove={(e) => handleSwipeMove(e, participant.id)}
                                     onTouchEnd={() => handleSwipeEnd(participant.id)}
                                 >
                                     <div
-                                        className="p-2.5 sm:p-4 rounded-xl shadow-sm border-2 flex items-center gap-2 sm:gap-3 transition-transform"
+                                        className="p-2.5 sm:p-4 rounded-xl shadow-sm border-2 flex flex-col gap-2 sm:gap-3 transition-transform relative"
                                         style={{ 
                                             transform: `translateX(${swipeTranslateX[participant.id] || 0}px)`,
                                             backgroundColor: hexToRgba(participant.color, 0.1),
                                             borderColor: participant.color
                                         }}
                                     >
+                                    <div className="flex items-center gap-2 sm:gap-3 w-full">
                                     <div 
                                         className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg flex items-center justify-center text-xl sm:text-3xl relative overflow-hidden shrink-0"
                                         style={{ backgroundColor: `${participant.color}22`, border: `1px solid ${participant.color}` }}
@@ -482,44 +483,72 @@ export default function GroupPage() {
                                                 <span>{participant.gender === 'male' ? '👦' : '👧'}</span>
                                             </div>
                                         </div>
-                                        <div className="mt-0.5">
-                                            {/* Total Stars Badge */}
-                                            {(() => {
-                                                // Calculate total stars from all events in the group
-                                                const totalStarsFromEvents = (group?.events || []).reduce((sum, event) => {
+                                        {/* Stars - in the center */}
+                                        {(() => {
+                                            const totalStarsFromEvents = (group?.events || []).reduce((sum, event) => {
+                                                const eventParticipant = event.participants.find(ep => ep.participantId === participant.id);
+                                                return sum + (eventParticipant?.stars || 0);
+                                            }, 0);
+                                            
+                                            if (totalStarsFromEvents === 0) return null;
+                                            
+                                            return (
+                                                <div className="flex items-center justify-center gap-1.5 mt-1 w-fit mx-auto">
+                                                    <Star className="w-6 h-6 sm:w-7 sm:h-7" fill="currentColor" style={{ color: '#FFD93D' }} />
+                                                    <span className="text-lg sm:text-xl font-black text-slate-900">{totalStarsFromEvents}</span>
+                                                </div>
+                                            );
+                                        })()}
+                                        {/* Trophy - above progress bar */}
+                                        {(() => {
+                                            const totalStarsFromEvents = (group?.events || []).reduce((sum, event) => {
+                                                const eventParticipant = event.participants.find(ep => ep.participantId === participant.id);
+                                                return sum + (eventParticipant?.stars || 0);
+                                            }, 0);
+                                            
+                                            if (totalStarsFromEvents === 0) return null;
+                                            
+                                            const totalGoal = (group?.events || []).reduce((sum, event) => {
+                                                const eventParticipant = event.participants.find(ep => ep.participantId === participant.id);
+                                                if (eventParticipant) {
+                                                    return sum + event.starGoal;
+                                                }
+                                                return sum;
+                                            }, 0);
+                                            
+                                            // Get events where participant has stars, sorted by most recent (by updatedAt or endDate)
+                                            const participantEvents = (group?.events || [])
+                                                .filter(event => {
                                                     const eventParticipant = event.participants.find(ep => ep.participantId === participant.id);
-                                                    return sum + (eventParticipant?.stars || 0);
-                                                }, 0);
-                                                const totalGoal = (group?.events || []).reduce((sum, event) => {
+                                                    return eventParticipant && eventParticipant.stars > 0;
+                                                })
+                                                .map(event => {
                                                     const eventParticipant = event.participants.find(ep => ep.participantId === participant.id);
-                                                    if (eventParticipant) {
-                                                        return sum + event.starGoal;
-                                                    }
-                                                    return sum;
-                                                }, 0);
-                                                
-                                                // Get events where participant has stars
-                                                const participantEvents = (group?.events || [])
-                                                    .filter(event => {
-                                                        const eventParticipant = event.participants.find(ep => ep.participantId === participant.id);
-                                                        return eventParticipant && eventParticipant.stars > 0;
-                                                    })
-                                                    .map(event => {
-                                                        const eventParticipant = event.participants.find(ep => ep.participantId === participant.id);
-                                                        return {
-                                                            name: event.name,
-                                                            stars: eventParticipant?.stars || 0
-                                                        };
-                                                    });
-                                                
-                                                if (totalStarsFromEvents === 0) return null;
-                                                
-                                                return (
+                                                    return {
+                                                        name: event.name,
+                                                        stars: eventParticipant?.stars || 0,
+                                                        icon: event.icon || 'trophy',
+                                                        endDate: event.endDate,
+                                                        updatedAt: event.updatedAt
+                                                    };
+                                                })
+                                                .sort((a, b) => {
+                                                    // Sort by updatedAt (most recent first), then by endDate
+                                                    const aTime = a.updatedAt || a.endDate || 0;
+                                                    const bTime = b.updatedAt || b.endDate || 0;
+                                                    return bTime - aTime;
+                                                });
+                                            
+                                            // Get the current/most recent event icon
+                                            const currentEventIcon = participantEvents.length > 0 ? participantEvents[0].icon : 'trophy';
+                                            
+                                            return (
+                                                <div className="flex items-center justify-start mt-1">
                                                     <div className="relative group inline-block">
                                                         <div 
                                                             className="w-5 h-5 sm:w-6 sm:h-6 rounded flex items-center justify-center text-[10px] sm:text-xs shadow-sm"
                                                         >
-                                                            <Trophy className="w-3 h-3 sm:w-4 sm:h-4 text-slate-600" fill="none" />
+                                                            <ParticipantIcon icon={currentEventIcon} className="w-3 h-3 sm:w-4 sm:h-4 text-slate-600" emojiSize="text-xs" />
                                                         </div>
                                                         {/* Tooltip */}
                                                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1.5 bg-slate-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none shadow-lg max-w-xs">
@@ -538,58 +567,6 @@ export default function GroupPage() {
                                                             )}
                                                             <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
                                                         </div>
-                                                    </div>
-                                                );
-                                            })()}
-                                        </div>
-                                        {/* Completed Events Tags - Calculate from actual events */}
-                                        {(() => {
-                                            // Calculate completed events from actual events in the group
-                                            const completedEventsList = (group?.events || [])
-                                                .filter(event => {
-                                                    const eventParticipant = event.participants.find(ep => ep.participantId === participant.id);
-                                                    if (!eventParticipant) return false;
-                                                    // Event is completed if participant reached the goal
-                                                    return eventParticipant.stars >= event.starGoal;
-                                                })
-                                                .map(event => {
-                                                    const eventParticipant = event.participants.find(ep => ep.participantId === participant.id);
-                                                    return {
-                                                        eventId: event.id,
-                                                        eventName: event.name,
-                                                        stars: eventParticipant?.stars || 0,
-                                                        starGoal: event.starGoal,
-                                                        icon: event.icon || 'trophy'
-                                                    };
-                                                });
-
-                                            if (completedEventsList.length === 0) return null;
-                                            
-                                            return (
-                                                <div className="max-h-24 sm:max-h-32 overflow-y-auto mt-1 pr-1">
-                                                    <div className="flex flex-wrap gap-1">
-                                                        {completedEventsList.map((achievement, idx) => {
-                                                            return (
-                                                                <div
-                                                                    key={`${achievement.eventId}-${idx}`}
-                                                                    className="relative group"
-                                                                >
-                                                                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded flex items-center justify-center text-[10px] sm:text-xs bg-gradient-to-br from-yellow-400 to-yellow-600 border-2 border-yellow-500 shadow-sm">
-                                                                        <ParticipantIcon icon={achievement.icon} className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-white"></div>
-                                                                    </div>
-                                                                    {/* Tooltip */}
-                                                                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1.5 bg-slate-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20 pointer-events-none shadow-lg">
-                                                                        <div className="font-bold mb-1">{achievement.eventName}</div>
-                                                                        <div className="flex items-center gap-1">
-                                                                            <Star className="w-3 h-3" fill="currentColor" style={{ color: '#FFD93D' }} />
-                                                                            <span>{achievement.stars}/{achievement.starGoal} כוכבים | יעד: {achievement.starGoal}</span>
-                                                                        </div>
-                                                                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
-                                                                    </div>
-                                                                </div>
-                                                            );
-                                                        })}
                                                     </div>
                                                 </div>
                                             );
@@ -630,13 +607,71 @@ export default function GroupPage() {
                                         </motion.button>
                                     </div>
                                     </div>
-                                    <button
-                                        onClick={() => handleDeleteParticipant(participant)}
-                                        className="absolute right-0 top-0 bottom-0 w-20 bg-red-500 text-white flex items-center justify-center rounded-xl"
-                                        style={{ transform: `translateX(${80 + (swipeTranslateX[participant.id] || 0)}px)` }}
-                                    >
-                                        <Trash2 className="w-5 h-5" />
-                                    </button>
+                                    
+                                    {/* Completed Events Tags - at the bottom */}
+                                    {(() => {
+                                        // Calculate completed events from actual events in the group
+                                        const completedEventsList = (group?.events || [])
+                                            .filter(event => {
+                                                const eventParticipant = event.participants.find(ep => ep.participantId === participant.id);
+                                                if (!eventParticipant) return false;
+                                                // Event is completed if participant reached the goal
+                                                return eventParticipant.stars >= event.starGoal;
+                                            })
+                                            .map(event => {
+                                                const eventParticipant = event.participants.find(ep => ep.participantId === participant.id);
+                                                return {
+                                                    eventId: event.id,
+                                                    eventName: event.name,
+                                                    stars: eventParticipant?.stars || 0,
+                                                    starGoal: event.starGoal,
+                                                    icon: event.icon || 'trophy'
+                                                };
+                                            });
+
+                                        if (completedEventsList.length === 0) return null;
+                                        
+                                        return (
+                                            <div className="w-full mt-1">
+                                                <div className="max-h-24 sm:max-h-32 overflow-y-auto">
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {completedEventsList.map((achievement, idx) => {
+                                                            return (
+                                                                <div
+                                                                    key={`${achievement.eventId}-${idx}`}
+                                                                    className="relative group"
+                                                                >
+                                                                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded flex items-center justify-center text-[10px] sm:text-xs bg-gradient-to-br from-yellow-400 to-yellow-600 border-2 border-yellow-500 shadow-sm">
+                                                                        <ParticipantIcon icon={achievement.icon} className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-white"></div>
+                                                                    </div>
+                                                                    {/* Tooltip */}
+                                                                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1.5 bg-slate-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20 pointer-events-none shadow-lg">
+                                                                        <div className="font-bold mb-1">{achievement.eventName}</div>
+                                                                        <div className="flex items-center gap-1">
+                                                                            <Star className="w-3 h-3" fill="currentColor" style={{ color: '#FFD93D' }} />
+                                                                            <span>{achievement.stars}/{achievement.starGoal} כוכבים | יעד: {achievement.starGoal}</span>
+                                                                        </div>
+                                                                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+                                    </div>
+                                    {swipeTranslateX[participant.id] && swipeTranslateX[participant.id] < -40 && (
+                                        <button
+                                            onClick={() => handleDeleteParticipant(participant)}
+                                            className="absolute right-0 top-0 bottom-0 w-20 bg-red-500 text-white flex items-center justify-center rounded-xl"
+                                            style={{ transform: `translateX(${80 + (swipeTranslateX[participant.id] || 0)}px)` }}
+                                        >
+                                            <Trash2 className="w-5 h-5" />
+                                        </button>
+                                    )}
                                 </div>
                             ))}
                     </div>
