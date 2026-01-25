@@ -191,15 +191,24 @@ export async function sendTelegramNotification(
  * Test Telegram connection
  */
 export async function testTelegramConnection(): Promise<{ success: boolean; message: string }> {
+  // This function should only be called server-side
+  if (typeof window !== 'undefined') {
+    return { success: false, message: 'פונקציה זו זמינה רק בצד השרת' };
+  }
+
   try {
-    const settings = await getTelegramSettings();
+    // Get token directly from environment variable (server-side only)
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
     
-    if (!settings || !settings.botToken) {
+    if (!botToken) {
       return { success: false, message: 'טוקן בוט לא מוגדר במשתני סביבה' };
     }
 
+    // Get settings for chat ID
+    const settings = await getTelegramSettings();
+
     // Test by getting bot info
-    const response = await fetch(`https://api.telegram.org/bot${settings.botToken}/getMe`);
+    const response = await fetch(`https://api.telegram.org/bot${botToken}/getMe`);
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -213,12 +222,14 @@ export async function testTelegramConnection(): Promise<{ success: boolean; mess
     }
 
     // Update bot username
-    await saveTelegramSettings({ 
-      botUsername: botInfo.result.username,
-      connected: !!settings.chatId,
-    });
+    if (settings) {
+      await saveTelegramSettings({ 
+        botUsername: botInfo.result.username,
+        connected: !!settings.chatId,
+      });
+    }
 
-    if (!settings.chatId) {
+    if (!settings || !settings.chatId) {
       return { success: false, message: 'Chat ID לא מוגדר - יש לקשר את הבוט' };
     }
 
