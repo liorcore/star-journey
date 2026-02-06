@@ -150,11 +150,20 @@ export default function TelegramSettingsComponent() {
     setTesting(true);
     setTestResult(null);
     try {
-      // Call API route instead of direct function (server-side only)
+      if (!user) {
+        setTestResult({ success: false, message: 'עליך להתחבר כאדמין כדי לבצע בדיקה' });
+        return;
+      }
+
+      // Get ID token for authentication (required by /api/telegram/test)
+      const idToken = await user.getIdToken();
+
+      // Call API route (server-side)
       const response = await fetch('/api/telegram/test', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
         },
       });
       
