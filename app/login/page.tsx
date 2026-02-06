@@ -35,7 +35,8 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await signIn(email, password);
+      const normalizedEmail = sanitizeAndValidate(email.trim().toLowerCase(), { maxLength: 100 });
+      await signIn(normalizedEmail, password);
       router.push('/');
     } catch (err: any) {
       // Log error for debugging
@@ -96,7 +97,9 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await signInWithGoogle();
+      const result = await signInWithGoogle();
+      // In redirect fallback, we won't have a result here (navigation happens).
+      if (!result) return;
       router.push('/');
     } catch (err: any) {
       // Check if error has a custom message (for account linking)

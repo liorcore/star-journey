@@ -6,6 +6,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
   GoogleAuthProvider,
   signOut,
   onAuthStateChanged,
@@ -13,6 +14,7 @@ import {
   UserCredential,
   fetchSignInMethodsForEmail,
   linkWithPopup,
+  getRedirectResult,
 } from 'firebase/auth';
 import { auth, db } from '@/app/lib/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -22,7 +24,7 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<UserCredential>;
   signUp: (email: string, password: string) => Promise<UserCredential>;
-  signInWithGoogle: () => Promise<UserCredential>;
+  signInWithGoogle: () => Promise<UserCredential | null>;
   linkGoogleAccount: () => Promise<UserCredential>;
   resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -58,6 +60,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    // If we came back from a Google redirect flow, finalize it here.
+    // This prevents "popup-blocked" from breaking sign-in on mobile/Safari/etc.
+    (async () => {
+      try {
+        const redirectResult = await getRedirectResult(auth);
+        if (redirectResult?.user) {
+          setUser(redirectResult.user);
+        }
+      } catch (e) {
+        // Don't block app; onAuthStateChanged will still handle normal cases.
+        console.warn('getRedirectResult failed:', e);
+      } finally {
+        // Do not flip loading here; onAuthStateChanged will do it.
+      }
+    })();
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       setLoading(false);
@@ -84,23 +102,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     if (!auth) {
       // Demo mode - create mock user
-      const mockUser = createMockUser(email) as User;
+      const normalizedEmail = email.trim().toLowerCase();
+      const mockUser = createMockUser(normalizedEmail) as User;
       localStorage.setItem('demo_user', JSON.stringify(mockUser));
       setUser(mockUser as User);
       return { user: mockUser as User } as UserCredential;
     }
-    return signInWithEmailAndPassword(auth, email, password);
+    const normalizedEmail = email.trim().toLowerCase();
+    return signInWithEmailAndPassword(auth, normalizedEmail, password);
   };
 
   const signUp = async (email: string, password: string) => {
     if (!auth) {
       // Demo mode - create mock user
-      const mockUser = createMockUser(email) as User;
+      const normalizedEmail = email.trim().toLowerCase();
+      const mockUser = createMockUser(normalizedEmail) as User;
       localStorage.setItem('demo_user', JSON.stringify(mockUser));
       setUser(mockUser as User);
       return { user: mockUser as User } as UserCredential;
     }
-    const result = await createUserWithEmailAndPassword(auth, email, password);
+    const normalizedEmail = email.trim().toLowerCase();
+    const result = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
     
     // Create user document in Firestore
     if (db && result.user) {
@@ -195,6 +217,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       return result;
     } catch (error: any) {
+      // If popups are blocked (mobile/Safari/strict browsers), fall back to redirect flow.
+      if (error?.code === 'auth/popup-blocked' || error?.code === 'auth/popup-closed-by-user') {
+        await signInWithRedirect(auth, provider);
+        return null; // Redirect navigation will happen; result handled in getRedirectResult().
+      }
+
       // If account exists with different credential, try to link accounts
       if (error.code === 'auth/account-exists-with-different-credential') {
         const email = error.customData?.email || null;
@@ -251,7 +279,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Demo mode: Password reset not available
       return;
     }
-    return sendPasswordResetEmail(auth, email);
+    const normalizedEmail = email.trim().toLowerCase();
+    return sendPasswordResetEmail(auth, normalizedEmail);
   };
 
   const logout = async () => {
