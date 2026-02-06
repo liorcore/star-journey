@@ -625,12 +625,20 @@ export async function updateParticipantStars(
         throw new Error('אין הרשאה לנהל כוכבים למשתתף זה');
       }
 
+      const previousStars = typeof participant.stars === 'number' ? participant.stars : 0;
+      const newStars = stars;
+      const delta = newStars - previousStars;
+
       const updatedParticipants = event.participants.map((p) =>
-        p.participantId === participantId ? { ...p, stars } : p
+        p.participantId === participantId ? { ...p, stars: newStars } : p
       );
+
+      const currentPoolStars = typeof event.poolStars === 'number' ? event.poolStars : 0;
+      const updatedPoolStars = Math.max(0, currentPoolStars + delta);
 
       transaction.update(eventRef, {
         participants: updatedParticipants,
+        poolStars: updatedPoolStars,
         updatedAt: serverTimestamp(),
       });
     });
