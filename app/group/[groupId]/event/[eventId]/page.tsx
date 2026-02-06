@@ -599,9 +599,9 @@ export default function EventPage() {
                                     <div className="w-3.5 h-3.5 rounded-full bg-white/70 border border-slate-300 flex items-center justify-center text-[9px] text-slate-400 shadow-sm">
                                         <Info className="w-2.5 h-2.5" />
                                     </div>
-                                    <div className="absolute bottom-full right-0 mb-1.5 px-3 py-2 bg-slate-900 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none transition-opacity shadow-lg max-w-[230px] text-right z-20">
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-3 py-2 bg-slate-900 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none transition-opacity shadow-lg w-[92vw] max-w-sm text-right z-20">
                                         שורת כוכבים אישיים – יעד כוכבים אישי לכל משתתף. ניתן לכבות/להדליק את התצוגה בכפתור בצד, והוספה/הסרת כוכבים אפשרית רק כשהכרטיס דלוק.
-                                        <div className="absolute top-full right-2 border-4 border-transparent border-t-slate-900" />
+                                        <div className="absolute top-full right-6 border-4 border-transparent border-t-slate-900" />
                                     </div>
                                 </div>
                             </div>
@@ -637,9 +637,9 @@ export default function EventPage() {
                                     <div className="w-3.5 h-3.5 rounded-full bg-white/70 border border-slate-300 flex items-center justify-center text-[9px] text-slate-400 shadow-sm">
                                         <Info className="w-2.5 h-2.5" />
                                     </div>
-                                    <div className="absolute bottom-full right-0 mb-1.5 px-3 py-2 bg-slate-900 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none transition-opacity shadow-lg max-w-[230px] text-right z-20">
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-3 py-2 bg-slate-900 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none transition-opacity shadow-lg w-[92vw] max-w-sm text-right z-20">
                                         שורת כוכבים קבוצתיים – יעד כוכבים קבוצתי שמתמלא מהוספת כוכבים למשתתפים. ניתן גם להוסיף כוכבים קבוצתיים בנפרד. אפשר לכבות/להדליק את התצוגה, והוספה/הסרה זמינה רק כשהכרטיס דלוק.
-                                        <div className="absolute top-full right-2 border-4 border-transparent border-t-slate-900" />
+                                        <div className="absolute top-full right-6 border-4 border-transparent border-t-slate-900" />
                                     </div>
                                 </div>
                             </div>
