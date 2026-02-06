@@ -45,8 +45,7 @@ async function getAdminDb() {
           });
           console.log('✅ getAdminDb(): Service account initialization succeeded');
         } catch (parseError: any) {
-          console.error('❌ getAdminDb(): JSON parsing failed:', parseError.message);
-          console.error('❌ getAdminDb(): First 100 chars:', serviceAccount.substring(0, 100));
+              console.error('❌ getAdminDb(): JSON parsing failed:', parseError.message);
           
           // If service account fails, try applicationDefault as fallback
           console.log('🔍 getAdminDb(): Trying applicationDefault() as fallback...');
