@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import { BadgeCheck, ChevronRight, ChevronUp, ChevronDown, Crown, Minus, Pencil, Sparkles, Star, Timer, UserPlus, X, Users, UsersRound, User, Droplet, Container, Trophy, Power } from 'lucide-react';
+import { BadgeCheck, ChevronRight, ChevronUp, ChevronDown, Crown, Minus, Pencil, Sparkles, Star, Timer, UserPlus, X, Users, UsersRound, User, Droplet, Container, Trophy, Power, Info } from 'lucide-react';
 import { ParticipantIcon, PARTICIPANT_ICONS } from '@/app/lib/participantIcons';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { subscribeToGroup, subscribeToEvent, updateEvent, updateParticipantStars, updateEventPoolStars, deleteEvent, addParticipantToEvent, Event as FirestoreEvent, Group as FirestoreGroup, Participant } from '@/app/lib/firestore';
@@ -577,7 +577,23 @@ export default function EventPage() {
                             <h1 className="text-3xl sm:text-4xl font-black rainbow-text text-center break-words">{event.name}</h1>
                         </div>
 
-                        <div className="mt-4 relative flex items-center justify-between gap-2 bg-gradient-to-r from-yellow-50 to-blue-50 rounded-xl px-4 py-3 border-2 border-yellow-200/50 shadow-sm">
+                        <div
+                            className={`mt-4 relative flex items-center justify-between gap-2 rounded-xl px-4 py-3 border-2 shadow-sm ${
+                                isPersonalGoalActive
+                                    ? 'bg-gradient-to-r from-yellow-50 to-blue-50 border-yellow-200/50'
+                                    : 'bg-slate-100 border-slate-200'
+                            }`}
+                        >
+                            {/* Info tooltip */}
+                            <div className="absolute top-1 right-1 group">
+                                <div className="w-4 h-4 rounded-full bg-white/80 border border-slate-300 flex items-center justify-center text-[10px] text-slate-600 shadow-sm">
+                                    <Info className="w-3 h-3" />
+                                </div>
+                                <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-slate-900 text-white text-[11px] rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-lg max-w-[220px] text-right">
+                                    שורת כוכבים אישיים – יעד כוכבים אישי לכל משתתף. ניתן לכבות/להדליק את התצוגה בכפתור בצד, והוספה/הסרת כוכבים אפשרית רק כשהכרטיס דלוק.
+                                    <div className="absolute top-full right-2 border-4 border-transparent border-t-slate-900" />
+                                </div>
+                            </div>
                             <User className="w-5 h-5 text-[#4D96FF]" />
                             <div className="flex items-center gap-2 absolute left-1/2 transform -translate-x-1/2">
                                 <span className="text-base font-black text-slate-900">{event.starGoal}</span>
@@ -597,7 +613,23 @@ export default function EventPage() {
                             </button>
                         </div>
 
-                        <div className="mt-4 relative flex items-center justify-between gap-2 bg-gradient-to-r from-yellow-50 to-blue-50 rounded-xl px-4 py-3 border-2 border-yellow-200/50 shadow-sm">
+                        <div
+                            className={`mt-4 relative flex items-center justify-between gap-2 rounded-xl px-4 py-3 border-2 shadow-sm ${
+                                isGroupGoalActive
+                                    ? 'bg-gradient-to-r from-yellow-50 to-blue-50 border-yellow-200/50'
+                                    : 'bg-slate-100 border-slate-200'
+                            }`}
+                        >
+                            {/* Info tooltip */}
+                            <div className="absolute top-1 right-1 group">
+                                <div className="w-4 h-4 rounded-full bg-white/80 border border-slate-300 flex items-center justify-center text-[10px] text-slate-600 shadow-sm">
+                                    <Info className="w-3 h-3" />
+                                </div>
+                                <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-slate-900 text-white text-[11px] rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-lg max-w-[220px] text-right">
+                                    שורת כוכבים קבוצתיים – יעד כוכבים קבוצתי שמתמלא מהוספת כוכבים למשתתפים. ניתן גם להוסיף כוכבים קבוצתיים בנפרד. אפשר לכבות/להדליק את התצוגה, והוספה/הסרה זמינה רק כשהכרטיס דלוק.
+                                    <div className="absolute top-full right-2 border-4 border-transparent border-t-slate-900" />
+                                </div>
+                            </div>
                             <UsersRound className="w-5 h-5 text-[#4D96FF]" />
                             <div className="flex items-center gap-2 absolute left-1/2 transform -translate-x-1/2">
                                 <span className="text-base font-black text-slate-900">{event.poolStarGoal || event.starGoal}</span>
@@ -699,14 +731,6 @@ export default function EventPage() {
                                             </div>
                                         )}
                                         
-                                        {/* Pool Stars Counter */}
-                                        <div className="text-center mb-4">
-                                            <div className="text-5xl sm:text-6xl font-black text-white leading-none">
-                                                {poolStars}
-                                            </div>
-                                            <div className="text-sm sm:text-base font-black text-white/90 uppercase tracking-widest mt-1">כוכבים משותפים</div>
-                                        </div>
-
                                         {/* Vertical Progress Bar */}
                                         <div className="flex items-center justify-center mb-4">
                                             <div className="relative w-20 h-32 sm:w-24 sm:h-40">
@@ -1308,9 +1332,15 @@ export default function EventPage() {
                                         className="w-full text-2xl font-black text-slate-900 text-center bg-transparent border-none outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-[#4D96FF] rounded-lg px-2"
                                     />
 
+                                    {/* Star Goals section title */}
+                                    <div className="mt-4 flex items-center justify-center gap-2 text-slate-900">
+                                        <Star className="w-4 h-4" fill="currentColor" style={{ color: '#FFD93D' }} />
+                                        <span className="text-xs font-black">יעד כוכבים</span>
+                                    </div>
+
                                     {/* Star Goal */}
-                                    <div className="mt-4 flex items-center justify-center gap-2 bg-white/70 backdrop-blur-md rounded-lg px-3 py-2 border border-white/50">
-                                        <span className="text-sm font-black text-slate-900 w-20 text-right">יעד</span>
+                                    <div className="mt-3 flex items-center justify-center gap-2 bg-white/70 backdrop-blur-md rounded-lg px-3 py-2 border border-white/50">
+                                        <User className="w-4 h-4 text-[#4D96FF]" />
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -1337,14 +1367,12 @@ export default function EventPage() {
                                                 <ChevronUp className="w-3 h-3" />
                                             </button>
                                         </div>
-                                        <User className="w-4 h-4 text-[#4D96FF]" />
                                         <Star className="w-4 h-4" fill="currentColor" style={{ color: '#FFD93D' }} />
-                                        <BadgeCheck className="w-4 h-4 text-[#4D96FF]" />
                                     </div>
 
                                     {/* Pool Star Goal */}
-                                    <div className="mt-4 flex items-center justify-center gap-2 bg-white/70 backdrop-blur-md rounded-lg px-3 py-2 border border-white/50">
-                                        <span className="text-sm font-black text-slate-900 w-20 text-right">יעד קבוצתי</span>
+                                    <div className="mt-3 flex items-center justify-center gap-2 bg-white/70 backdrop-blur-md rounded-lg px-3 py-2 border border-white/50">
+                                        <Users className="w-4 h-4 text-[#4D96FF]" />
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
@@ -1371,9 +1399,7 @@ export default function EventPage() {
                                                 <ChevronUp className="w-3 h-3" />
                                             </button>
                                         </div>
-                                        <Users className="w-4 h-4 text-[#4D96FF]" />
                                         <Star className="w-4 h-4" fill="currentColor" style={{ color: '#FFD93D' }} />
-                                        <BadgeCheck className="w-4 h-4 text-[#4D96FF]" />
                                     </div>
 
                                     {/* End Date */}
