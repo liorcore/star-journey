@@ -73,7 +73,9 @@ export async function POST(request: NextRequest) {
       userId = body.userId;
     }
 
-    if (!chatId || !userId) {
+    const normalizedChatId = typeof chatId === 'string' ? chatId.trim() : String(chatId ?? '').trim();
+
+    if (!normalizedChatId || !userId) {
       return NextResponse.json(
         { success: false, message: 'Missing chatId or userId' },
         { status: 400 }
@@ -101,7 +103,7 @@ export async function POST(request: NextRequest) {
     if (adminDb) {
       // Use Admin SDK - bypasses Security Rules
       await adminDb.collection('adminSettings').doc('telegram').set({
-        chatId: String(chatId),
+        chatId: normalizedChatId,
         connected: true,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       }, { merge: true });
@@ -111,7 +113,7 @@ export async function POST(request: NextRequest) {
       const { doc: docFn, setDoc, serverTimestamp } = await import('firebase/firestore');
       const settingsRef = docFn(db, 'adminSettings', 'telegram');
       await setDoc(settingsRef, {
-        chatId: String(chatId),
+        chatId: normalizedChatId,
         connected: true,
         updatedAt: serverTimestamp(),
       }, { merge: true });

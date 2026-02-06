@@ -276,8 +276,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const resetPassword = async (email: string) => {
     if (!auth) {
-      // Demo mode: Password reset not available
-      return;
+      // Firebase not configured (demo mode) — don't pretend we sent an email
+      throw new Error('Firebase לא מוגדר - לא ניתן לשלוח אימייל איפוס סיסמה');
     }
     const normalizedEmail = email.trim().toLowerCase();
     // Use current origin so the reset link brings user back to this app
