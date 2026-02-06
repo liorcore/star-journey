@@ -26,6 +26,26 @@ const isFirebaseAvailable = () => {
   return true;
 };
 
+async function safeNotifyUserError(params: {
+  userId: string;
+  errorType: string;
+  location: string;
+  error: unknown;
+}) {
+  try {
+    await sendTelegramNotification('user_error', {
+      userId: params.userId,
+      userEmail: params.userId, // We don't always have email here
+      errorType: params.errorType,
+      location: params.location,
+      errorMessage:
+        params.error instanceof Error ? params.error.message : String(params.error ?? 'Unknown error'),
+    });
+  } catch {
+    // Silently fail - never block the user flow on notification errors
+  }
+}
+
 // Types
 export interface Participant {
   id: string;
@@ -215,7 +235,12 @@ export async function updateGroup(
       updatedAt: serverTimestamp(),
     });
   } catch (error) {
-    // Error updating group
+    await safeNotifyUserError({
+      userId,
+      errorType: 'group_update_failed',
+      location: 'updateGroup',
+      error,
+    });
     throw error;
   }
 }
@@ -259,7 +284,12 @@ export async function deleteParticipantFromGroup(
       updatedAt: serverTimestamp(),
     });
   } catch (error) {
-    // Error deleting participant from group
+    await safeNotifyUserError({
+      userId,
+      errorType: 'group_delete_participant_failed',
+      location: 'deleteParticipantFromGroup',
+      error,
+    });
     throw error;
   }
 }
@@ -284,7 +314,12 @@ export async function deleteGroup(userId: string, groupId: string): Promise<void
 
     await deleteDoc(groupRef);
   } catch (error) {
-    // Error deleting group
+    await safeNotifyUserError({
+      userId,
+      errorType: 'group_delete_failed',
+      location: 'deleteGroup',
+      error,
+    });
     throw error;
   }
 }
@@ -312,7 +347,12 @@ export async function getGroupEvents(userId: string, groupId: string): Promise<E
       ...doc.data(),
     })) as Event[];
   } catch (error) {
-    // Error getting group events
+    await safeNotifyUserError({
+      userId,
+      errorType: 'events_fetch_failed',
+      location: 'getGroupEvents',
+      error,
+    });
     throw error;
   }
 }
@@ -414,7 +454,12 @@ export async function updateEvent(
       updatedAt: serverTimestamp(),
     });
   } catch (error) {
-    // Error updating event
+    await safeNotifyUserError({
+      userId,
+      errorType: 'event_update_failed',
+      location: 'updateEvent',
+      error,
+    });
     throw error;
   }
 }
@@ -435,7 +480,12 @@ export async function deleteEvent(userId: string, groupId: string, eventId: stri
 
     await deleteDoc(eventRef);
   } catch (error) {
-    // Error deleting event
+    await safeNotifyUserError({
+      userId,
+      errorType: 'event_delete_failed',
+      location: 'deleteEvent',
+      error,
+    });
     throw error;
   }
 }
@@ -528,7 +578,12 @@ export async function addParticipantToEvent(
       });
     });
   } catch (error) {
-    // Error adding participant to event
+    await safeNotifyUserError({
+      userId,
+      errorType: 'event_add_participant_failed',
+      location: 'addParticipantToEvent',
+      error,
+    });
     throw error;
   }
 }
