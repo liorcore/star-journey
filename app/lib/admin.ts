@@ -12,43 +12,61 @@ const isFirebaseAvailable = () => {
 // Helper to get Admin SDK (server-side only)
 async function getAdminDb() {
   if (typeof window !== 'undefined') {
-    console.log('🔍 getAdminDb(): Client-side, returning null');
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('🔍 getAdminDb(): Client-side, returning null');
+    }
     return null; // Client-side - no Admin SDK
   }
 
   try {
-    console.log('🔍 getAdminDb(): Importing firebase-admin...');
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('🔍 getAdminDb(): Importing firebase-admin...');
+    }
     const admin = await import('firebase-admin');
     
     if (!admin.apps.length) {
-      console.log('🔍 getAdminDb(): No apps initialized, initializing...');
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('🔍 getAdminDb(): No apps initialized, initializing...');
+      }
       
       // Try service account JSON first (most reliable for Vercel)
       const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
-      console.log('🔍 getAdminDb(): Service account env var exists:', !!serviceAccount);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('🔍 getAdminDb(): Service account env var exists:', !!serviceAccount);
+      }
       
       if (serviceAccount) {
         try {
           const serviceAccountJson = JSON.parse(serviceAccount);
-          console.log('🔍 getAdminDb(): JSON parsed successfully');
-          console.log('🔍 getAdminDb(): project_id:', serviceAccountJson.project_id);
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('🔍 getAdminDb(): JSON parsed successfully');
+            console.log('🔍 getAdminDb(): project_id:', serviceAccountJson.project_id);
+          }
           
           if (!serviceAccountJson.project_id) {
             console.error('❌ getAdminDb(): project_id is missing from service account JSON!');
             throw new Error('project_id is missing from service account');
           }
           
-          console.log('🔍 getAdminDb(): Initializing with service account...');
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('🔍 getAdminDb(): Initializing with service account...');
+          }
           admin.initializeApp({
             credential: admin.credential.cert(serviceAccountJson),
             projectId: serviceAccountJson.project_id,
           });
-          console.log('✅ getAdminDb(): Service account initialization succeeded');
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('✅ getAdminDb(): Service account initialization succeeded');
+          }
         } catch (parseError: any) {
-              console.error('❌ getAdminDb(): JSON parsing failed:', parseError.message);
+          if (process.env.NODE_ENV !== 'production') {
+            console.error('❌ getAdminDb(): JSON parsing failed:', parseError.message);
+          }
           
           // If service account fails, try applicationDefault as fallback
-          console.log('🔍 getAdminDb(): Trying applicationDefault() as fallback...');
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('🔍 getAdminDb(): Trying applicationDefault() as fallback...');
+          }
           try {
             let projectId: string | undefined;
             try {
@@ -63,47 +81,67 @@ async function getAdminDb() {
                 credential: admin.credential.applicationDefault(),
                 projectId: projectId,
               });
-              console.log('🔍 getAdminDb(): applicationDefault() succeeded with projectId:', projectId);
+              if (process.env.NODE_ENV !== 'production') {
+                console.log('🔍 getAdminDb(): applicationDefault() succeeded with projectId:', projectId);
+              }
             } else {
               admin.initializeApp({
                 credential: admin.credential.applicationDefault(),
               });
-              console.log('🔍 getAdminDb(): applicationDefault() succeeded (no explicit projectId)');
+              if (process.env.NODE_ENV !== 'production') {
+                console.log('🔍 getAdminDb(): applicationDefault() succeeded (no explicit projectId)');
+              }
             }
           } catch (e2) {
-            console.error('❌ getAdminDb(): All initialization methods failed:', e2);
+            if (process.env.NODE_ENV !== 'production') {
+              console.error('❌ getAdminDb(): All initialization methods failed:', e2);
+            }
             return null;
           }
         }
       } else {
         // No service account, try applicationDefault
-        console.log('🔍 getAdminDb(): No service account, trying applicationDefault()...');
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('🔍 getAdminDb(): No service account, trying applicationDefault()...');
+        }
         try {
           admin.initializeApp({
             credential: admin.credential.applicationDefault(),
           });
-          console.log('🔍 getAdminDb(): applicationDefault() succeeded');
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('🔍 getAdminDb(): applicationDefault() succeeded');
+          }
         } catch (e) {
-          console.error('❌ getAdminDb(): applicationDefault() failed:', e);
+          if (process.env.NODE_ENV !== 'production') {
+            console.error('❌ getAdminDb(): applicationDefault() failed:', e);
+          }
           return null;
         }
       }
     } else {
-      console.log('🔍 getAdminDb(): Admin app already initialized');
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('🔍 getAdminDb(): Admin app already initialized');
+      }
       // Check if the app has project ID
       const app = admin.apps[0];
       const currentProjectId = app?.options?.projectId;
-      console.log('🔍 getAdminDb(): Current app projectId:', currentProjectId);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('🔍 getAdminDb(): Current app projectId:', currentProjectId);
+      }
       
       if (!currentProjectId) {
-        console.warn('⚠️ getAdminDb(): App initialized but no projectId!');
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('⚠️ getAdminDb(): App initialized but no projectId!');
+        }
         // Try to get project ID from service account
         const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
         if (serviceAccount) {
           try {
             const serviceAccountJson = JSON.parse(serviceAccount);
             if (serviceAccountJson.project_id) {
-              console.warn('⚠️ getAdminDb(): Reinitializing app with project ID...');
+              if (process.env.NODE_ENV !== 'production') {
+                console.warn('⚠️ getAdminDb(): Reinitializing app with project ID...');
+              }
               // Delete existing app and reinitialize
               try {
                 admin.app().delete();
@@ -114,7 +152,9 @@ async function getAdminDb() {
                 credential: admin.credential.cert(serviceAccountJson),
                 projectId: serviceAccountJson.project_id,
               });
-              console.log('✅ getAdminDb(): Reinitialized with project ID:', serviceAccountJson.project_id);
+              if (process.env.NODE_ENV !== 'production') {
+                console.log('✅ getAdminDb(): Reinitialized with project ID:', serviceAccountJson.project_id);
+              }
             }
           } catch (e) {
             console.error('❌ getAdminDb(): Failed to reinitialize:', e);
@@ -130,15 +170,19 @@ async function getAdminDb() {
     const projectId = app?.options?.projectId;
     
     if (!projectId) {
-      console.error('❌ getAdminDb(): No project ID found in app options!');
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('❌ getAdminDb(): No project ID found in app options!');
+      }
       // Try to get from service account
       const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
       if (serviceAccount) {
         try {
           const serviceAccountJson = JSON.parse(serviceAccount);
           if (serviceAccountJson.project_id) {
-            console.error('❌ getAdminDb(): App initialized without project ID, but service account has it!');
-            console.error('❌ getAdminDb(): This means app was initialized elsewhere without project ID');
+            if (process.env.NODE_ENV !== 'production') {
+              console.error('❌ getAdminDb(): App initialized without project ID, but service account has it!');
+              console.error('❌ getAdminDb(): This means app was initialized elsewhere without project ID');
+            }
             return null;
           }
         } catch (e) {
@@ -149,10 +193,14 @@ async function getAdminDb() {
     }
     
     const firestore = admin.firestore();
-    console.log('🔍 getAdminDb(): Returning Firestore instance with projectId:', projectId);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('🔍 getAdminDb(): Returning Firestore instance with projectId:', projectId);
+    }
     return firestore;
   } catch (error) {
-    console.error('❌ getAdminDb(): Error:', error);
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('❌ getAdminDb(): Error:', error);
+    }
     return null;
   }
 }
@@ -162,15 +210,21 @@ async function getAdminDb() {
  * Works both client-side (with client SDK) and server-side (with Admin SDK)
  */
 export async function isAdmin(userId: string): Promise<boolean> {
-  console.log('🔍 isAdmin() called for userId:', userId);
-  console.log('🔍 Environment:', typeof window !== 'undefined' ? 'client' : 'server');
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('🔍 isAdmin() called for userId:', userId);
+    console.log('🔍 Environment:', typeof window !== 'undefined' ? 'client' : 'server');
+  }
   
   if (!isFirebaseAvailable()) {
-    console.log('🔍 Firebase not available, checking env var');
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('🔍 Firebase not available, checking env var');
+    }
     // Demo mode - check environment variable or return false
     const adminIds = process.env.ADMIN_USER_IDS?.split(',') || [];
     const result = adminIds.includes(userId);
-    console.log('🔍 Env var check result:', result);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('🔍 Env var check result:', result);
+    }
     return result;
   }
 
@@ -178,15 +232,23 @@ export async function isAdmin(userId: string): Promise<boolean> {
     const isServerSide = typeof window === 'undefined';
     
     // Try to use Admin SDK first (server-side)
-    console.log('🔍 Attempting to get Admin SDK...');
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('🔍 Attempting to get Admin SDK...');
+    }
     const adminDb = await getAdminDb();
-    console.log('🔍 Admin SDK result:', adminDb ? 'available' : 'not available');
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('🔍 Admin SDK result:', adminDb ? 'available' : 'not available');
+    }
     
     if (adminDb) {
-      console.log('🔍 Using Admin SDK to check admin document...');
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('🔍 Using Admin SDK to check admin document...');
+      }
       const adminDoc = await adminDb.collection('admins').doc(userId).get();
       const exists = adminDoc.exists;
-      console.log('🔍 Admin document exists:', exists);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('🔍 Admin document exists:', exists);
+      }
       return exists;
     }
 
@@ -197,7 +259,9 @@ export async function isAdmin(userId: string): Promise<boolean> {
     }
 
     // Fallback to client SDK (client-side only)
-    console.log('🔍 Falling back to client SDK (client-side)...');
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('🔍 Falling back to client SDK (client-side)...');
+    }
     if (!db) {
       console.error('❌ Client SDK not available');
       return false;
@@ -205,14 +269,12 @@ export async function isAdmin(userId: string): Promise<boolean> {
     const adminRef = doc(db, 'admins', userId);
     const adminDoc = await getDoc(adminRef);
     const exists = adminDoc.exists();
-    console.log('🔍 Client SDK check result:', exists);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('🔍 Client SDK check result:', exists);
+    }
     return exists;
   } catch (error) {
     console.error('❌ Error checking admin status:', error);
-    console.error('❌ Error details:', {
-      message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-    });
     return false;
   }
 }
