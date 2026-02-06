@@ -25,7 +25,9 @@ export default function TelegramSettingsComponent() {
 
   const loadSettings = async () => {
     if (!user || !user.uid) {
-      console.warn('User not available for loading settings - user:', user);
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('User not available for loading settings - user:', user);
+      }
       // Don't try to load if user is not available
       return;
     }
@@ -38,7 +40,9 @@ export default function TelegramSettingsComponent() {
       const userId = encodeURIComponent(user.uid);
       const url = `/api/telegram/get-settings?userId=${userId}`;
       
-      console.log('Loading Telegram settings for user:', user.uid);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Loading Telegram settings for user:', user.uid);
+      }
       
       const response = await fetch(url, {
         headers: {
@@ -48,7 +52,9 @@ export default function TelegramSettingsComponent() {
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('API error:', response.status, errorText);
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('API error:', response.status, errorText);
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
@@ -59,7 +65,9 @@ export default function TelegramSettingsComponent() {
         setChatId(result.settings.chatId || '');
         setTempChatId(result.settings.chatId || '');
       } else {
-        console.warn('API returned unsuccessful result:', result);
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('API returned unsuccessful result:', result);
+        }
         // Fallback to direct call if API fails
         try {
           const currentSettings = await getTelegramSettings();
@@ -69,11 +77,15 @@ export default function TelegramSettingsComponent() {
             setTempChatId(currentSettings.chatId || '');
           }
         } catch (e) {
-          console.error('Fallback also failed:', e);
+          if (process.env.NODE_ENV !== 'production') {
+            console.error('Fallback also failed:', e);
+          }
         }
       }
     } catch (error: any) {
-      console.error('Error loading settings:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Error loading settings:', error);
+      }
       // Fallback to direct call on error
       try {
         const currentSettings = await getTelegramSettings();

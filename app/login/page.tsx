@@ -39,11 +39,13 @@ export default function LoginPage() {
       await signIn(normalizedEmail, password);
       router.push('/');
     } catch (err: any) {
-      // Log error for debugging
-      console.error('Login error:', err);
-      console.error('Error code:', err?.code);
-      console.error('Error message:', err?.message);
-      console.error('Full error object:', JSON.stringify(err, null, 2));
+      // Log error for debugging (development only)
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Login error:', err);
+        console.error('Error code:', err?.code);
+        console.error('Error message:', err?.message);
+        console.error('Full error object:', JSON.stringify(err, null, 2));
+      }
       
       // Try to get error code from different possible locations
       const errorCode = err?.code || err?.error?.code || err?.errorCode || null;
@@ -82,9 +84,11 @@ export default function LoginPage() {
       await signUp(sanitizedEmail, password);
       router.push('/');
     } catch (err: any) {
-      // Log error for debugging
-      console.error('Signup error:', err);
-      console.error('Error code:', err?.code);
+      // Log error for debugging (development only)
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Signup error:', err);
+        console.error('Error code:', err?.code);
+      }
       const errorCode = err?.code || err?.error?.code || err?.errorCode || null;
       setError(getErrorMessage(errorCode));
     } finally {
@@ -106,9 +110,11 @@ export default function LoginPage() {
       if (err.message && typeof err.message === 'string' && err.message.includes('קיים כבר חשבון')) {
         setError(err.message);
       } else {
-        // Log error for debugging
-        console.error('Google sign in error:', err);
-        console.error('Error code:', err?.code);
+        // Log error for debugging (development only)
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('Google sign in error:', err);
+          console.error('Error code:', err?.code);
+        }
         const errorCode = err?.code || err?.error?.code || err?.errorCode || null;
         setError(getErrorMessage(errorCode));
       }
@@ -132,9 +138,11 @@ export default function LoginPage() {
         setError('');
       }, 8000);
     } catch (err: any) {
-      // Log error for debugging
-      console.error('Reset password error:', err);
-      console.error('Error code:', err?.code);
+      // Log error for debugging (development only)
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Reset password error:', err);
+        console.error('Error code:', err?.code);
+      }
       const errorCode = err?.code || err?.error?.code || err?.errorCode || null;
       setError(getErrorMessage(errorCode));
     } finally {

@@ -13,7 +13,9 @@ export default function PWARegister() {
         navigator.serviceWorker
           .register('/sw.js', { updateViaCache: 'none' }) // Always check for updates
           .then((reg) => {
-            console.log('Service Worker registered:', reg);
+            if (process.env.NODE_ENV !== 'production') {
+              console.log('Service Worker registered:', reg);
+            }
             setRegistration(reg);
 
             // Check for updates immediately
@@ -33,7 +35,9 @@ export default function PWARegister() {
             });
           })
           .catch((error) => {
-            console.error('Service Worker registration failed:', error);
+            if (process.env.NODE_ENV !== 'production') {
+              console.error('Service Worker registration failed:', error);
+            }
           });
       });
 
@@ -63,7 +67,9 @@ export default function PWARegister() {
       window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        console.log('PWA install prompt available');
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('PWA install prompt available');
+        }
       });
     }
   }, [registration]);
