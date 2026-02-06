@@ -280,7 +280,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     const normalizedEmail = email.trim().toLowerCase();
-    return sendPasswordResetEmail(auth, normalizedEmail);
+    // Use current origin so the reset link brings user back to this app
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    const actionCodeSettings = baseUrl
+      ? {
+          url: `${baseUrl}/login`,
+          handleCodeInApp: false,
+        }
+      : undefined;
+    return sendPasswordResetEmail(auth, normalizedEmail, actionCodeSettings);
   };
 
   const logout = async () => {

@@ -124,11 +124,13 @@ export default function LoginPage() {
 
     try {
       await resetPassword(email);
-      setError('נשלח אימייל לאיפוס סיסמה');
+      setError(
+        'אם יש חשבון עם האימייל הזה – נשלח אליו קישור לאיפוס. בדוק גם בתיקיית דואר זבל ווודא שהזנת את הכתובת הנכונה. אם לא מגיע תוך כמה דקות – נסה שוב.'
+      );
       setTimeout(() => {
         setView('login');
         setError('');
-      }, 3000);
+      }, 8000);
     } catch (err: any) {
       // Log error for debugging
       console.error('Reset password error:', err);
