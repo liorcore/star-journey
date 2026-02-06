@@ -355,6 +355,8 @@ export default function GroupPage() {
         return `${hours} שעות`;
     };
 
+    const isEventActive = (event: Event) => event.endDate > Date.now();
+
     const pAgeLabel = pAge.toFixed(1);
 
     if (!group) {
@@ -694,8 +696,20 @@ export default function GroupPage() {
                                 <p className="text-xs sm:text-lg font-bold text-slate-400">אין הרפתקאות</p>
                             </div>
                         ) : (
-                            (group.events || []).map((event) => {
-                                const isEventEnded = event.endDate <= Date.now();
+                            (() => {
+                                const now = Date.now();
+                                const activeEvents = (group.events || [])
+                                    .filter((e) => e.endDate > now)
+                                    .sort((a, b) => a.endDate - b.endDate);
+                                const endedEvents = (group.events || [])
+                                    .filter((e) => e.endDate <= now)
+                                    .sort((a, b) => b.endDate - a.endDate);
+
+                                const orderedEvents = [...activeEvents, ...endedEvents];
+
+                                return orderedEvents.map((event) => {
+                                const isEventEnded = event.endDate <= now;
+                                const active = !isEventEnded;
                                 return (
                                 <div
                                     key={event.id}
@@ -723,9 +737,23 @@ export default function GroupPage() {
                                         <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                     </button>
 
-                                    <h3 className={`text-sm sm:text-xl font-black mb-2 sm:mb-4 pr-6 ${
-                                        isEventEnded ? 'text-slate-600' : 'text-blue-600'
-                                    }`}>{event.name}</h3>
+                                    <h3
+                                        className={`text-sm sm:text-xl font-black mb-2 sm:mb-4 pr-6 flex items-center gap-2 ${
+                                            isEventEnded ? 'text-slate-600' : 'text-blue-600'
+                                        }`}
+                                    >
+                                        <span
+                                            className={[
+                                                'inline-block w-2.5 h-2.5 rounded-full shrink-0',
+                                                active
+                                                    ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.85)]'
+                                                    : 'bg-slate-400 shadow-[0_0_8px_rgba(148,163,184,0.7)]',
+                                            ].join(' ')}
+                                            aria-label={active ? 'אירוע פעיל' : 'אירוע הסתיים'}
+                                            title={active ? 'פעיל' : 'הסתיים'}
+                                        />
+                                        <span className="truncate">{event.name}</span>
+                                    </h3>
                                     
                                     <div className="space-y-1.5 sm:space-y-3 mb-3 sm:mb-5">
                                         {/* Start Date */}
@@ -779,7 +807,8 @@ export default function GroupPage() {
                                     </div>
                                 </div>
                                 );
-                            })
+                            });
+                            })()
                         )}
                     </div>
                 </section>
